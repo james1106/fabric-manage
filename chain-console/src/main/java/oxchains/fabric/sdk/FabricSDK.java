@@ -1,12 +1,10 @@
 package oxchains.fabric.sdk;
 
 import com.google.common.collect.Lists;
-import org.hyperledger.fabric.protos.peer.Query;
 import org.hyperledger.fabric.protos.peer.Query.ChaincodeInfo;
 import org.hyperledger.fabric.sdk.*;
 import org.hyperledger.fabric.sdk.exception.CryptoException;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
-import org.hyperledger.fabric.sdk.exception.ProposalException;
 import org.hyperledger.fabric.sdk.exception.TransactionException;
 import org.hyperledger.fabric_ca.sdk.HFCAClient;
 import org.hyperledger.fabric_ca.sdk.RegistrationRequest;
@@ -112,9 +110,9 @@ public class FabricSDK {
         try {
             user = new FabricUser(username, affiliation);
             RegistrationRequest registrationRequest = new RegistrationRequest(username, affiliation);
-            user.setEnrollmentSecret(caClient.register(registrationRequest, caServerAdminUser));
+            user.setPassword(caClient.register(registrationRequest, caServerAdminUser));
             //TODO when to enroll? difference to register?
-            caClient.enroll(username, user.getEnrollmentSecret());
+            caClient.enroll(username, user.getPassword());
             user.setMspId(caServerAdminMSPId);
         } catch (Exception e) {
             LOG.error("failed to register fabric user {} from {}", username, affiliation);

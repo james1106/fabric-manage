@@ -16,11 +16,20 @@ public class CAAdmin implements User {
     private String affiliation;
     private Enrollment enrollment;
     private String mspId;
+    private String password;
 
     public CAAdmin(String name, String affiliation, String mspId) {
         this.name = name;
         this.affiliation = affiliation;
         this.mspId = mspId;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getPassword(){
+        return this.password;
     }
 
     @Override
