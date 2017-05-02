@@ -16,14 +16,18 @@ public class FabricUser implements User {
     private String affiliation;
     private Enrollment enrollment;
     private String mspId;
-    private String enrollmentSecret;
+    private String password;
 
-    public void setEnrollmentSecret(String enrollmentSecret) {
-        this.enrollmentSecret = enrollmentSecret;
+    public void setEnrollment(Enrollment enrollment) {
+        this.enrollment = enrollment;
     }
 
-    public String getEnrollmentSecret() {
-        return enrollmentSecret;
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getPassword() {
+        return password;
     }
 
     public void setMspId(String mspId) {
