@@ -9,3 +9,16 @@ backend with RESTful API for:
   - ca user: login(enroll), register, revoke
   - chaincode: upload, delete, install(deploy), instantiate, invoke and query
   
+
+## [FrontEnd](./FrontEnd)
+
+### Getting Started
+
+Checkout this repo, install dependencies, then start the app with the following:
+
+```
+> git clone https://git@github.com:zkjs/oxchain-invoice.git
+> cd invoice-app/FrontEnd
+> npm install
+> npm start
+```
