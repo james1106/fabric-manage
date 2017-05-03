@@ -8,6 +8,8 @@ import reduxThunk from 'redux-thunk';
 import reducers from './reducers';
 import { AUTH_USER } from './actions/types';
 
+import RequireAuth from './components/auth/require_auth';
+import PrivateRoute from './components/auth/private_route';
 import Welcome from './components/welcome';
 import NavTop from './components/common/header';
 import NavSide from './components/common/nav_side';
@@ -41,8 +43,8 @@ ReactDOM.render(
             <Route path="/signout" component={Signout} />
             <Route path="/signin" component={Signin} />
             <Route path="/peer/:id/status" component={PeerStatus} />
-            <Route path="/peer" component={PeerList} />
-            <Route path="/users" component={UserList} />
+            <Route path="/peer" component={RequireAuth(PeerList)} />
+            <PrivateRoute path="/users" component={UserList}/>
             <Route path="/" component={Welcome} />
           </Switch>
         </div>

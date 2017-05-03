@@ -8,23 +8,17 @@ import {
 
 
 // 登录
-export function signinAction(props, callback) {
+export function signinAction({ username, password }, callback) {
   return function(dispatch) {
-    //TODO: using GET for test only
-    //axios.post(`${ROOT_URL}/signin`, { username, password })
-    axios.get(`${ROOT_URL}/signin`)
+    axios.post(`${ROOT_URL}/user/token`, { username, password })
+    //axios.get('http://localhost:3000/signin')
       .then(response => {
 
         if(response.data.status == 1) {//auth success
           // - Save the JWT token
-          /*
-           localStorage.setItem('token', response.data.token);
-           localStorage.setItem('user', JSON.stringify(response.data.user));
-           localStorage.setItem('username', response.data.user.username);
-           */
-          localStorage.setItem('token', response.data.data.id);
-          localStorage.setItem('user', JSON.stringify(response.data.data));
-          localStorage.setItem('username', response.data.data.name);
+          localStorage.setItem('token', response.data.data.token);
+          //localStorage.setItem('user', JSON.stringify(response.data.data));
+          localStorage.setItem('username', response.data.data.username);
 
           dispatch({type: AUTH_USER});
           // - redirect to the route '/'

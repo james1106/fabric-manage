@@ -11,13 +11,16 @@ import {
   ModalBody,
   ModalFooter
 } from 'react-modal-bootstrap';
+import AddUser from './user_add';
 
 class UserList extends Component {
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
     this.state = {
       isModalOpen: false,
-      actionSuccess: null
+      isAddModalOpen : false,
+      actionSuccess: null,
+      actionResult: ''
     };
 
   }
@@ -47,19 +50,32 @@ class UserList extends Component {
   }
 
   handleStopClick({username}) {
-    this.props.disableUser(username, success => {
+    if(!window.confirm('确定禁用该账号？')) return false;
+    this.props.disableUser(username, 0 , success => {
       console.log(success);
       if(success) {//操作成功
         this.props.fetchUserList();
       }
-      this.setState({ isModalOpen: true ,actionSuccess:success });
+      this.setState({ isModalOpen: true ,actionSuccess:success, actionResult: success?'操作成功!':'操作失败' });
     });
   };
 
-  render() {
-    if(this.props.all.length<1) {
-      return <div><section className="content-header"><h1>Loading...</h1></section></div>
+  handleAddClick() {
+    this.setState({isAddModalOpen: true});
+  }
+
+  hideAddModal = () => {
+    this.setState({ isAddModalOpen : false });
+  };
+
+  addUserCallback(err) {
+    if(!err){
+      this.props.fetchUserList();
+      this.setState({isAddModalOpen : false, isModalOpen: true ,actionSuccess:true, actionResult:'用户注册成功!' });
     }
+  }
+
+  render() {
 
     return (
       <div>
@@ -68,7 +84,10 @@ class UserList extends Component {
           <div className="row">
             <div className="col-xs-12">
               <div className="box box-info">
-                <div className="box-header"><h3 className="box-title">用户</h3></div>
+                <div className="box-header">
+                  <h3 className="box-title">用户</h3>
+                  <button className="btn btn-success pull-right" onClick={this.handleAddClick.bind(this)}><i className="fa fa-plus"></i> 注册用户</button>
+                </div>
                 <div className="box-body table-responsive no-padding">
                   <table className="table table-bordered table-hover">
                     <tbody>
@@ -91,13 +110,30 @@ class UserList extends Component {
         <Modal isOpen={this.state.isModalOpen} onRequestHide={this.hideModal}>
           <ModalHeader>
             <ModalClose onClick={this.hideModal}/>
-            <ModalTitle>结果</ModalTitle>
+            <ModalTitle>提示:</ModalTitle>
           </ModalHeader>
           <ModalBody>
-            <p className={this.state.actionSuccess?'text-green':'text-red'}>{this.state.actionSuccess?'操作成功!':'操作失败'}</p>
+            <p className={this.state.actionSuccess?'text-green':'text-red'}>
+              {this.state.actionResult}
+            </p>
           </ModalBody>
           <ModalFooter>
             <button className='btn btn-default' onClick={this.hideModal}>
+              关闭
+            </button>
+          </ModalFooter>
+        </Modal>
+
+        <Modal isOpen={this.state.isAddModalOpen} onRequestHide={this.hideAddModal}>
+          <ModalHeader>
+            <ModalClose onClick={this.hideAddModal}/>
+            <ModalTitle>注册用户</ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <AddUser addCallback={this.addUserCallback.bind(this)}/>
+          </ModalBody>
+          <ModalFooter>
+            <button className='btn btn-default' onClick={this.hideAddModal}>
               关闭
             </button>
           </ModalFooter>
