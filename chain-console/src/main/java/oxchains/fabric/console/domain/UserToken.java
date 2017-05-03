@@ -2,8 +2,6 @@ package oxchains.fabric.console.domain;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import javax.persistence.MapsId;
-import javax.persistence.OneToOne;
 
 /**
  * @author aiet
@@ -11,22 +9,38 @@ import javax.persistence.OneToOne;
 @Entity
 public class UserToken {
 
-    @OneToOne
-    @MapsId
-    private User user;
+    @Id private Long id;
 
-    @Id private String token;
+    private String token;
+    private String username;
 
     public UserToken() {
     }
 
     public UserToken(User user, String token) {
-        this.user = user;
+        this.username = user.getUsername();
+        this.id = user.getId();
+        this.token = token;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setToken(String token) {
         this.token = token;
     }
 
     public String getUsername() {
-        return this.user.getUsername();
+        return this.username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getToken() {

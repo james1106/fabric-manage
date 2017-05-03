@@ -3,17 +3,21 @@ package oxchains.fabric.rest.steps;
 import io.restassured.module.mockmvc.response.MockMvcResponse;
 import net.thucydides.core.annotations.Step;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import oxchains.fabric.ChainConsoleApplication;
 import oxchains.fabric.console.data.UserRepo;
 import oxchains.fabric.console.domain.User;
 
+import java.util.Map;
+
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.module.mockmvc.RestAssuredMockMvc.given;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
+import static oxchains.fabric.util.StoryTestUtil.propertyParse;
 
 /**
  * @author aiet
@@ -21,6 +25,9 @@ import static org.hamcrest.collection.IsEmptyCollection.empty;
 @ContextConfiguration(classes = ChainConsoleApplication.class)
 @TestPropertySource(locations = "classpath:test.properties")
 public class FabricUserControllerSteps {
+
+    @Value("#{${fabric.test.endpoints}}") private Map<String, String> testProperties;
+    private final String defaultAffilicationKey = "#affiliation";
 
     private MockMvcResponse mockMvcResponse;
 
@@ -75,6 +82,7 @@ public class FabricUserControllerSteps {
         User user = new User();
         user.setUsername(username);
         user.setPassword(password);
+        user.setAffiliation(propertyParse(defaultAffilicationKey, testProperties));
         mockMvcResponse = given()
           .contentType(JSON)
           .body(user)
@@ -97,6 +105,7 @@ public class FabricUserControllerSteps {
     public void revokeUser(String username) {
         mockMvcResponse = given()
           .param("action", 0)
+          .param("reason", 0)
           .when()
           .put("/user/" + username);
     }
@@ -126,7 +135,7 @@ public class FabricUserControllerSteps {
         User user = new User();
         user.setUsername(username);
         user.setPassword(password);
-        user.setId("0001");
+        user.setId(1L);
         userRepo.save(user);
     }
 

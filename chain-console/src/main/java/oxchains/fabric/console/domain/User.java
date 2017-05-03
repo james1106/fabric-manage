@@ -12,8 +12,8 @@ import javax.persistence.Id;
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     private String username;
     private String password;
@@ -27,11 +27,11 @@ public class User {
         this.username = username;
     }
 
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -50,4 +50,10 @@ public class User {
     public void setAffiliation(String affiliation) {
         this.affiliation = affiliation;
     }
+
+    @Override
+    public String toString() {
+        return String.format("%s of %s [%s]", username, affiliation, id);
+    }
+
 }
