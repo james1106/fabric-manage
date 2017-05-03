@@ -8,6 +8,7 @@ import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.TransactionException;
 import org.hyperledger.fabric_ca.sdk.HFCAClient;
 import org.hyperledger.fabric_ca.sdk.RegistrationRequest;
+import org.hyperledger.fabric_ca.sdk.RevokeReason;
 import org.hyperledger.fabric_ca.sdk.exception.BaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,13 +24,13 @@ import java.net.MalformedURLException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptySet;
-import static java.util.Collections.singletonList;
+import static java.util.Collections.*;
+import static java.util.Optional.empty;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 import static org.hyperledger.fabric.sdk.ChainCodeResponse.Status.SUCCESS;
 import static org.hyperledger.fabric.sdk.TransactionRequest.Type.GO_LANG;
 import static org.hyperledger.fabric.sdk.security.CryptoSuite.Factory.getCryptoSuite;
+import static org.hyperledger.fabric_ca.sdk.RevokeReason.UNSPECIFIED;
 
 /**
  * @author aiet
@@ -311,5 +312,47 @@ public class FabricSDK {
             LOG.error("failed to query installed chaincodes of peer {}:", peer.getName(), e);
         }
         return emptyList();
+    }
+
+    public boolean revokeUser(String username, int reason) {
+        try {
+            caClient.revoke(caServerAdminUser, username, int2RevokeReason(reason));
+            return true;
+        } catch (Exception e) {
+            LOG.error("failed to revoke {} with reason {}", username, reason, e);
+        }
+        return false;
+    }
+
+    private RevokeReason int2RevokeReason(int reasonOrdinal) {
+        Optional<RevokeReason> revokeReasonOptional = Arrays
+          .stream(RevokeReason.values())
+          .filter(r -> r.ordinal() == reasonOrdinal)
+          .findFirst();
+        return revokeReasonOptional.orElse(UNSPECIFIED);
+    }
+
+    public boolean register(String username, String affiliation, String password) {
+        try {
+            RegistrationRequest registrationRequest = new RegistrationRequest(username, affiliation);
+            registrationRequest.setSecret(password);
+            String registerResult = caClient.register(registrationRequest, caServerAdminUser);
+            LOG.info("fabric registered {} of {}: {}", username, affiliation, registerResult);
+            return true;
+        } catch (Exception e) {
+            LOG.error("failed to register new fabric user {} of {}", username, affiliation, e);
+        }
+        return false;
+    }
+
+    public Optional<Enrollment> enroll(String username, String password) {
+        try {
+            Enrollment enrollment = caClient.enroll(username, password);
+            LOG.info("user {} enrolled", username);
+            return Optional.of(enrollment);
+        } catch (Exception e) {
+            LOG.error("failed to enroll user {}", username, e);
+        }
+        return empty();
     }
 }
