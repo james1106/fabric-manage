@@ -63,7 +63,7 @@ public class PeerAPISteps {
     public void queryChainOfPeer(String peerId) {
         Optional<Peer> peerOptional = fabricSDK.getPeer(peerId);
         assertTrue("peer should have been created", peerOptional.isPresent());
-        chains.addAll(fabricSDK.queryPeerChain(peerOptional.get()));
+        chains.addAll(fabricSDK.chainsOfPeer(peerOptional.get()));
     }
 
     @Step("peer is in chain {0}")

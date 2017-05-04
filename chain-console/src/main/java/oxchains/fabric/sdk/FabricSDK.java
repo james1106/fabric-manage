@@ -21,6 +21,7 @@ import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
@@ -60,6 +61,10 @@ public class FabricSDK {
     @Value("${fabric.ca.server.admin.pass}") private String caServerAdminPass;
     @Value("${fabric.ca.server.admin.mspid}") private String caServerAdminMSPId;
     @Value("${fabric.ca.server.admin.affiliation}") private String caServerAdminAffiliation;
+    @Value("${fabric.orderer.name}") private String defaultOrdererName;
+    @Value("${fabric.orderer.endpoint}") String defaultOrdererEndpoint;
+    @Value("${fabric.chain.name}") String defaultChainName;
+    @Value("${fabric.chain.configuration}") String defaultChainConfigurationPath;
 
     @PostConstruct
     private void init() {
@@ -70,6 +75,9 @@ public class FabricSDK {
             this.caServerAdminUser = new CAAdmin(caServerAdmin, caServerAdminAffiliation, caServerAdminMSPId);
             enroll(caServerAdminUser);
             fabricClient.setUserContext(caServerAdminUser);
+            withOrderer(defaultOrdererName, defaultOrdererEndpoint).ifPresent(orderer -> {
+                constructChain(defaultChainName, orderer, defaultChainConfigurationPath);
+            });
         } catch (MalformedURLException e) {
             LOG.error("failed to create CA client with url {} and properties {}", caServerUrl, properties, e);
         } catch (InvalidArgumentException | CryptoException e) {
@@ -141,16 +149,28 @@ public class FabricSDK {
         return Optional.ofNullable(eventHub);
     }
 
+    /**
+     * @param chainName chain name
+     * @param orderer with which orderer the chain will be constructed
+     * @param chainConfigurationFilePath path of chain configuration file
+     */
     public Optional<Chain> constructChain(String chainName, Orderer orderer, String chainConfigurationFilePath) {
-        Optional<Chain> chain = null;
         try {
-            chain = constructChain(chainName, orderer, new ChainConfiguration(new File(chainConfigurationFilePath)));
+            URL fileURL = getClass().getClassLoader().getResource(chainConfigurationFilePath);
+            if(fileURL!=null) {
+                return constructChain(chainName, orderer, new ChainConfiguration(new File(fileURL.getFile())));
+            }
         } catch (IOException e) {
             LOG.error("failed to read chain configuration file {}", chainConfigurationFilePath, e);
         }
-        return chain;
+        return empty();
     }
 
+    /**
+     * @param chainName chain name
+     * @param orderer with which orderer the chain will be constructed
+     * @param chainConfiguration chain configuration
+     */
     public Optional<Chain> constructChain(String chainName, Orderer orderer, ChainConfiguration chainConfiguration) {
         Chain chain = null;
         try {
@@ -170,20 +190,30 @@ public class FabricSDK {
         return Optional.ofNullable(PEER_CACHE.get(peerId));
     }
 
-    public void joinChain(String peerId, String chainName) {
+    public boolean joinChain(Peer peer) {
+        return joinChain(peer.getName(), defaultChainName);
+    }
+
+    public boolean joinChain(String peerId, String chainName) {
         try {
             Chain chain = fabricClient.getChain(chainName);
             chain.joinPeer(PEER_CACHE.get(peerId));
             chain.initialize();
+            return true;
         } catch (Exception e) {
             LOG.error("{} failed to join chain {}: ", peerId, chainName, e);
         }
+        return false;
     }
 
     public List<Peer> chainPeers(String channelName) {
         return Lists.newCopyOnWriteArrayList(fabricClient
           .getChain(channelName)
           .getPeers());
+    }
+
+    public List<Peer> chainPeers() {
+        return chainPeers(defaultChainName);
     }
 
     public ProposalResponse installChaincodeOnPeer(ChainCodeID chaincodeId, Chain chain, Peer peer, String sourceLocation) {
@@ -296,7 +326,7 @@ public class FabricSDK {
         return null;
     }
 
-    public Set<String> queryPeerChain(Peer peer) {
+    public Set<String> chainsOfPeer(Peer peer) {
         try {
             return fabricClient.queryChannels(peer);
         } catch (Exception e) {
@@ -305,7 +335,7 @@ public class FabricSDK {
         return emptySet();
     }
 
-    public List<ChaincodeInfo> queryPeerChaincode(Peer peer) {
+    public List<ChaincodeInfo> chaincodesOnPeer(Peer peer) {
         try {
             return fabricClient.queryInstalledChaincodes(peer);
         } catch (Exception e) {
@@ -354,5 +384,16 @@ public class FabricSDK {
             LOG.error("failed to enroll user {}", username, e);
         }
         return empty();
+    }
+
+    public boolean attachEventHubToChain(EventHub eventHub) {
+        try {
+            Chain chain = fabricClient.getChain(defaultChainName);
+            chain.addEventHub(eventHub);
+            return true;
+        } catch (Exception e) {
+            LOG.error("failed to attach eventhub {}", eventHub.getUrl(), e);
+        }
+        return false;
     }
 }

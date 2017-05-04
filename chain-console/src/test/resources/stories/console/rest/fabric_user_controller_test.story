@@ -8,9 +8,9 @@ I want to see current users
 So that I can manager them
 
 Scenario: console manager should see all current fabric users
-Given fabric console
+Given fabric console for user
 When I get current users
-Then there is nothing
+Then there is no user yet
 
 Scenario: console manager can enroll with the right account info and manage users
 Given admin : adminpw as admin
