@@ -41,10 +41,24 @@ public class FabricPeerControllerStory {
         steps.foundPeer(peerId);
     }
 
-
     @Then("chain $chainName should be found")
     public void oneChainFound(String chainName){
         steps.foundChain(chainName);
+    }
+
+    @When("I stop $peerId")
+    public void stopPeer(String peerId){
+        steps.stopPeer(peerId);
+    }
+
+    @When("I start $peerId")
+    public void startPeer(String peerId){
+        steps.startPeer(peerId);
+    }
+
+    @Then("operation success")
+    public void thenPeerOperationSuccess(){
+        steps.operationDone();
     }
 
 }

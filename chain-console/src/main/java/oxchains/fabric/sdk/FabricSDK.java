@@ -1,6 +1,7 @@
 package oxchains.fabric.sdk;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.io.IOUtils;
 import org.hyperledger.fabric.protos.peer.Query.ChaincodeInfo;
 import org.hyperledger.fabric.sdk.*;
 import org.hyperledger.fabric.sdk.exception.CryptoException;
@@ -20,8 +21,8 @@ import oxchains.fabric.sdk.domain.FabricUser;
 import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
@@ -156,9 +157,11 @@ public class FabricSDK {
      */
     public Optional<Chain> constructChain(String chainName, Orderer orderer, String chainConfigurationFilePath) {
         try {
-            URL fileURL = getClass().getClassLoader().getResource(chainConfigurationFilePath);
-            if(fileURL!=null) {
-                return constructChain(chainName, orderer, new ChainConfiguration(new File(fileURL.getFile())));
+            InputStream inputStream = getClass()
+              .getClassLoader()
+              .getResourceAsStream(chainConfigurationFilePath);
+            if (inputStream != null) {
+                return constructChain(chainName, orderer, new ChainConfiguration(IOUtils.toByteArray(inputStream)));
             }
         } catch (IOException e) {
             LOG.error("failed to read chain configuration file {}", chainConfigurationFilePath, e);
@@ -210,6 +213,16 @@ public class FabricSDK {
         return Lists.newCopyOnWriteArrayList(fabricClient
           .getChain(channelName)
           .getPeers());
+    }
+
+    public List<EventHub> chainEventHubs() {
+        return chainEventHubs(defaultChainName);
+    }
+
+    public List<EventHub> chainEventHubs(String channelName) {
+        return Lists.newCopyOnWriteArrayList(fabricClient
+          .getChain(channelName)
+          .getEventHubs());
     }
 
     public List<Peer> chainPeers() {

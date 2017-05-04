@@ -14,9 +14,7 @@ import static io.restassured.http.ContentType.JSON;
 import static io.restassured.module.mockmvc.RestAssuredMockMvc.given;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.http.HttpStatus.SC_OK;
-import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.CoreMatchers.hasItems;
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static oxchains.fabric.util.StoryTestUtil.propertyParse;
 
@@ -85,4 +83,28 @@ public class FabricPeerControllerSteps {
           .body("data.chains", hasItems(hasItem(chainName)));
     }
 
+    @Step("stopping peer {0}")
+    public void stopPeer(String peerId) {
+        mockMvcResponse = given()
+          .queryParam("action", 0)
+          .when()
+          .put(String.format("/peer/%s/status", peerId));
+    }
+
+    @Step("starting peer {0}")
+    public void startPeer(String peerId) {
+        mockMvcResponse = given()
+          .queryParam("action", 1)
+          .when()
+          .put(String.format("/peer/%s/status", peerId));
+    }
+
+    @Step("peer operation succeeded")
+    public void operationDone() {
+        mockMvcResponse
+          .then()
+          .statusCode(SC_OK)
+          .and()
+          .body("status", is(1));
+    }
 }

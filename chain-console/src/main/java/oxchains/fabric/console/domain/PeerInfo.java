@@ -13,9 +13,8 @@ public class PeerInfo {
 
     private String id;
     private String endpoint;
-    private String eventEndpoint;
-    private String status = "未知";
-    private int statusCode;
+    private String status = "N/A";
+    private int statusCode = -1;
 
     private List<ChaincodeInfo> chaincodes = emptyList();
     private List<String> chains = emptyList();
@@ -26,14 +25,6 @@ public class PeerInfo {
     public PeerInfo(Peer peer) {
         this.id = peer.getName();
         this.endpoint = peer.getUrl();
-    }
-
-    public String getEventEndpoint() {
-        return eventEndpoint;
-    }
-
-    public void setEventEndpoint(String eventEndpoint) {
-        this.eventEndpoint = eventEndpoint;
     }
 
     public List<ChaincodeInfo> getChaincodes() {
@@ -82,6 +73,8 @@ public class PeerInfo {
 
     public void setStatusCode(int statusCode) {
         this.statusCode = statusCode;
+        if(statusCode==1) this.status = "CONNECTED";
+        else this.status = "UNREACHABLE";
     }
 
     @Override

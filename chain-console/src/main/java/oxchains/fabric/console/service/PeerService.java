@@ -1,14 +1,23 @@
 package oxchains.fabric.console.service;
 
+import com.google.common.collect.Streams;
 import org.hyperledger.fabric.sdk.EventHub;
 import org.hyperledger.fabric.sdk.Peer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import oxchains.fabric.console.domain.ChaincodeInfo;
 import oxchains.fabric.console.domain.PeerInfo;
 import oxchains.fabric.sdk.FabricSDK;
+import oxchains.fabric.sdk.FabricSSH;
+import oxchains.fabric.sdk.FabricSSH.SSHResponse;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketAddress;
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,16 +35,18 @@ public class PeerService {
     private Logger LOG = LoggerFactory.getLogger(this.getClass());
 
     private FabricSDK fabricSDK;
+    private FabricSSH fabricSSH;
 
-    public PeerService(FabricSDK fabricSDK) {
+    public PeerService(@Autowired FabricSDK fabricSDK, @Autowired FabricSSH fabricSSH) {
         this.fabricSDK = fabricSDK;
+        this.fabricSSH = fabricSSH;
     }
 
     public List<PeerInfo> allPeers() {
         try {
             List<Peer> peers = fabricSDK.chainPeers();
             return peers
-              .stream()
+              .parallelStream()
               .map(peer -> {
                   PeerInfo peerInfo = new PeerInfo(peer);
                   peerInfo.setChaincodes(fabricSDK
@@ -44,6 +55,7 @@ public class PeerService {
                     .map(ChaincodeInfo::new)
                     .collect(toList()));
                   peerInfo.setChains(newArrayList(fabricSDK.chainsOfPeer(peer)));
+                  peerInfo.setStatusCode(reachable(peer.getUrl())?1:0);
                   return peerInfo;
               })
               .collect(toList());
@@ -54,10 +66,18 @@ public class PeerService {
     }
 
     public boolean start(String peerId) {
+        Optional<SSHResponse> responseOptional = fabricSSH.startPeer(peerId);
+        if (responseOptional.isPresent()) return responseOptional
+          .map(SSHResponse::succeeded)
+          .orElse(false);
         return false;
     }
 
     public boolean stop(String peerId) {
+        Optional<SSHResponse> responseOptional = fabricSSH.stopPeer(peerId);
+        if (responseOptional.isPresent()) return responseOptional
+          .map(SSHResponse::succeeded)
+          .orElse(false);
         return false;
     }
 
@@ -83,6 +103,27 @@ public class PeerService {
         return true;
     }
 
-
+    private boolean reachable(String endpoint) {
+        Socket s = null;
+        try {
+            s = new Socket();
+            s.setReuseAddress(true);
+            URI uri = new URI(endpoint);
+            SocketAddress sa = new InetSocketAddress(uri.getHost(), uri.getPort());
+            s.connect(sa, 3000);
+            return true;
+        } catch (Exception e) {
+            LOG.error("failed to connect to {}", endpoint, e);
+        } finally {
+            if (s != null && s.isConnected()) {
+                try {
+                    s.close();
+                } catch (IOException e) {
+                    LOG.error("failed to close socket on {}", endpoint, e);
+                }
+            }
+        }
+        return false;
+    }
 
 }

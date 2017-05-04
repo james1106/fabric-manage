@@ -41,7 +41,7 @@ public class FabricPeerController {
         default:
             break;
         }
-        return operationDone ? fail() : success(null);
+        return operationDone ? success(null) : fail();
     }
 
     @PostMapping("/peer")
