@@ -22,3 +22,24 @@ Checkout this repo, install dependencies, then start the app with the following:
 > npm install
 > npm start
 ```
+
+##### 配置  
+
+```
+将 ./src/actions/types.js 中 ROOT_URL 修改为API服务器地址
+```
+
+##### 截屏
+
+###### 节点
+ ![image](https://github.com/zkjs/fabric-manage/tree/master/FrontEnd/screenshot/peer.png)  
+ ![image](https://github.com/zkjs/fabric-manage/tree/master/FrontEnd/screenshot/peer_detail.png)   
+ ![image](https://github.com/zkjs/fabric-manage/tree/master/FrontEnd/screenshot/peer_add.png)  
+ 
+###### 区块链  
+ ![image](https://github.com/zkjs/fabric-manage/tree/master/FrontEnd/screenshot/chain.png)  
+ ![image](https://github.com/zkjs/fabric-manage/tree/master/FrontEnd/screenshot/block.png)    
+ 
+###### 用户
+ ![image](https://github.com/zkjs/fabric-manage/tree/master/FrontEnd/screenshot/user.png)  
+ ![image](https://github.com/zkjs/fabric-manage/tree/master/FrontEnd/screenshot/user_add.png)  
