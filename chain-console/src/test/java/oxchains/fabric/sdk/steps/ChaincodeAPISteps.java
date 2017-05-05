@@ -1,7 +1,6 @@
 package oxchains.fabric.sdk.steps;
 
 import net.thucydides.core.annotations.Step;
-import org.hyperledger.fabric.protos.peer.Query;
 import org.hyperledger.fabric.protos.peer.Query.ChaincodeInfo;
 import org.hyperledger.fabric.sdk.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -192,7 +191,7 @@ public class ChaincodeAPISteps {
     public void queryChaincodeOfPeer(String peerId) {
         Optional<Peer> peerOptional = fabricSDK.getPeer(peerId);
         assertTrue("peer should have been created", peerOptional.isPresent());
-        installedChaincodes.addAll(fabricSDK.queryPeerChaincode(peerOptional.get()));
+        installedChaincodes.addAll(fabricSDK.chaincodesOnPeer(peerOptional.get()));
     }
 
     @Step("peer has installed chaincode {0}")

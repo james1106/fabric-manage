@@ -18,6 +18,7 @@ import java.util.UUID;
 import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static java.util.Optional.empty;
 
 /**
@@ -74,7 +75,7 @@ public class UserService {
     public Optional<UserToken> tokenForUser(User user) {
         try {
             User foundUser = userRepo.findUserByUsernameAndPassword(user.getUsername(), user.getPassword());
-            if (!isNull(foundUser)) {
+            if (nonNull(foundUser)) {
                 Optional<Enrollment> enrollmentOptional = fabricSDK.enroll(user.getUsername(), user.getPassword());
                 if(enrollmentOptional.isPresent()) {
                     UserToken userToken = new UserToken(foundUser, UUID

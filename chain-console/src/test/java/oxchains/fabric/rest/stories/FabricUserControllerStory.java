@@ -13,7 +13,7 @@ public class FabricUserControllerStory {
 
     @Steps FabricUserControllerSteps steps;
 
-    @Given("fabric console")
+    @Given("fabric console for user")
     public void givenFabricConsole() {
     }
 
@@ -72,7 +72,7 @@ public class FabricUserControllerStory {
         steps.shouldNotInclude(username);
     }
 
-    @Then("there is nothing")
+    @Then("there is no user yet")
     public void thenThereIsNothing(){
         steps.nothingThere();
     }

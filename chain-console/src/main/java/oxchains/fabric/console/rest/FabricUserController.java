@@ -1,6 +1,5 @@
 package oxchains.fabric.console.rest;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import oxchains.fabric.console.domain.User;
 import oxchains.fabric.console.domain.UserToken;
@@ -20,7 +19,7 @@ public class FabricUserController {
 
     private UserService userService;
 
-    public FabricUserController(@Autowired UserService userService) {
+    public FabricUserController(UserService userService) {
         this.userService = userService;
     }
 

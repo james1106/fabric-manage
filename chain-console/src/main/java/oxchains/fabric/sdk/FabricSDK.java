@@ -1,6 +1,7 @@
 package oxchains.fabric.sdk;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.io.IOUtils;
 import org.hyperledger.fabric.protos.peer.Query.ChaincodeInfo;
 import org.hyperledger.fabric.sdk.*;
 import org.hyperledger.fabric.sdk.exception.CryptoException;
@@ -20,13 +21,16 @@ import oxchains.fabric.sdk.domain.FabricUser;
 import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.LongStream;
 
 import static java.util.Collections.*;
 import static java.util.Optional.empty;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
+import static java.util.stream.Collectors.toList;
 import static org.hyperledger.fabric.sdk.ChainCodeResponse.Status.SUCCESS;
 import static org.hyperledger.fabric.sdk.TransactionRequest.Type.GO_LANG;
 import static org.hyperledger.fabric.sdk.security.CryptoSuite.Factory.getCryptoSuite;
@@ -50,6 +54,7 @@ public class FabricSDK {
     }
 
     private static final WeakHashMap<String, Peer> PEER_CACHE = new WeakHashMap<>(8);
+    private static final WeakHashMap<String, EventHub> EVENTHUB_CACHE = new WeakHashMap<>(8);
     private static final WeakHashMap<String, ChainCodeID> CHAINCODE_CACHE = new WeakHashMap<>(8);
 
     private final HFClient fabricClient = HFClient.createNewInstance();
@@ -60,6 +65,10 @@ public class FabricSDK {
     @Value("${fabric.ca.server.admin.pass}") private String caServerAdminPass;
     @Value("${fabric.ca.server.admin.mspid}") private String caServerAdminMSPId;
     @Value("${fabric.ca.server.admin.affiliation}") private String caServerAdminAffiliation;
+    @Value("${fabric.orderer.name}") private String defaultOrdererName;
+    @Value("${fabric.orderer.endpoint}") String defaultOrdererEndpoint;
+    @Value("${fabric.chain.name}") String defaultChainName;
+    @Value("${fabric.chain.configuration}") String defaultChainConfigurationPath;
 
     @PostConstruct
     private void init() {
@@ -70,6 +79,9 @@ public class FabricSDK {
             this.caServerAdminUser = new CAAdmin(caServerAdmin, caServerAdminAffiliation, caServerAdminMSPId);
             enroll(caServerAdminUser);
             fabricClient.setUserContext(caServerAdminUser);
+            withOrderer(defaultOrdererName, defaultOrdererEndpoint).ifPresent(orderer -> {
+                constructChain(defaultChainName, orderer, defaultChainConfigurationPath);
+            });
         } catch (MalformedURLException e) {
             LOG.error("failed to create CA client with url {} and properties {}", caServerUrl, properties, e);
         } catch (InvalidArgumentException | CryptoException e) {
@@ -85,14 +97,6 @@ public class FabricSDK {
     private void enroll(CAAdmin userToEnroll) throws BaseException {
         //TODO check if enrolled yet
         userToEnroll.setEnrollment(caClient.enroll(userToEnroll.getName(), caServerAdminPass));
-    }
-
-    public void startPeer(String peerId) {
-        //TODO
-    }
-
-    public void stopPeer(String peerId) {
-        //TODO
     }
 
     public Optional<Peer> withPeer(String peerId, String peerUrl) {
@@ -131,26 +135,41 @@ public class FabricSDK {
         return Optional.ofNullable(orderer);
     }
 
-    public Optional<EventHub> withEventHub(String eventName, String eventEndpoint) {
+    public Optional<EventHub> withEventHub(String eventhubId, String eventEndpoint) {
         EventHub eventHub = null;
         try {
-            eventHub = fabricClient.newEventHub(eventName, eventEndpoint);
+            eventHub = fabricClient.newEventHub(eventhubId, eventEndpoint);
+            EVENTHUB_CACHE.putIfAbsent(eventhubId, eventHub);
         } catch (Exception e) {
             LOG.error("failed to create event hub at {}", eventEndpoint, e);
         }
         return Optional.ofNullable(eventHub);
     }
 
+    /**
+     * @param chainName chain name
+     * @param orderer with which orderer the chain will be constructed
+     * @param chainConfigurationFilePath path of chain configuration file
+     */
     public Optional<Chain> constructChain(String chainName, Orderer orderer, String chainConfigurationFilePath) {
-        Optional<Chain> chain = null;
         try {
-            chain = constructChain(chainName, orderer, new ChainConfiguration(new File(chainConfigurationFilePath)));
+            InputStream inputStream = getClass()
+              .getClassLoader()
+              .getResourceAsStream(chainConfigurationFilePath);
+            if (inputStream != null) {
+                return constructChain(chainName, orderer, new ChainConfiguration(IOUtils.toByteArray(inputStream)));
+            }
         } catch (IOException e) {
             LOG.error("failed to read chain configuration file {}", chainConfigurationFilePath, e);
         }
-        return chain;
+        return empty();
     }
 
+    /**
+     * @param chainName chain name
+     * @param orderer with which orderer the chain will be constructed
+     * @param chainConfiguration chain configuration
+     */
     public Optional<Chain> constructChain(String chainName, Orderer orderer, ChainConfiguration chainConfiguration) {
         Chain chain = null;
         try {
@@ -166,24 +185,58 @@ public class FabricSDK {
         return Optional.ofNullable(cachedChain);
     }
 
+    public Optional<BlockchainInfo> getChaininfo() {
+        try {
+            Optional<Chain> chainOptional = getChain(defaultChainName);
+            if (chainOptional.isPresent()) {
+                return Optional.of(chainOptional
+                  .get()
+                  .queryBlockchainInfo());
+            }
+        } catch (Exception e) {
+            LOG.error("failed to get default chain's block info", e);
+        }
+        return empty();
+    }
+
     public Optional<Peer> getPeer(String peerId) {
         return Optional.ofNullable(PEER_CACHE.get(peerId));
     }
 
-    public void joinChain(String peerId, String chainName) {
+    public boolean joinChain(Peer peer) {
+        return joinChain(peer.getName(), defaultChainName);
+    }
+
+    public boolean joinChain(String peerId, String chainName) {
         try {
             Chain chain = fabricClient.getChain(chainName);
             chain.joinPeer(PEER_CACHE.get(peerId));
             chain.initialize();
+            return true;
         } catch (Exception e) {
             LOG.error("{} failed to join chain {}: ", peerId, chainName, e);
         }
+        return false;
     }
 
     public List<Peer> chainPeers(String channelName) {
         return Lists.newCopyOnWriteArrayList(fabricClient
           .getChain(channelName)
           .getPeers());
+    }
+
+    public List<EventHub> chainEventHubs() {
+        return chainEventHubs(defaultChainName);
+    }
+
+    public List<EventHub> chainEventHubs(String channelName) {
+        return Lists.newCopyOnWriteArrayList(fabricClient
+          .getChain(channelName)
+          .getEventHubs());
+    }
+
+    public List<Peer> chainPeers() {
+        return chainPeers(defaultChainName);
     }
 
     public ProposalResponse installChaincodeOnPeer(ChainCodeID chaincodeId, Chain chain, Peer peer, String sourceLocation) {
@@ -296,7 +349,7 @@ public class FabricSDK {
         return null;
     }
 
-    public Set<String> queryPeerChain(Peer peer) {
+    public Set<String> chainsOfPeer(Peer peer) {
         try {
             return fabricClient.queryChannels(peer);
         } catch (Exception e) {
@@ -305,7 +358,7 @@ public class FabricSDK {
         return emptySet();
     }
 
-    public List<ChaincodeInfo> queryPeerChaincode(Peer peer) {
+    public List<ChaincodeInfo> chaincodesOnPeer(Peer peer) {
         try {
             return fabricClient.queryInstalledChaincodes(peer);
         } catch (Exception e) {
@@ -354,5 +407,90 @@ public class FabricSDK {
             LOG.error("failed to enroll user {}", username, e);
         }
         return empty();
+    }
+
+    public boolean attachEventHubToChain(EventHub eventHub) {
+        try {
+            Chain chain = fabricClient.getChain(defaultChainName);
+            chain.addEventHub(eventHub);
+            return true;
+        } catch (Exception e) {
+            LOG.error("failed to attach eventhub {}", eventHub.getUrl(), e);
+        }
+        return false;
+    }
+
+    public List<BlockInfo> getChainBlocks() {
+        try {
+            Optional<Chain> chainOptional = getChain(defaultChainName);
+            if (chainOptional.isPresent()) {
+                Chain chain = chainOptional.get();
+                long chainheight = chain
+                  .queryBlockchainInfo()
+                  .getHeight();
+                return LongStream
+                  .range(Math.max(0, chainheight - 5), chainheight)
+                  .parallel()
+                  .mapToObj(i -> {
+                      try {
+                          return chain.queryBlockByNumber(i);
+                      } catch (Exception e) {
+                          LOG.error("failed to get {}-th block", i, e);
+                      }
+                      return null;
+                  })
+                  .filter(Objects::nonNull)
+                  .collect(toList());
+            }
+        } catch (Exception e) {
+            LOG.error("failed to get default chain's block info", e);
+        }
+        return emptyList();
+    }
+
+    public Optional<BlockInfo> getChainBlock(long blockNumber) {
+        Optional<Chain> chainOptional = getChain(defaultChainName);
+        if (chainOptional.isPresent()) {
+            Chain chain = chainOptional.get();
+            try {
+                return Optional.of(chain.queryBlockByNumber(blockNumber));
+            } catch (Exception e) {
+                LOG.error("failed to get {}-th block  of default chain", blockNumber, e);
+            }
+        }
+        return empty();
+    }
+
+    public Optional<BlockInfo> getChainBlock(String tx) {
+        Optional<Chain> chainOptional = getChain(defaultChainName);
+        if (chainOptional.isPresent()) {
+            Chain chain = chainOptional.get();
+            try {
+                return Optional.of(chain.queryBlockByTransactionID(tx));
+            } catch (Exception e) {
+                LOG.error("failed to get block of default chain by tx {}", tx, e);
+            }
+        }
+        return empty();
+    }
+
+    public Optional<TransactionInfo> getChainTx(String tx) {
+        Optional<Chain> chainOptional = getChain(defaultChainName);
+        if (chainOptional.isPresent()) {
+            Chain chain = chainOptional.get();
+            try {
+                return Optional.of(chain.queryTransactionByID(tx));
+            } catch (Exception e) {
+                LOG.error("failed to get tx {} of default chain", tx, e);
+            }
+        }
+        return empty();
+    }
+
+    public void stopEventhub(String peerId) {
+        EVENTHUB_CACHE.computeIfPresent(peerId, (key, eventHub) -> {
+            eventHub.shutdown();
+            return null;
+        });
     }
 }
