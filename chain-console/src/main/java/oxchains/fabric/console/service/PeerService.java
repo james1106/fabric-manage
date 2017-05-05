@@ -7,7 +7,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import oxchains.fabric.console.data.PeerRepo;
 import oxchains.fabric.console.domain.ChaincodeInfo;
+import oxchains.fabric.console.domain.EventHubInfo;
+import oxchains.fabric.console.domain.PeerEventhub;
 import oxchains.fabric.console.domain.PeerInfo;
 import oxchains.fabric.sdk.FabricSDK;
 import oxchains.fabric.sdk.FabricSSH;
@@ -24,6 +27,8 @@ import java.util.Optional;
 import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+import static java.util.concurrent.CompletableFuture.runAsync;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -36,10 +41,12 @@ public class PeerService {
 
     private FabricSDK fabricSDK;
     private FabricSSH fabricSSH;
+    private PeerRepo peerRepo;
 
-    public PeerService(@Autowired FabricSDK fabricSDK, @Autowired FabricSSH fabricSSH) {
+    public PeerService(@Autowired FabricSDK fabricSDK, @Autowired FabricSSH fabricSSH, @Autowired PeerRepo peerRepo) {
         this.fabricSDK = fabricSDK;
         this.fabricSSH = fabricSSH;
+        this.peerRepo = peerRepo;
     }
 
     public List<PeerInfo> allPeers() {
@@ -74,6 +81,13 @@ public class PeerService {
     }
 
     public boolean stop(String peerId) {
+        //TODO if peer has corresponding eventhub, shut it down first
+        try {
+            PeerEventhub peerEventhub = peerRepo.findOne(peerId);
+            fabricSDK.stopEventhub(peerId);
+        }catch (Exception e){
+
+        }
         Optional<SSHResponse> responseOptional = fabricSSH.stopPeer(peerId);
         if (responseOptional.isPresent()) return responseOptional
           .map(SSHResponse::succeeded)
@@ -81,20 +95,26 @@ public class PeerService {
         return false;
     }
 
-    public boolean addPeer(String peerId, String peerEndpoint, String eventhubEndpoint) {
+    public boolean addPeer(PeerEventhub peerEventhub) {
         try {
-            Optional<Peer> peerOptional = fabricSDK.withPeer(peerId, peerEndpoint);
-            boolean eventHubAttached = eventHubAttached(peerId, eventhubEndpoint);
+            Optional<Peer> peerOptional = fabricSDK.withPeer(peerEventhub.getId(), peerEventhub.getEndpoint());
+            boolean eventHubAttached = eventHubAttached(peerEventhub.getId(), peerEventhub.getEventhub());
             boolean peerJoined = peerOptional.isPresent() && fabricSDK.joinChain(peerOptional.get());
+            if(eventHubAttached && peerJoined){
+                runAsync(()->peerRepo.save(peerEventhub)).exceptionally(t -> {
+                    LOG.error("failed to save peer eventhub {}", peerEventhub, t);
+                    return null;
+                });
+            }
             return eventHubAttached && peerJoined;
         } catch (Exception e) {
-            LOG.error("failed to add peer {}@{} #{}", peerId, peerEndpoint, eventhubEndpoint, e);
+            LOG.error("failed to add peer and eventhub {}", peerEventhub, e);
         }
         return false;
     }
 
     private boolean eventHubAttached(String id, String endpoint) {
-        if (!isNull(endpoint)) {
+        if (nonNull(endpoint)) {
             Optional<EventHub> eventHubOptional = fabricSDK.withEventHub(id, endpoint);
             if (eventHubOptional.isPresent()) {
                 return fabricSDK.attachEventHubToChain(eventHubOptional.get());
@@ -126,4 +146,7 @@ public class PeerService {
         return false;
     }
 
+    public List<EventHubInfo> eventhubs() {
+        return fabricSDK.chainEventHubs().stream().map(EventHubInfo::new).collect(toList());
+    }
 }

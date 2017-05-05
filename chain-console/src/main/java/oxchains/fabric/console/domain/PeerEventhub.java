@@ -1,11 +1,15 @@
-package oxchains.fabric.console.rest.common;
+package oxchains.fabric.console.domain;
+
+import javax.persistence.Entity;
+import javax.persistence.Id;
 
 /**
  * @author aiet
  */
+@Entity
 public class PeerEventhub {
 
-    private String id;
+    @Id private String id;
     private String endpoint;
     private String eventhub;
 
@@ -32,4 +36,10 @@ public class PeerEventhub {
     public void setEventhub(String eventhub) {
         this.eventhub = eventhub;
     }
+
+    @Override
+    public String toString(){
+        return String.format("%s@%s, listening on %s", id, endpoint, eventhub);
+    }
+
 }

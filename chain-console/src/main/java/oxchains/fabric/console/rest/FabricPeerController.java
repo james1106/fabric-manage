@@ -1,8 +1,8 @@
 package oxchains.fabric.console.rest;
 
 import org.springframework.web.bind.annotation.*;
+import oxchains.fabric.console.domain.PeerEventhub;
 import oxchains.fabric.console.domain.PeerInfo;
-import oxchains.fabric.console.rest.common.PeerEventhub;
 import oxchains.fabric.console.rest.common.RestResp;
 import oxchains.fabric.console.service.PeerService;
 
@@ -46,8 +46,19 @@ public class FabricPeerController {
 
     @PostMapping("/peer")
     public RestResp addPeer(@RequestBody PeerEventhub peerEventhub) {
-        boolean added = peerService.addPeer(peerEventhub.getId(), peerEventhub.getEndpoint(), peerEventhub.getEventhub());
+        boolean added = peerService.addPeer(peerEventhub);
         return added ? success(peerEventhub) : fail();
+    }
+
+    @GetMapping("/peer/eventhub")
+    public RestResp eventhubs() {
+        return success(peerService.eventhubs());
+    }
+
+    @PostMapping("/peer/chaincode/{chaincode}")
+    public RestResp installChaincode(@PathVariable String chaincode, @RequestParam String version) {
+        //TODO
+        return fail();
     }
 
 }

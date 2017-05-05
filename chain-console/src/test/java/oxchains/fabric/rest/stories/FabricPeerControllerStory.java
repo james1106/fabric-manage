@@ -21,9 +21,9 @@ public class FabricPeerControllerStory {
         steps.getPeers();
     }
 
-    @Then("there is no peer yet")
-    public void thenThereIsNoPeerYet() {
-        steps.noPeerYet();
+    @Then("there is no peer $peerId yet")
+    public void thenThereIsNoPeerYet(String peerId) {
+        steps.noPeerYet(peerId);
     }
 
     @When("I add peer $peerId at $peerEndpoint with eventhub at $eventHubEndpoint")
@@ -39,6 +39,15 @@ public class FabricPeerControllerStory {
     @Then("peer $peerId should be found")
     public void onePeerFound(String peerId) {
         steps.foundPeer(peerId);
+    }
+
+    @When("I get current eventhubs")
+    public void whenIGetCurrentEventHubs(){
+        steps.getEventhubs();
+    }
+    @Then("eventhub $eventhubId should be found")
+    public void thenEventhubFound(String eventhubId){
+        steps.foundEventHub(eventhubId);
     }
 
     @Then("chain $chainName should be found")

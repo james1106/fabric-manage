@@ -2,11 +2,12 @@ package oxchains.fabric.rest.steps;
 
 import io.restassured.module.mockmvc.response.MockMvcResponse;
 import net.thucydides.core.annotations.Step;
+import org.hamcrest.CoreMatchers;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import oxchains.fabric.ChainConsoleApplication;
-import oxchains.fabric.console.domain.PeerInfo;
+import oxchains.fabric.console.domain.PeerEventhub;
 
 import java.util.Map;
 
@@ -15,7 +16,6 @@ import static io.restassured.module.mockmvc.RestAssuredMockMvc.given;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static oxchains.fabric.util.StoryTestUtil.propertyParse;
 
 /**
@@ -35,21 +35,21 @@ public class FabricPeerControllerSteps {
           .get("/peer");
     }
 
-    @Step("no peer on default chain")
-    public void noPeerYet() {
+    @Step("no peer {0} on default chain")
+    public void noPeerYet(String peerId) {
         mockMvcResponse
           .then()
           .statusCode(SC_OK)
           .and()
-          .body("data", empty());
+          .body("data.id", not(hasItem(peerId)));
     }
 
     @Step("adding peer {0}:{1} and eventhub {2}")
     public void addPeerWithEventhub(String peerId, String peerEndpoint, String eventHubEndpoint) {
-        PeerInfo peerInfo = new PeerInfo();
+        PeerEventhub peerInfo = new PeerEventhub();
         peerInfo.setId(peerId);
         peerInfo.setEndpoint(propertyParse(peerEndpoint, testProperties));
-        peerInfo.setEventEndpoint(propertyParse(eventHubEndpoint, testProperties));
+        peerInfo.setEventhub(propertyParse(eventHubEndpoint, testProperties));
         mockMvcResponse = given()
           .contentType(JSON.withCharset(UTF_8))
           .body(peerInfo)
@@ -106,5 +106,21 @@ public class FabricPeerControllerSteps {
           .statusCode(SC_OK)
           .and()
           .body("status", is(1));
+    }
+
+    @Step("fetching eventhubs of default chain")
+    public void getEventhubs() {
+        mockMvcResponse = given()
+          .when()
+          .get("/peer/eventhub");
+    }
+
+    @Step("eventhub {0} found")
+    public void foundEventHub(String eventhubId) {
+        mockMvcResponse
+          .then()
+          .statusCode(SC_OK)
+          .and()
+          .body("data.id", hasItem(eventhubId));
     }
 }
