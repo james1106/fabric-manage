@@ -33,7 +33,7 @@ Checkout this repo, install dependencies, then start the app with the following:
 
 ###### 节点
  ![image](./FrontEnd/screenshot/peer.png)  
- ![image](./screenshot/peer_detail.png)   
+ ![image](./FrontEnd/screenshot/peer_detail.png)   
  ![image](./FrontEnd/screenshot/peer_add.png)  
  
 ###### 区块链  
