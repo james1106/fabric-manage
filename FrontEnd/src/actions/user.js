@@ -20,7 +20,7 @@ export function fetchUserList() {
   return function(dispatch) {
     axios.get(`${ROOT_URL}/user`)
       .then(response => dispatch({ type: FETCH_USER_LIST, payload:response }))
-      .catch( response => dispatch(requestError(response.data.error)) );
+      .catch( err => dispatch(requestError(err.message)) );
   }
 }
 
@@ -33,8 +33,8 @@ export function disableUser(id, reason, callback) {
         dispatch({ type: REQUEST_SUCCESS, payload:response });
         callback(!!response.data.status);
       })
-      .catch( response => {
-        dispatch(requestError(response.data.error));
+      .catch( err => {
+        dispatch(requestError(err.message));
         callback(false);
       } );
   }

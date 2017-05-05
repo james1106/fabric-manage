@@ -76,6 +76,9 @@ class UserList extends Component {
   }
 
   render() {
+    if(this.props.all===null) {
+      return <div><section className="content"><h1>Loading...</h1></section></div>
+    }
 
     return (
       <div>

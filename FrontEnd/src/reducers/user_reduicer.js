@@ -6,7 +6,7 @@ import {
   ADD_USER_ERROR
 } from '../actions/types';
 
-const INITIAL_STATE = { all: [] };
+const INITIAL_STATE = { all: null };
 
 export default function(state = INITIAL_STATE, action) {
   switch(action.type) {
