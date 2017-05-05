@@ -32,14 +32,14 @@ Checkout this repo, install dependencies, then start the app with the following:
 ##### 截屏
 
 ###### 节点
- ![image](https://github.com/zkjs/fabric-manage/tree/master/FrontEnd/screenshot/peer.png)  
- ![image](https://github.com/zkjs/fabric-manage/tree/master/FrontEnd/screenshot/peer_detail.png)   
- ![image](https://github.com/zkjs/fabric-manage/tree/master/FrontEnd/screenshot/peer_add.png)  
+ ![image](./FrontEnd/screenshot/peer.png)  
+ ![image](./screenshot/peer_detail.png)   
+ ![image](./FrontEnd/screenshot/peer_add.png)  
  
 ###### 区块链  
- ![image](https://github.com/zkjs/fabric-manage/tree/master/FrontEnd/screenshot/chain.png)  
- ![image](https://github.com/zkjs/fabric-manage/tree/master/FrontEnd/screenshot/block.png)    
+ ![image](./FrontEnd/screenshot/chain.png)  
+ ![image](./FrontEnd/screenshot/block.png)    
  
 ###### 用户
- ![image](https://github.com/zkjs/fabric-manage/tree/master/FrontEnd/screenshot/user.png)  
- ![image](https://github.com/zkjs/fabric-manage/tree/master/FrontEnd/screenshot/user_add.png)  
+ ![image](./FrontEnd/screenshot/user.png)  
+ ![image](./FrontEnd/screenshot/user_add.png)  
