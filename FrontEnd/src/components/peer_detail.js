@@ -12,7 +12,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import _ from 'lodash';
 import Moment from 'react-moment';
-import { fetchEventHubList } from '../actions/peer';
+import { fetchEventHubList,fetchPeerList } from '../actions/peer';
 
 class PeerDetail extends Component {
   constructor(props) {
@@ -21,6 +21,7 @@ class PeerDetail extends Component {
   }
 
   componentWillMount() {
+    //this.props.fetchPeerList();
     this.props.fetchEventHubList();
   }
 
@@ -70,40 +71,58 @@ class PeerDetail extends Component {
   }
 
   render() {
-    const { selectedIndex } = this.props;
-    if(selectedIndex == null) return <div>no item selected</div>;
-    const item = this.props.all[selectedIndex];
+    if(this.props.all == null){
+      return <div><section className="content"><h1>Loading...</h1></section></div>
+    }
+
+    const  peerID  = this.props.match.params.id;
+    const item = _.find(this.props.all, { 'id': peerID });
 
     return (
       <div>
-        <div className="panel panel-default">
-          <div className="panel-heading">基本信息</div>
-          <div className="panel-body">
-            <dl className="dl-horizontal">
-              <dt>ID</dt>
-              <dd>{item.id}</dd>
-              <dt>EndPoint</dt>
-              <dd>{item.endpoint}</dd>
-              <dt>状态</dt>
-              <dd>{item.status}</dd>
-              <dt>Chains</dt>
-              <dd>{item.chains.join(', ')}</dd>
-            </dl>
-          </div>
-        </div>
-        <div className="panel panel-default">
-          <div className="panel-heading">合约</div>
-          <div className="panel-body">
-            {this.renderChainCodes(item.chaincodes)}
-          </div>
-        </div>
+        <section className="content">
+          <div className="row">
+            <div className="col-xs-12">
+              <div className="box box-info">
+                <div className="box-header">
+                  <h3 className="box-title">节点详情</h3>
+                </div>
+                <div className="box-body table-responsive">
+                  <div className="panel panel-default">
+                    <div className="panel-heading">基本信息</div>
+                    <div className="panel-body">
+                      <dl className="dl-horizontal">
+                        <dt>ID</dt>
+                        <dd>{item.id}</dd>
+                        <dt>EndPoint</dt>
+                        <dd>{item.endpoint}</dd>
+                        <dt>状态</dt>
+                        <dd>{item.status}</dd>
+                        <dt>Chains</dt>
+                        <dd>{item.chains.join(', ')}</dd>
+                      </dl>
+                    </div>
+                  </div>
+                  <div className="panel panel-default">
+                    <div className="panel-heading">合约</div>
+                    <div className="panel-body">
+                      {this.renderChainCodes(item.chaincodes)}
+                    </div>
+                  </div>
 
-        <div className="panel panel-default">
-          <div className="panel-heading">EventHub</div>
-          <div className="panel-body">
-            {this.renderEventHub(item.id)}
+                  <div className="panel panel-default">
+                    <div className="panel-heading">EventHub</div>
+                    <div className="panel-body">
+                      {this.renderEventHub(item.id)}
+                    </div>
+                  </div>
+                </div>
+                <div className="box-footer clearfix">
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+        </section>
       </div>
     );
   }
@@ -115,4 +134,4 @@ function mapStateToProps(state) {
     eventhub: state.peer.eventhub
   };
 }
-export default connect(mapStateToProps, { fetchEventHubList })(PeerDetail);
+export default connect(mapStateToProps, { fetchEventHubList, fetchPeerList })(PeerDetail);

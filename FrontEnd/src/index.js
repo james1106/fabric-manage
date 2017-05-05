@@ -18,7 +18,10 @@ import Signout from './components/auth/signout';
 import Signin from './components/auth/signin';
 import PeerList from './components/peer_list';
 import PeerStatus from './components/peer_status';
+import PeerDetail from './components/peer_detail';
 import UserList from './components/user_list';
+import ChainDashboard from './components/chain_dashboard';
+import BlockInfo from './components/block_info';
 
 const createStoreWithMiddleware = compose(
   applyMiddleware(reduxThunk),
@@ -42,9 +45,12 @@ ReactDOM.render(
           <Switch>
             <Route path="/signout" component={Signout} />
             <Route path="/signin" component={Signin} />
-            <Route path="/peer/:id/status" component={PeerStatus} />
-            <Route path="/peer" component={RequireAuth(PeerList)} />
-            <PrivateRoute path="/users" component={UserList}/>
+            <PrivateRoute path="/peer/:id/status" component={PeerStatus} />
+            <PrivateRoute path="/peer/:id" component={PeerDetail} />
+            <PrivateRoute path="/peer" component={PeerList} />
+            <PrivateRoute path="/chain/block/:id" component={BlockInfo} />
+            <PrivateRoute path="/chain" component={ChainDashboard} />
+            <Route path="/users" component={UserList}/>
             <Route path="/" component={Welcome} />
           </Switch>
         </div>

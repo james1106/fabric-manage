@@ -12,7 +12,6 @@ import {
   ModalFooter
 } from 'react-modal-bootstrap';
 import AddPeer from './peer_add';
-import PeerDetail from './peer_detail';
 
 class PeerList extends Component {
   constructor() {
@@ -49,8 +48,9 @@ class PeerList extends Component {
                   onClick={this.handleStopClick.bind(this, row.id, 1)}>启动</button>
           <button className={`btn btn-sm btn-danger margin-r-5`}
                   onClick={this.handleStopClick.bind(this, row.id, 0)}>停止</button>
-          <button className={`btn btn-sm btn-danger margin-r-5`}
+          <button className={`btn btn-sm btn-warning hidden margin-r-5`}
                   onClick={this.handleDetailClick.bind(this, idx)}>详情</button>
+          <Link className="btn btn-sm btn-warning" to={`/peer/${row.id}`}>详情</Link>
           <Link className="btn btn-sm btn-default hidden" to={`/peer/${row.id}/status`}>状态</Link>
         </td>
       </tr>);
@@ -152,21 +152,6 @@ class PeerList extends Component {
           </ModalBody>
           <ModalFooter>
             <button className='btn btn-default' onClick={this.hideAddModal}>
-              关闭
-            </button>
-          </ModalFooter>
-        </Modal>
-
-        <Modal isOpen={this.state.isDetailModalOpen} onRequestHide={this.hideDetailModal}>
-          <ModalHeader>
-            <ModalClose onClick={this.hideDetailModal}/>
-            <ModalTitle>节点详情</ModalTitle>
-          </ModalHeader>
-          <ModalBody>
-            <PeerDetail selectedIndex={this.state.selectedIndex}/>
-          </ModalBody>
-          <ModalFooter>
-            <button className='btn btn-default' onClick={this.hideDetailModal}>
               关闭
             </button>
           </ModalFooter>

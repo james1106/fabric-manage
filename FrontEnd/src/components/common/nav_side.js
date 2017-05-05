@@ -3,16 +3,11 @@ import { connect } from 'react-redux';
 import { Link } from 'react-router-dom';
 
 class NavSide extends  Component {
+  constructor(props) {
+    super(props);
+    this.state = {current:null}
 
-  renderLinks() {
-    if (this.props.authenticated) {
-      // show a link to sign out
-      return  <li key="nav1"><Link to="/signout"><i className="fa fa-sign-in"></i> <span>退出登录</span></Link></li>
-    } else {
-      return [
-        <li key="nav2"><Link to="/signin"><i className="fa fa-sign-in"></i> <span>登录</span></Link></li>,
-      ];
-    }
+    this.renderLink = this.renderLink.bind(this);
   }
 
   renderUserInfo() {
@@ -33,18 +28,45 @@ class NavSide extends  Component {
     }
   }
 
+  handleLinkClick(e) {
+    //console.log(e.target)
+    this.setState({current: e.target.id });
+  }
+
+  renderLoginLinks() {
+    if (this.props.authenticated) {
+      // show a link to sign out
+      return  <li key="nav1"><Link to="/signout"><i className="fa fa-sign-in"></i> <span>退出登录</span></Link></li>
+    } else {
+      return [
+        <li key="nav2"><Link to="/signin"><i className="fa fa-sign-in"></i> <span>登录</span></Link></li>,
+      ];
+    }
+  }
+
+  renderLink({path, title, icon}) {
+    return (<li key={path} className={this.state.current==path?'active':''}
+                onClick={this.handleLinkClick.bind(this)}>
+      <Link id={path} to={'/'+path}><i className={`fa fa-${icon}`}></i> <span>{title}</span></Link>
+    </li>)
+  }
+
   render() {
+    const links = [
+      {path:'peer', title:'节点管理', icon:'database'},
+      {path:'chain', title:'区块链', icon:'link'},
+      {path:'contract', title:'合约管理', icon:'bitcoin'},
+      {path:'users', title:'用户管理', icon:'users'}
+    ];
+
     return (
       <aside className="main-sidebar">
         <section className="sidebar">
           { this.renderUserInfo() }
           <ul className="sidebar-menu">
             <li className="header">导航</li>
-            { this.renderLinks() }
-            <li key="nav5"><Link to="/peer"><i className="fa fa-database"></i> <span>节点管理</span></Link></li>
-            <li key="nav6"><Link to="/chain"><i className="fa fa-link"></i> <span>区块链</span></Link></li>
-            <li key="nav7"><Link to="/contract"><i className="fa fa-bitcoin"></i> <span>合约管理</span></Link></li>
-            <li key="nav8"><Link to="/users"><i className="fa fa-users"></i> <span>用户管理</span></Link></li>
+            { this.renderLoginLinks() }
+            { links.map(this.renderLink) }
           </ul>
         </section>
       </aside>
