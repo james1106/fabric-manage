@@ -54,10 +54,7 @@ public class ChaincodeAPISteps {
     @Step("install chaincode on chain {0}")
     public void installChaincodeOnPeer(String chainName) {
         checkChain(chainName);
-        installResponse = fabricSDK.installChaincodeOnPeer(chaincode, chain, chain
-          .getPeers()
-          .iterator()
-          .next(), "src/test/resources/chaincode");
+        installResponse = fabricSDK.installChaincodeOnPeer(chaincode, chain, "go", "src/test/resources/chaincode", chain.getPeers()).get(0);
         assertNotNull(installResponse);
     }
 
@@ -97,7 +94,6 @@ public class ChaincodeAPISteps {
           .getPeers()
           .iterator()
           .next(), arg.split(" "));
-        assertNotNull(queryResponse);
     }
 
     @Step("query result: {0}")
@@ -184,7 +180,7 @@ public class ChaincodeAPISteps {
 
     @Step("chain query failed")
     public void queryFail() {
-        assertEquals(FAILURE, queryResponse.getStatus());
+        assertNull(queryResponse);
     }
 
     @Step("query {0} installed chaincodes")
@@ -196,7 +192,9 @@ public class ChaincodeAPISteps {
 
     @Step("peer has installed chaincode {0}")
     public void peerHasInstalled(String chaincodeName) {
-        Optional<ChaincodeInfo> chaincodeInfoOptional = installedChaincodes.stream().filter(cc -> chaincodeName.equals(cc.getName()))
+        Optional<ChaincodeInfo> chaincodeInfoOptional = installedChaincodes
+          .stream()
+          .filter(cc -> chaincodeName.equals(cc.getName()))
           .findFirst();
         assertTrue("peer should have installed chaincode " + chaincodeName, chaincodeInfoOptional.isPresent());
     }

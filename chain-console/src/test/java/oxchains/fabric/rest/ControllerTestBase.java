@@ -8,9 +8,11 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import oxchains.fabric.ChainConsoleApplication;
 import oxchains.fabric.console.rest.FabricChainController;
+import oxchains.fabric.console.rest.FabricChaincodeController;
 import oxchains.fabric.console.rest.FabricPeerController;
 import oxchains.fabric.console.rest.FabricUserController;
 import oxchains.fabric.console.service.ChainService;
+import oxchains.fabric.console.service.ChaincodeService;
 import oxchains.fabric.console.service.PeerService;
 import oxchains.fabric.console.service.UserService;
 
@@ -24,13 +26,15 @@ public class ControllerTestBase extends SerenityStory {
     @Autowired private UserService userService;
     @Autowired private PeerService peerService;
     @Autowired private ChainService chainService;
+    @Autowired private ChaincodeService chaincodeService;
 
     @BeforeStories
     public void init() {
         RestAssuredMockMvc.standaloneSetup(
           new FabricUserController(userService),
           new FabricPeerController(peerService),
-          new FabricChainController(chainService)
+          new FabricChainController(chainService),
+          new FabricChaincodeController(chaincodeService)
         );
     }
 

@@ -2,7 +2,6 @@ package oxchains.fabric.rest.steps;
 
 import io.restassured.module.mockmvc.response.MockMvcResponse;
 import net.thucydides.core.annotations.Step;
-import org.hamcrest.CoreMatchers;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
@@ -10,6 +9,7 @@ import oxchains.fabric.ChainConsoleApplication;
 import oxchains.fabric.console.domain.PeerEventhub;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.module.mockmvc.RestAssuredMockMvc.given;
@@ -55,7 +55,6 @@ public class FabricPeerControllerSteps {
           .body(peerInfo)
           .when()
           .post("/peer");
-
     }
 
     @Step("new peer added")
@@ -97,6 +96,9 @@ public class FabricPeerControllerSteps {
           .queryParam("action", 1)
           .when()
           .put(String.format("/peer/%s/status", peerId));
+        try {
+            TimeUnit.SECONDS.sleep(5);
+        }catch (Exception ignored){}
     }
 
     @Step("peer operation succeeded")

@@ -1,30 +1,77 @@
 package oxchains.fabric.console.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.hyperledger.fabric.protos.peer.Query;
+
+import javax.persistence.*;
 
 /**
  * @author aiet
  */
-public class ChaincodeInfo {
+@Entity
+public class ChainCodeInfo {
 
-    public ChaincodeInfo() {
+    public ChainCodeInfo() {
     }
 
-    public ChaincodeInfo(Query.ChaincodeInfo chaincode) {
+    public ChainCodeInfo(Query.ChaincodeInfo chaincode) {
         this.input = chaincode.getInput();
         this.path = chaincode.getPath();
         this.version = chaincode.getVersion();
-        this.init = chaincode.isInitialized();
         this.error = chaincode.getInitializationErrorString();
         this.name = chaincode.getName();
     }
 
-    private String name;
+    @JsonIgnore
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @JsonIgnore
+    @Transient
     private String input;
+    @JsonIgnore
+    @Transient
+    private String error;
+
+    private String name;
+
     private String path;
     private String version;
-    private boolean init;
-    private String error;
+    private String lang;
+
+    private int installed;
+
+    public ChainCodeInfo(String name, String version, String lang, String path) {
+        this.name = name;
+        this.version = version;
+        this.path = path;
+        this.lang = lang;
+    }
+
+    public int getInstalled() {
+        return installed;
+    }
+
+    public void setInstalled(int installed) {
+        this.installed = installed;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getLang() {
+        return lang;
+    }
+
+    public void setLang(String lang) {
+        this.lang = lang;
+    }
 
     public String getName() {
         return name;
@@ -56,14 +103,6 @@ public class ChaincodeInfo {
 
     public void setVersion(String version) {
         this.version = version;
-    }
-
-    public boolean isInit() {
-        return init;
-    }
-
-    public void setInit(boolean init) {
-        this.init = init;
     }
 
     public String getError() {

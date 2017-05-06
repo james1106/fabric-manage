@@ -23,7 +23,7 @@ Scenario: console manager can add peer
 Given fabric console for peer
 When I start peer1
 Then operation success
-When I add peer peer1 at #peerx with eventhub at #eventhubx
+When I add peer peer1 at #peer1 with eventhub at #eventhub1
 Then new peer added
 When I get current peers
 Then peer peer1 should be found

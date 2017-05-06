@@ -16,7 +16,7 @@ public class PeerInfo {
     private String status = "N/A";
     private int statusCode = -1;
 
-    private List<ChaincodeInfo> chaincodes = emptyList();
+    private List<ChainCodeInfo> chaincodes = emptyList();
     private List<String> chains = emptyList();
 
     public PeerInfo() {
@@ -27,11 +27,11 @@ public class PeerInfo {
         this.endpoint = peer.getUrl();
     }
 
-    public List<ChaincodeInfo> getChaincodes() {
+    public List<ChainCodeInfo> getChaincodes() {
         return chaincodes;
     }
 
-    public void setChaincodes(List<ChaincodeInfo> chaincodes) {
+    public void setChaincodes(List<ChainCodeInfo> chaincodes) {
         this.chaincodes = chaincodes;
     }
 

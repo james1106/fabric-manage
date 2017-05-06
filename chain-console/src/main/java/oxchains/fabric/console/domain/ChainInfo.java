@@ -15,15 +15,11 @@ public class ChainInfo {
     private String hash;
     private String next;
     private long height;
-    private int init;
 
     public ChainInfo(BlockchainInfo blockchainInfo) {
         this.hash = toHexString(blockchainInfo.getCurrentBlockHash());
         this.next = toHexString(blockchainInfo.getPreviousBlockHash());
         this.height = blockchainInfo.getHeight();
-        this.init = blockchainInfo
-          .getBlockchainInfo()
-          .isInitialized() ? 1 : 0;
     }
 
     public String getHash() {
@@ -38,7 +34,4 @@ public class ChainInfo {
         return height;
     }
 
-    public int getInit() {
-        return init;
-    }
 }

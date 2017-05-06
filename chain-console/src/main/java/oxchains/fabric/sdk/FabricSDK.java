@@ -27,12 +27,14 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.LongStream;
 
+import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Collections.*;
 import static java.util.Optional.empty;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 import static java.util.stream.Collectors.toList;
 import static org.hyperledger.fabric.sdk.ChainCodeResponse.Status.SUCCESS;
 import static org.hyperledger.fabric.sdk.TransactionRequest.Type.GO_LANG;
+import static org.hyperledger.fabric.sdk.TransactionRequest.Type.JAVA;
 import static org.hyperledger.fabric.sdk.security.CryptoSuite.Factory.getCryptoSuite;
 import static org.hyperledger.fabric_ca.sdk.RevokeReason.UNSPECIFIED;
 
@@ -175,7 +177,13 @@ public class FabricSDK {
         try {
             chain = fabricClient.newChain(chainName, orderer, chainConfiguration);
         } catch (TransactionException | InvalidArgumentException e) {
-            LOG.error("failed to construct new chain {} with orderer {} and configuration {}", chainName, orderer.getName(), e);
+            LOG.warn("failed to construct new chain {} with orderer {} and configuration {}", chainName, orderer.getName(), e.getMessage());
+            try {
+                chain = fabricClient.newChain(chainName);
+                chain.addOrderer(orderer);
+            } catch (InvalidArgumentException configuredChainExceptoin) {
+                LOG.error("failed to construct a configured chain {}", chainName, configuredChainExceptoin);
+            }
         }
         return Optional.ofNullable(chain);
     }
@@ -208,8 +216,8 @@ public class FabricSDK {
     }
 
     public boolean joinChain(String peerId, String chainName) {
+        Chain chain = fabricClient.getChain(chainName);
         try {
-            Chain chain = fabricClient.getChain(chainName);
             chain.joinPeer(PEER_CACHE.get(peerId));
             chain.initialize();
             return true;
@@ -239,29 +247,44 @@ public class FabricSDK {
         return chainPeers(defaultChainName);
     }
 
-    public ProposalResponse installChaincodeOnPeer(ChainCodeID chaincodeId, Chain chain, Peer peer, String sourceLocation) {
+    public List<ProposalResponse> installChaincodeOnPeer(ChainCodeID chaincodeId, Chain chain, String lang, String sourceLocation, Collection<Peer> peers) {
+        switch (lang) {
+        case "go":
+            return installChaincodeOnPeer(chaincodeId, chain, GO_LANG, sourceLocation, peers);
+        case "java":
+            return installChaincodeOnPeer(chaincodeId, chain, JAVA, sourceLocation, peers);
+        default:
+            break;
+        }
+        return emptyList();
+    }
+
+    public List<ProposalResponse> installChaincodeOnPeer(ChainCodeID chaincodeId, Chain chain, TransactionRequest.Type type, String sourceLocation, Collection<Peer> peers) {
         InstallProposalRequest installProposalRequest = fabricClient.newInstallProposalRequest();
         installProposalRequest.setChaincodeID(chaincodeId);
         try {
             installProposalRequest.setChaincodeSourceLocation(new File(sourceLocation));
-            installProposalRequest.setChaincodeLanguage(GO_LANG);
-            Collection<ProposalResponse> responses = chain.sendInstallProposal(installProposalRequest, singletonList(peer));
+            installProposalRequest.setChaincodeLanguage(type);
+            Collection<ProposalResponse> responses = chain.sendInstallProposal(installProposalRequest, peers);
             if (responses.isEmpty()) {
                 LOG.warn("no response while installing chaincode {}", chaincodeId.getName());
             } else {
                 CHAINCODE_CACHE.putIfAbsent(chaincodeId.getName(), chaincodeId);
-                return responses
-                  .iterator()
-                  .next();
+                return newArrayList(responses);
             }
         } catch (Exception e) {
-            LOG.error("failed to install chaincode {} on peer {} for chain {}", chaincodeId.getName(), peer.getName(), chain.getName(), e);
+            LOG.error("failed to install chaincode {} on for chain {}", chaincodeId.getName(), chain.getName(), e);
         }
-        return null;
+        return emptyList();
     }
 
-    public CompletableFuture<ProposalResponse> instantiateChaincode(ChainCodeID chaincode, Chain chain, Peer peer, final String... args) {
-        return instantiateChaincode(chaincode, chain, peer, null, args);
+    public CompletableFuture<ProposalResponse> instantiateChaincode(ChainCodeID chaincode, ChaincodeEndorsementPolicy policy, String... params) {
+        return getChain(defaultChainName)
+          .map(chain -> instantiateChaincode(chaincode, chain, chain
+            .getPeers()
+            .iterator()
+            .next(), policy, params))
+          .orElse(supplyAsync(() -> null));
     }
 
     public CompletableFuture<ProposalResponse> instantiateChaincode(ChainCodeID chaincode, Chain chain, Peer peer, ChaincodeEndorsementPolicy policy, final String... args) {
@@ -291,7 +314,7 @@ public class FabricSDK {
         } catch (Exception e) {
             LOG.error("failed to instantiate chaincode {} with arg {}", chaincode.getName(), Arrays.toString(args), e);
         }
-        return null;
+        return supplyAsync(() -> null);
     }
 
     public Optional<ChainCodeID> getChaincode(String chaincodeName) {
@@ -326,7 +349,25 @@ public class FabricSDK {
         } catch (Exception e) {
             LOG.error("failed to invoke chaincode {} with arg {}", chaincode.getName(), Arrays.toString(args));
         }
-        return null;
+        return supplyAsync(() -> null);
+    }
+
+    public CompletableFuture<ProposalResponse> invokeChaincode(ChainCodeID chaincode, String... params) {
+        return getChain(defaultChainName)
+          .map(chain -> invokeChaincode(chaincode, chain, chain
+            .getPeers()
+            .iterator()
+            .next(), params))
+          .orElse(supplyAsync(() -> null));
+    }
+
+    public ProposalResponse queryChaincode(ChainCodeID chaincode, String... args) {
+        return getChain(defaultChainName)
+          .map(chain -> queryChaincode(chaincode, chain, chain
+            .getPeers()
+            .iterator()
+            .next(), args))
+          .orElse(null);
     }
 
     public ProposalResponse queryChaincode(ChainCodeID chaincode, Chain chain, Peer peer, String... args) {
@@ -340,9 +381,12 @@ public class FabricSDK {
             Collection<ProposalResponse> responses = chain.queryByChaincode(queryByChaincodeRequest, singletonList(peer));
             if (responses.isEmpty()) {
                 LOG.warn("no response while querying chaincode {}", chaincode.getName());
-            } else return responses
-              .iterator()
-              .next();
+            } else {
+                ProposalResponse response = responses
+                  .iterator()
+                  .next();
+                if (response.getStatus() == SUCCESS) return response;
+            }
         } catch (Exception e) {
             LOG.error("failed to query chaincode {} with arg {}", chaincode.getName(), Arrays.toString(args), e);
         }
@@ -493,4 +537,21 @@ public class FabricSDK {
             return null;
         });
     }
+
+    public List<ProposalResponse> installChaincodeOnPeer(ChainCodeID chaincode, String path, String lang, List<Peer> peers) {
+        switch (lang) {
+        case "go":
+            return getChain(defaultChainName)
+              .map(chain -> installChaincodeOnPeer(chaincode, chain, GO_LANG, path, peers))
+              .orElse(emptyList());
+        case "java":
+            return getChain(defaultChainName)
+              .map(chain -> installChaincodeOnPeer(chaincode, chain, JAVA, path, peers))
+              .orElse(emptyList());
+        default:
+            break;
+        }
+        return emptyList();
+    }
+
 }

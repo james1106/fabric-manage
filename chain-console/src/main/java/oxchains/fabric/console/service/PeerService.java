@@ -1,6 +1,5 @@
 package oxchains.fabric.console.service;
 
-import com.google.common.collect.Streams;
 import org.hyperledger.fabric.sdk.EventHub;
 import org.hyperledger.fabric.sdk.Peer;
 import org.slf4j.Logger;
@@ -8,7 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import oxchains.fabric.console.data.PeerRepo;
-import oxchains.fabric.console.domain.ChaincodeInfo;
+import oxchains.fabric.console.domain.ChainCodeInfo;
 import oxchains.fabric.console.domain.EventHubInfo;
 import oxchains.fabric.console.domain.PeerEventhub;
 import oxchains.fabric.console.domain.PeerInfo;
@@ -26,7 +25,6 @@ import java.util.Optional;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Collections.emptyList;
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.concurrent.CompletableFuture.runAsync;
 import static java.util.stream.Collectors.toList;
@@ -59,10 +57,10 @@ public class PeerService {
                   peerInfo.setChaincodes(fabricSDK
                     .chaincodesOnPeer(peer)
                     .stream()
-                    .map(ChaincodeInfo::new)
+                    .map(ChainCodeInfo::new)
                     .collect(toList()));
                   peerInfo.setChains(newArrayList(fabricSDK.chainsOfPeer(peer)));
-                  peerInfo.setStatusCode(reachable(peer.getUrl())?1:0);
+                  peerInfo.setStatusCode(reachable(peer.getUrl()) ? 1 : 0);
                   return peerInfo;
               })
               .collect(toList());
@@ -81,12 +79,11 @@ public class PeerService {
     }
 
     public boolean stop(String peerId) {
-        //TODO if peer has corresponding eventhub, shut it down first
         try {
             PeerEventhub peerEventhub = peerRepo.findOne(peerId);
-            fabricSDK.stopEventhub(peerId);
-        }catch (Exception e){
-
+            if (nonNull(peerEventhub.getEventhub())) fabricSDK.stopEventhub(peerId);
+        } catch (Exception e) {
+            LOG.error("failed to stop cached eventhub {}", peerId, e);
         }
         Optional<SSHResponse> responseOptional = fabricSSH.stopPeer(peerId);
         if (responseOptional.isPresent()) return responseOptional
@@ -100,8 +97,8 @@ public class PeerService {
             Optional<Peer> peerOptional = fabricSDK.withPeer(peerEventhub.getId(), peerEventhub.getEndpoint());
             boolean eventHubAttached = eventHubAttached(peerEventhub.getId(), peerEventhub.getEventhub());
             boolean peerJoined = peerOptional.isPresent() && fabricSDK.joinChain(peerOptional.get());
-            if(eventHubAttached && peerJoined){
-                runAsync(()->peerRepo.save(peerEventhub)).exceptionally(t -> {
+            if (eventHubAttached && peerJoined) {
+                runAsync(() -> peerRepo.save(peerEventhub)).exceptionally(t -> {
                     LOG.error("failed to save peer eventhub {}", peerEventhub, t);
                     return null;
                 });
@@ -147,6 +144,10 @@ public class PeerService {
     }
 
     public List<EventHubInfo> eventhubs() {
-        return fabricSDK.chainEventHubs().stream().map(EventHubInfo::new).collect(toList());
+        return fabricSDK
+          .chainEventHubs()
+          .stream()
+          .map(EventHubInfo::new)
+          .collect(toList());
     }
 }

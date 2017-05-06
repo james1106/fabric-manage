@@ -77,6 +77,8 @@ public class FabricChainControllerSteps {
 
     @Step("{0} at {1} joining chain")
     public void joinChain(String peerId, String peerEndpoint) {
+        if(fabricSDK.getPeer(peerId).isPresent()) return;
+
         Optional<Peer> peerOptional = fabricSDK.withPeer(peerId, propertyParse(peerEndpoint, testProperties));
         assertTrue(peerOptional.isPresent());
         boolean joined = fabricSDK.joinChain(peerOptional.get());

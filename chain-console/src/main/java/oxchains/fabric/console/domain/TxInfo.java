@@ -2,6 +2,7 @@ package oxchains.fabric.console.domain;
 
 import org.hyperledger.fabric.protos.common.Common.*;
 import org.hyperledger.fabric.sdk.TransactionInfo;
+import oxchains.fabric.console.rest.common.KV;
 
 import static org.bouncycastle.util.encoders.Hex.toHexString;
 
