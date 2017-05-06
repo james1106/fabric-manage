@@ -29,7 +29,20 @@ Checkout this repo, install dependencies, then start the app with the following:
 将 ./src/actions/types.js 中 ROOT_URL 修改为API服务器地址
 ```
 
-##### 截屏
+### How to deploy 
+```
+> Requirements: NPM
+> git clone https://git@github.com:zkjs/oxchain-invoice.git
+> cd invoice-app/FrontEnd
+> modify ./src/actions/types.js , change ROOT_URL to right api server endpoint
+> npm install
+> npm install -g webpack
+> webpack -p
+> copy files index.html, bundle.js and directory public/  to any web server directory
+> done
+```
+
+### 截屏
 
 ###### 节点
  ![image](./FrontEnd/screenshot/peer.png)  
