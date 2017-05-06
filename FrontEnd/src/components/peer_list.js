@@ -11,19 +11,23 @@ import {
   ModalBody,
   ModalFooter
 } from 'react-modal-bootstrap';
+import AddPeer from './peer_add';
 
 class PeerList extends Component {
   constructor() {
     super();
     this.state = {
       isModalOpen: false,
-      actionSuccess: null
+      isAddModalOpen : false,
+      isDetailModalOpen : false,
+      actionSuccess: null,
+      actionResult: '',
+      selectedIndex: null
     };
 
   }
 
   componentWillMount() {
-
     this.props.fetchPeerList();
   }
 
@@ -37,32 +41,59 @@ class PeerList extends Component {
     return this.props.all.map((row, idx) => {
       return (<tr key={idx}>
         <td>{row.id}</td>
-        <td>{row.ip}</td>
-        <td>{row.port}</td>
-        <td>{row.block_height}</td>
-        <td>{row.up?'运行':'停止'}</td>
+        <td>{row.endpoint}</td>
+        <td>{row.status}</td>
         <td>
-          <button className={`btn btn-sm ${row.up?'btn-danger':'btn-success'} margin-r-5`}
-                  onClick={this.handleStopClick.bind(this, row)}>{row.up?'停止':'启动'}</button>
-          <Link className="btn btn-sm btn-default" to={`/peer/${row.id}/status`}>状态</Link>
+          <button className={`btn btn-sm btn-success margin-r-5`}
+                  onClick={this.handleStopClick.bind(this, row.id, 1)}>启动</button>
+          <button className={`btn btn-sm btn-danger margin-r-5`}
+                  onClick={this.handleStopClick.bind(this, row.id, 0)}>停止</button>
+          <button className={`btn btn-sm btn-warning hidden margin-r-5`}
+                  onClick={this.handleDetailClick.bind(this, idx)}>详情</button>
+          <Link className="btn btn-sm btn-warning" to={`/peer/${row.id}`}>详情</Link>
+          <Link className="btn btn-sm btn-default hidden" to={`/peer/${row.id}/status`}>状态</Link>
         </td>
       </tr>);
     });
   }
 
-  handleStopClick({id, up}) {
-    this.props.switchPeerStatus(id, up?0:1, success => {
+  handleDetailClick(index) {
+    this.setState({ selectedIndex: index, isDetailModalOpen: true });
+  }
+
+
+  handleStopClick(id, up) {
+    this.props.switchPeerStatus(id, up?1:0, success => {
       console.log(success);
       if(success) {//操作成功
         this.props.fetchPeerList();
       }
-      this.setState({ isModalOpen: true ,actionSuccess:success });
+      this.setState({ isModalOpen: true ,actionSuccess:success, actionResult: success?'操作成功!':'操作失败' });
     });
   };
 
+  handleAddClick() {
+    this.setState({isAddModalOpen: true});
+  }
+
+  hideAddModal = () => {
+    this.setState({ isAddModalOpen : false });
+  };
+
+  hideDetailModal = () => {
+    this.setState({ isDetailModalOpen : false });
+  };
+
+  addCallback(err) {
+    if(!err){
+      this.props.fetchPeerList();
+      this.setState({isAddModalOpen : false, isModalOpen: true ,actionSuccess:true, actionResult:'节点添加成功!' });
+    }
+  }
+
   render() {
-    if(this.props.all.length<1) {
-      return <div><section className="content-header"><h1>Loading...</h1></section></div>
+    if(this.props.all===null) {
+      return <div><section className="content"><h1>Loading...</h1></section></div>
     }
 
     return (
@@ -72,15 +103,16 @@ class PeerList extends Component {
           <div className="row">
             <div className="col-xs-12">
               <div className="box box-info">
-                <div className="box-header"><h3 className="box-title">节点</h3></div>
+                <div className="box-header">
+                  <h3 className="box-title">节点</h3>
+                  <button className="btn btn-success pull-right" onClick={this.handleAddClick.bind(this)}><i className="fa fa-plus"></i> 添加节点</button>
+                </div>
                 <div className="box-body table-responsive no-padding">
                   <table className="table table-bordered table-hover">
                     <tbody>
                     <tr>
                       <th>ID</th>
-                      <th>IP</th>
-                      <th>Port</th>
-                      <th>区块高度</th>
+                      <th>EndPoint</th>
                       <th>状态</th>
                       <th>操作</th>
                     </tr>
@@ -109,6 +141,22 @@ class PeerList extends Component {
             </button>
           </ModalFooter>
         </Modal>
+
+        <Modal isOpen={this.state.isAddModalOpen} onRequestHide={this.hideAddModal}>
+          <ModalHeader>
+            <ModalClose onClick={this.hideAddModal}/>
+            <ModalTitle>添加节点</ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <AddPeer addCallback={this.addCallback.bind(this)}/>
+          </ModalBody>
+          <ModalFooter>
+            <button className='btn btn-default' onClick={this.hideAddModal}>
+              关闭
+            </button>
+          </ModalFooter>
+        </Modal>
+
       </div>)
   }
 }

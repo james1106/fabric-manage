@@ -8,6 +8,8 @@ import reduxThunk from 'redux-thunk';
 import reducers from './reducers';
 import { AUTH_USER } from './actions/types';
 
+import RequireAuth from './components/auth/require_auth';
+import PrivateRoute from './components/auth/private_route';
 import Welcome from './components/welcome';
 import NavTop from './components/common/header';
 import NavSide from './components/common/nav_side';
@@ -16,7 +18,10 @@ import Signout from './components/auth/signout';
 import Signin from './components/auth/signin';
 import PeerList from './components/peer_list';
 import PeerStatus from './components/peer_status';
+import PeerDetail from './components/peer_detail';
 import UserList from './components/user_list';
+import ChainDashboard from './components/chain_dashboard';
+import BlockInfo from './components/block_info';
 
 const createStoreWithMiddleware = compose(
   applyMiddleware(reduxThunk),
@@ -40,9 +45,12 @@ ReactDOM.render(
           <Switch>
             <Route path="/signout" component={Signout} />
             <Route path="/signin" component={Signin} />
-            <Route path="/peer/:id/status" component={PeerStatus} />
-            <Route path="/peer" component={PeerList} />
-            <Route path="/users" component={UserList} />
+            <PrivateRoute path="/peer/:id/status" component={PeerStatus} />
+            <PrivateRoute path="/peer/:id" component={PeerDetail} />
+            <PrivateRoute path="/peer" component={PeerList} />
+            <PrivateRoute path="/chain/block/:id" component={BlockInfo} />
+            <PrivateRoute path="/chain" component={ChainDashboard} />
+            <Route path="/users" component={UserList}/>
             <Route path="/" component={Welcome} />
           </Switch>
         </div>
