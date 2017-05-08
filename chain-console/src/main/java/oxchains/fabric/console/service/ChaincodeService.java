@@ -18,7 +18,6 @@ import oxchains.fabric.console.rest.common.TxResult;
 import oxchains.fabric.sdk.FabricSDK;
 
 import java.io.File;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -26,6 +25,8 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import static com.google.common.collect.Lists.newArrayList;
+import static java.time.LocalDateTime.now;
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.empty;
@@ -56,7 +57,7 @@ public class ChaincodeService {
         try {
             File dir = new File(String.format("%s/src/%s", path, name));
             if (!dir.exists()) FileUtils.forceMkdir(dir);
-            File target = new File(String.format("%s/src/%s/%s-%s.go", path, name, name, version));
+            File target = new File(String.format("%s/src/%s/%s-%s-%s.go", path, name, name, version, now().format(ISO_LOCAL_DATE_TIME)));
             file.transferTo(target);
             chaincodeRepo.save(new ChainCodeInfo(name, version, lang, target.getPath()));
             return true;
@@ -111,9 +112,7 @@ public class ChaincodeService {
         try {
             File dir = new File(String.format("%s/endorsement/%s", path, name));
             if (!dir.exists()) FileUtils.forceMkdir(dir);
-            File endorsementYaml = new File(String.format("%s/endorsement/%s/%s-%s-(%s).yaml", path, name, name, version, LocalDateTime
-              .now()
-              .toString()));
+            File endorsementYaml = new File(String.format("%s/endorsement/%s/%s-%s-(%s).yaml", path, name, name, version, now().toString()));
             endorsement.transferTo(endorsementYaml);
 
             ChaincodeEndorsementPolicy chaincodeEndorsementPolicy = new ChaincodeEndorsementPolicy();
@@ -168,10 +167,13 @@ public class ChaincodeService {
           .setPath(name)
           .build();
         try {
-            return Optional.of(fabricSDK.queryChaincode(chaincode, args)).map(QueryResult::new);
+            return Optional
+              .of(fabricSDK.queryChaincode(chaincode, args))
+              .map(QueryResult::new);
         } catch (Exception e) {
             LOG.error("failed to invoke chaincode {}-{} with {}", name, version, args, e);
-        } return empty();
+        }
+        return empty();
     }
 
 }
