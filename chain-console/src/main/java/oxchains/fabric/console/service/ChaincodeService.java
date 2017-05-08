@@ -59,7 +59,7 @@ public class ChaincodeService {
             if (!dir.exists()) FileUtils.forceMkdir(dir);
             File target = new File(String.format("%s/src/%s/%s-%s-%s.go", path, name, name, version, now().format(ISO_LOCAL_DATE_TIME)));
             file.transferTo(target);
-            chaincodeRepo.save(new ChainCodeInfo(name, version, lang, target.getPath()));
+            chaincodeRepo.save(new ChainCodeInfo(name, version, lang, target.getPath().replace(path, "")));
             return true;
         } catch (Exception e) {
             LOG.error("failed to cache chaincode {}-{}", name, version, e);
