@@ -1,21 +1,26 @@
-# Dockerfile for Hyperledger fabric-orderer image.
-
 FROM yeasy/hyperledger-fabric-base:latest
 LABEL maintainer "aietcn <lovetcn@gmail.com>"
 
 EXPOSE 7050
 
-#ENV FABRIC_CFG_PATH /etc/hyperledger/fabric
-ENV ORDERER_GENERAL_GENESISPROFILE=SampleInsecureSolo
-ENV ORDERER_GENERAL_LOCALMSPDIR $FABRIC_CFG_PATH/msp
-ENV ORDERER_GENERAL_LISTENADDRESS 0.0.0.0
-ENV CONFIGTX_ORDERER_ORDERERTYPE=solo
+ENV ORDERER_HOME=/etc/hyperledger/fabric
+RUN mkdir $ORDERER_HOME/ledger && rm -rf $ORDERER_HOME/msp && rm -rf $ORDERER_HOME/*.yaml
+COPY ./two-orgs.block $ORDERER_HOME/
+COPY ./msp $ORDERER_HOME/msp
+COPY ./ordererOrg1 $ORDERER_HOME/ordererOrg1
+COPY ./peerOrg1 $ORDERER_HOME/peerOrg1
+COPY ./peerOrg2 $ORDERER_HOME/peerOrg2
+COPY ./*.yaml $ORDERER_HOME/
 
-RUN mkdir -p $FABRIC_CFG_PATH $ORDERER_GENERAL_LOCALMSPDIR
-
+ENV http_proxy='http://10.8.47.20:8118' https_proxy='http://10.8.47.20:8118'
 # install hyperledger fabric orderer
-RUN cd $FABRIC_HOME/orderer \
+RUN cd $FABRIC_HOME \ 
+        && git fetch && git reset --hard fed2efa \
+        && cd orderer \
         && CGO_CFLAGS=" " go install -ldflags "$LD_FLAGS -linkmode external -extldflags '-static -lpthread'" \
         && go clean
+
+ENV ORDERER_CFG_PATH=$ORDERER_HOME ORDERER_GENERAL_LEDGERTYPE=file ORDERER_FILELEDGER_LOCATION=$ORDERER_HOME/ledger
+WORKDIR $ORDERER_HOME
 
 CMD ["orderer"]

@@ -32,7 +32,7 @@ public class FabricChaincodeController {
     }
 
     @PostMapping("/chaincode/install/{chaincode}")
-    public RestResp install(@PathVariable String chaincode, @RequestParam(required = false, defaultValue = "1.0") String version, @RequestParam(required = false, defaultValue = "go") String lang, @RequestParam(required = false) String[] peers) {
+    public RestResp install(@PathVariable String chaincode, @RequestParam String version, @RequestParam String lang, @RequestParam String[] peers) {
         List<TxResult> result = chaincodeService.installCCOnPeer(chaincode, version, lang, peers);
         return result.isEmpty() ? fail() : success(result);
     }

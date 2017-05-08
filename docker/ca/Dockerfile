@@ -7,13 +7,7 @@ FROM golang:1.8
 LABEL maintainer "aietcn <lovetcn@gmail.com>"
 
 # ca-server and ca-client will try checking the following env in order, to get the home directory
-ENV FABRIC_CA_HOME /etc/hyperledger/fabric-ca-server
-ENV FABRIC_CA_SERVER_HOME /etc/hyperledger/fabric-ca-server
-ENV FABRIC_CA_CLIENT_HOME $HOME/.fabric-ca-client
-ENV CA_CFG_PATH /etc/hyperledger/fabric-ca
-
-# This is just for simplifying this Dockerfile
-ENV FABRIC_CA_CODE $GOPATH/src/github.com/hyperledger/fabric-ca
+ENV FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server FABRIC_CA_SERVER_HOME=/etc/hyperledger/fabric-ca-server FABRIC_CA_CLIENT_HOME=$HOME/.fabric-ca-client CA_CFG_PATH=/etc/hyperledger/fabric-ca FABRIC_CA_CODE=$GOPATH/src/github.com/hyperledger/fabric-ca
 
 # Usually the cmd will be installed into $GOPATH/bin, but we add local build path 
 ENV PATH=$FABRIC_CA_CODE/bin:$PATH
@@ -34,18 +28,21 @@ RUN apt-get update \
         && apt-get install -y libtool \
         && rm -rf /var/cache/apt
 
+COPY 5a0981ca.diff $FABRIC_CA_SERVER_HOME/
+COPY 6204e6dc.diff $FABRIC_CA_SERVER_HOME/
+
 # clone and build ca
 RUN cd $GOPATH/src/github.com/hyperledger \
     && git clone --single-branch -b master --depth 1 https://github.com/hyperledger/fabric-ca \
-
-COPY diff 
-COPY diff 
-
+    && cd fabric-ca \
+    && git apply $FABRIC_CA_SERVER_HOME/5a0981ca.diff \
+    && git apply $FABRIC_CA_SERVER_HOME/6204e6dc.diff \
 # This will install fabric-ca-server and fabric-ca-client which are under cmd into $GOPATH/bin/
-RUN cd $GOPATH/src/github.com/hyperledger/fabric-ca \
-    && git apply /5a0981ca.diff && git apply /6204e6dc.diff \
-    && go install -ldflags " -linkmode external -extldflags '-static -lpthread'" github.com/hyperledger/fabric-ca/cmd/... \
-    && cp $FABRIC_CA_CODE/images/fabric-ca/payload/*.pem $FABRIC_CA_HOME/
+    && go install -ldflags " -linkmode external -extldflags '-static -lpthread'" github.com/hyperledger/fabric-ca/cmd/... 
+    
+    # && cp $FABRIC_CA_CODE/images/fabric-ca/payload/*.pem $FABRIC_CA_HOME/
+
+COPY *.pem $FABRIC_CA_HOME/
 
 # Disable the tls in the existing cfg file
 #COPY ./testconfig.json $FABRIC_CA_HOME/testdata/
@@ -54,5 +51,4 @@ WORKDIR $FABRIC_CA_CODE
 
 # if no config exists under $FABRIC_CA_HOME, will init fabric-ca-server-config.yaml and fabric-ca-server.db
 # by default, the server will enable '-address 0.0.0.0'
-CMD ["bash", "-c", "fabric-ca-server start -b admin:adminpw"]
-#CMD ["bash", "-c", "fabric-ca-server start --ca.certfile $FABRIC_CA_HOME/ca-cert.pem --ca.keyfile $FABRIC_CA_HOME/ca-key.pem -b admin:adminpw"]
+CMD ["fabric-ca-server","start","-b","admin:adminpw"]
