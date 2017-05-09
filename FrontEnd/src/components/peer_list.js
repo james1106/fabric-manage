@@ -151,9 +151,6 @@ class PeerList extends Component {
             <AddPeer addCallback={this.addCallback.bind(this)}/>
           </ModalBody>
           <ModalFooter>
-            <button className='btn btn-default' onClick={this.hideAddModal}>
-              关闭
-            </button>
           </ModalFooter>
         </Modal>
 

@@ -55,7 +55,7 @@ class NavSide extends  Component {
     const links = [
       {path:'peer', title:'节点管理', icon:'database'},
       {path:'chain', title:'区块链', icon:'link'},
-      {path:'contract', title:'合约管理', icon:'bitcoin'},
+      {path:'chaincode', title:'合约管理', icon:'bitcoin'},
       {path:'users', title:'用户管理', icon:'users'}
     ];
 

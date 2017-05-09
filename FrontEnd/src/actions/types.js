@@ -3,6 +3,7 @@ export const ROOT_URL = 'http://xfja.local:9494';
 export const AUTH_USER = 'auth_user';                               //登录
 export const UNAUTH_USER = 'unauth_user';                           //退出登录
 export const AUTH_ERROR = 'auth_error';                             //登录失败
+
 export const REQUEST_SUCCESS = 'request_success';                   //http请求正确
 export const REQUEST_ERROR = 'request_error';                       //http请求返回错误
 
@@ -21,3 +22,9 @@ export const FETCH_BLOCK_LIST = 'fetch_block_list';                 //获取区�
 export const FETCH_BLOCK_INFO = 'fetch_block_info';                 //获取区块信息
 export const FETCH_TRANSACTION_LIST = 'fetch_transaction_list';     //获取交易列表
 export const FETCH_TRANSACTION_INFO = 'fetch_transaction_info';     //获取交易信息
+
+export const FETCH_CHAINCODE_LIST = 'fetch_chain_code_list';        //获取合约列表
+export const UPLOAD_CHAINCODE = 'upload_chain_code';                //上传合约
+export const INSTALL_CHAINCODE = 'install_chain_code';              //部署合约
+export const INIT_CHAINCODE = 'init_chain_code';                    //初始化合约
+export const EXECUTE_CHAINCODE = 'execute_chain_code';              //执行合约
