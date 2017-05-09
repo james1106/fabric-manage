@@ -130,15 +130,12 @@ class UserList extends Component {
         <Modal isOpen={this.state.isAddModalOpen} onRequestHide={this.hideAddModal}>
           <ModalHeader>
             <ModalClose onClick={this.hideAddModal}/>
-            <ModalTitle>注册用户</ModalTitle>
+            <ModalTitle>用户注册</ModalTitle>
           </ModalHeader>
           <ModalBody>
             <AddUser addCallback={this.addUserCallback.bind(this)}/>
           </ModalBody>
           <ModalFooter>
-            <button className='btn btn-default' onClick={this.hideAddModal}>
-              关闭
-            </button>
           </ModalFooter>
         </Modal>
       </div>)

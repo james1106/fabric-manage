@@ -57,9 +57,9 @@ export function addUser({ username, password, affiliation }, callback) {
         }
 
       })
-      .catch(response => {
-        dispatch(requestError(response.data.error));
-        callback(response.data.error);
-      });
+      .catch( err => {
+        dispatch(requestError(err.message));
+        callback(err.message);
+      } );
   }
 }
