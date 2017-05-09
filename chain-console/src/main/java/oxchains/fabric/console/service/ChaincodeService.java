@@ -14,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import oxchains.fabric.console.data.ChaincodeRepo;
 import oxchains.fabric.console.domain.ChainCodeInfo;
 import oxchains.fabric.console.rest.common.QueryResult;
+import oxchains.fabric.console.rest.common.TxPeerResult;
 import oxchains.fabric.console.rest.common.TxResult;
 import oxchains.fabric.sdk.FabricSDK;
 
@@ -62,7 +63,7 @@ public class ChaincodeService {
             chaincodeRepo.save(new ChainCodeInfo(name, version, lang, target.getPath().replace(path, "")));
             return true;
         } catch (Exception e) {
-            LOG.error("failed to cache chaincode {}-{}", name, version, e);
+            LOG.error("failed to cache chaincode {}-{}", name, version, e.getMessage());
         }
         return false;
     }
@@ -94,7 +95,7 @@ public class ChaincodeService {
                 chainCodeInfo.setInstalled(list.isEmpty() ? 0 : 1);
                 chaincodeRepo.save(chainCodeInfo);
             } catch (Exception e) {
-                LOG.error("failed to update install status of chaincode {}-{}", name, version, e);
+                LOG.error("failed to update install status of chaincode {}-{}", name, version, e.getMessage());
             }
 
             return list;
@@ -102,7 +103,7 @@ public class ChaincodeService {
         return emptyList();
     }
 
-    public Optional<TxResult> instantiate(String name, String version, String[] params, MultipartFile endorsement) {
+    public Optional<TxPeerResult> instantiate(String name, String version, String[] params, MultipartFile endorsement) {
         ChainCodeID chaincode = ChainCodeID
           .newBuilder()
           .setName(name)
@@ -120,10 +121,10 @@ public class ChaincodeService {
 
             return Optional.of(fabricSDK
               .instantiateChaincode(chaincode, chaincodeEndorsementPolicy, params)
-              .thenApplyAsync(RESPONSE2TXRESULT_FUNC)
+              .thenApplyAsync(RESPONSE2TXPEERRESULT_FUNC)
               .get(txTimeout, SECONDS));
         } catch (Exception e) {
-            LOG.error("failed to instantiate chaincode {}-{} with {}", name, version, params, e);
+            LOG.error("failed to instantiate chaincode {}-{} with {}", name, version, params, e.getMessage());
         }
         return empty();
     }
@@ -137,7 +138,7 @@ public class ChaincodeService {
         return emptyList();
     }
 
-    public Optional<TxResult> invoke(String name, String version, String... params) {
+    public Optional<TxPeerResult> invoke(String name, String version, String... params) {
         ChainCodeID chaincode = ChainCodeID
           .newBuilder()
           .setName(name)
@@ -147,13 +148,17 @@ public class ChaincodeService {
         try {
             return Optional.of(fabricSDK
               .invokeChaincode(chaincode, params)
-              .thenApplyAsync(RESPONSE2TXRESULT_FUNC)
+              .thenApplyAsync(RESPONSE2TXPEERRESULT_FUNC)
               .get(txTimeout, SECONDS));
         } catch (Exception e) {
-            LOG.error("failed to invoke chaincode {}-{} with {}", name, version, params, e);
+            LOG.error("failed to invoke chaincode {}-{} with {}", name, version, params, e.getMessage());
         }
         return empty();
     }
+
+
+    private static Function<ProposalResponse, TxPeerResult> RESPONSE2TXPEERRESULT_FUNC = proposalResponse -> nonNull(proposalResponse) ?
+      new TxPeerResult(proposalResponse.getTransactionID(), proposalResponse.getPeer().getName(), proposalResponse.getStatus() == SUCCESS? 1: 0) : null;
 
     private static Function<ProposalResponse, TxResult> RESPONSE2TXRESULT_FUNC = proposalResponse -> nonNull(proposalResponse) ? new TxResult<>(proposalResponse.getTransactionID(), proposalResponse
       .getPeer()
@@ -171,7 +176,7 @@ public class ChaincodeService {
               .of(fabricSDK.queryChaincode(chaincode, args))
               .map(QueryResult::new);
         } catch (Exception e) {
-            LOG.error("failed to invoke chaincode {}-{} with {}", name, version, args, e);
+            LOG.error("failed to invoke chaincode {}-{} with {}", name, version, args, e.getMessage());
         }
         return empty();
     }

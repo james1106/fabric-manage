@@ -45,7 +45,6 @@ RUN cd $GOPATH/src/github.com/hyperledger \
 COPY *.pem $FABRIC_CA_HOME/
 
 # Disable the tls in the existing cfg file
-#COPY ./testconfig.json $FABRIC_CA_HOME/testdata/
 
 WORKDIR $FABRIC_CA_CODE
 

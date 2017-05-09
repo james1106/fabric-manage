@@ -71,8 +71,11 @@ public class FabricChaincodeControllerSteps {
     @Step("installing chaincode {0} on peer {1}")
     public void installChaincodeOn(String chaincode, String peerId) {
         mockMvcResponse = given()
+          .queryParam("peers", peerId)
+          .queryParam("version", "1.0")
+          .queryParam("lang", "go")
           .when()
-          .post(String.format("/chaincode/install/%s?peers=%s", chaincode, peerId));
+          .post(String.format("/chaincode/install/%s", chaincode));
     }
 
     @Step("chaincode {0} installed on peer {1}")

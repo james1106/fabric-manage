@@ -327,8 +327,6 @@ public class FabricSDK {
         if (args.length > 0) transactionProposalRequest.setFcn(args[0]);
         if (args.length > 1) transactionProposalRequest.setArgs(Arrays.copyOfRange(args, 1, args.length));
         else transactionProposalRequest.setArgs(EMPTY_ARGS);
-
-        transactionProposalRequest.setProposalWaitTime(30000);
         try {
             Collection<ProposalResponse> responses = chain.sendTransactionProposal(transactionProposalRequest, singletonList(peer));
             if (responses.isEmpty()) {
