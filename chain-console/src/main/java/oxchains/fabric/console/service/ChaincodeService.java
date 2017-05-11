@@ -19,10 +19,7 @@ import oxchains.fabric.console.rest.common.TxResult;
 import oxchains.fabric.sdk.FabricSDK;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 
 import static com.google.common.collect.Lists.newArrayList;
@@ -78,8 +75,8 @@ public class ChaincodeService {
         return false;
     }
 
-    private String chaincodePath(String name, String version){
-        return name+"-"+version;
+    private String chaincodePath(String name, String version) {
+        return name + "-" + version;
     }
 
     public List<TxResult> installCCOnPeer(String name, String version, String lang, String[] peers) {
@@ -90,29 +87,43 @@ public class ChaincodeService {
           .setPath(chaincodePath(name, version))
           .build();
 
-        List<Peer> peerList = Arrays
-          .stream(peers)
-          .map(p -> fabricSDK
-            .getPeer(p)
-            .orElse(null))
-          .filter(Objects::nonNull)
-          .collect(toList());
-        if (peerList.size() == peers.length) {
-            List<TxResult> list = fabricSDK
-              .installChaincodeOnPeer(chaincode, path, lang, peerList)
+        try {
+            ChainCodeInfo chainCodeInfo = chaincodeRepo.findByNameAndVersion(name, version);
+            Set<String> installedPeers = chainCodeInfo.getInstalled();
+            List<String> peers2Install = Arrays.asList(peers);
+            installedPeers.retainAll(peers2Install);
+            List<Peer> peerList = peers2Install
               .stream()
-              .map(RESPONSE2TXRESULT_FUNC)
+              .map(p -> fabricSDK
+                .getPeer(p)
+                .orElse(null))
+              .filter(Objects::nonNull)
+              .filter(p -> !installedPeers.contains(p.getName()))
               .collect(toList());
 
-            try {
-                ChainCodeInfo chainCodeInfo = chaincodeRepo.findByNameAndVersion(name, version);
-                chainCodeInfo.setInstalled(list.isEmpty() ? 0 : 1);
-                chaincodeRepo.save(chainCodeInfo);
-            } catch (Exception e) {
-                LOG.error("failed to update install status of chaincode {}-{}", name, version, e.getMessage());
-            }
+            List<TxResult> list = installedPeers
+              .stream()
+              .map(installedPeer -> new TxResult<>(null, installedPeer, 1))
+              .collect(toList());
 
+            if (!peerList.isEmpty()) {
+                List<ProposalResponse> installResult = fabricSDK.installChaincodeOnPeer(chaincode, path, lang, peerList);
+                installResult
+                  .stream()
+                  .map(resp -> {
+                      if (resp.getStatus() == SUCCESS) chainCodeInfo.addInstalled(resp
+                        .getPeer()
+                        .getName());
+                      return resp;
+                  })
+                  .map(RESPONSE2TXRESULT_FUNC)
+                  .forEach(list::add);
+                chaincodeRepo.save(chainCodeInfo);
+            }
             return list;
+
+        } catch (Exception e) {
+            LOG.error("failed to update install status of chaincode {}-{}", name, version, e.getMessage());
         }
         return emptyList();
     }

@@ -4,6 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.hyperledger.fabric.protos.peer.Query;
 
 import javax.persistence.*;
+import java.util.HashSet;
+import java.util.Set;
+
+import static com.google.common.collect.Sets.newHashSet;
 
 /**
  * @author aiet
@@ -40,7 +44,8 @@ public class ChainCodeInfo {
     private String version;
     private String lang;
 
-    private int installed;
+    @ElementCollection
+    private Set<String> installed = new HashSet<>(4);
 
     public ChainCodeInfo(String name, String version, String lang, String path) {
         this.name = name;
@@ -49,12 +54,16 @@ public class ChainCodeInfo {
         this.lang = lang;
     }
 
-    public int getInstalled() {
-        return installed;
+    public Set<String> getInstalled() {
+        return newHashSet(installed);
     }
 
-    public void setInstalled(int installed) {
+    public void setInstalled(Set<String> installed) {
         this.installed = installed;
+    }
+
+    public void addInstalled(String installedPeer) {
+        this.installed.add(installedPeer);
     }
 
     public Long getId() {
