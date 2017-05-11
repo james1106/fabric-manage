@@ -56,11 +56,21 @@ public class ChaincodeService {
 
     public boolean cacheChaincode(String name, String version, String lang, MultipartFile file) {
         try {
-            File dir = new File(String.format("%s/src/%s", path, name));
-            if (!dir.exists()) FileUtils.forceMkdir(dir);
-            File target = new File(String.format("%s/src/%s/%s-%s-%s.go", path, name, name, version, now().format(ISO_LOCAL_DATE_TIME)));
+            File chaincodePath = new File(String.format("%s/src/%s-%s", path, name, version));
+            if (chaincodePath.exists()) {
+                LOG.warn("chaincode {}-{} already exists", name, version);
+                return false;
+            } else FileUtils.forceMkdir(chaincodePath);
+
+            File target = new File(chaincodePath.getPath() + String.format("/%s-%s-%s.go", name, version, now().format(ISO_LOCAL_DATE_TIME)));
+            if (target.exists()) {
+                LOG.warn("target cache file {} already exists", target.getPath());
+                return false;
+            }
             file.transferTo(target);
-            chaincodeRepo.save(new ChainCodeInfo(name, version, lang, target.getPath().replace(path, "")));
+            chaincodeRepo.save(new ChainCodeInfo(name, version, lang, target
+              .getPath()
+              .replace(path, "")));
             return true;
         } catch (Exception e) {
             LOG.error("failed to cache chaincode {}-{}", name, version, e.getMessage());
@@ -68,12 +78,16 @@ public class ChaincodeService {
         return false;
     }
 
+    private String chaincodePath(String name, String version){
+        return name+"-"+version;
+    }
+
     public List<TxResult> installCCOnPeer(String name, String version, String lang, String[] peers) {
         ChainCodeID chaincode = ChainCodeID
           .newBuilder()
           .setName(name)
           .setVersion(version)
-          .setPath(name)
+          .setPath(chaincodePath(name, version))
           .build();
 
         List<Peer> peerList = Arrays
@@ -108,7 +122,7 @@ public class ChaincodeService {
           .newBuilder()
           .setName(name)
           .setVersion(version)
-          .setPath(name)
+          .setPath(chaincodePath(name, version))
           .build();
         try {
             File dir = new File(String.format("%s/endorsement/%s", path, name));
@@ -143,7 +157,7 @@ public class ChaincodeService {
           .newBuilder()
           .setName(name)
           .setVersion(version)
-          .setPath(name)
+          .setPath(chaincodePath(name, version))
           .build();
         try {
             return Optional.of(fabricSDK
@@ -156,9 +170,9 @@ public class ChaincodeService {
         return empty();
     }
 
-
-    private static Function<ProposalResponse, TxPeerResult> RESPONSE2TXPEERRESULT_FUNC = proposalResponse -> nonNull(proposalResponse) ?
-      new TxPeerResult(proposalResponse.getTransactionID(), proposalResponse.getPeer().getName(), proposalResponse.getStatus() == SUCCESS? 1: 0) : null;
+    private static Function<ProposalResponse, TxPeerResult> RESPONSE2TXPEERRESULT_FUNC = proposalResponse -> nonNull(proposalResponse) ? new TxPeerResult(proposalResponse.getTransactionID(), proposalResponse
+      .getPeer()
+      .getName(), proposalResponse.getStatus() == SUCCESS ? 1 : 0) : null;
 
     private static Function<ProposalResponse, TxResult> RESPONSE2TXRESULT_FUNC = proposalResponse -> nonNull(proposalResponse) ? new TxResult<>(proposalResponse.getTransactionID(), proposalResponse
       .getPeer()

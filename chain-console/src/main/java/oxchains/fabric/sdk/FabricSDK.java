@@ -218,8 +218,11 @@ public class FabricSDK {
     public boolean joinChain(String peerId, String chainName) {
         Chain chain = fabricClient.getChain(chainName);
         try {
-            chain.joinPeer(PEER_CACHE.get(peerId));
-            chain.initialize();
+            boolean joined = chain.getPeers().stream().anyMatch(peer -> peerId.equals(peer.getName()));
+            if(!joined) {
+                chain.joinPeer(PEER_CACHE.get(peerId));
+                chain.initialize();
+            }
             return true;
         } catch (Exception e) {
             LOG.error("{} failed to join chain {}: ", peerId, chainName, e);
