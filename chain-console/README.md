@@ -7,11 +7,14 @@
 - [x] fabric peer start, stop, status
 - [x] fabric eventHub list
 - [x] fabric chain status
-- [x] fabric chaincode list upload, install, instantiate, query, invoke
+- [x] fabric chaincode list, upload, install, instantiate, query, invoke
 
 ### TODO
 
 - [ ] fabric chain management: new-chain
+- [ ] fabric transaction performance visualization
+- [ ] support system status restore
+
 
 ## Test
 
