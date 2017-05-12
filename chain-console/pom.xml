@@ -27,6 +27,7 @@
         <rest-assured.version>3.0.2</rest-assured.version>
         <maven-surefire-plugin.version>2.19.1</maven-surefire-plugin.version>
         <fabric-sdk-java.version>1.0.0-SNAPSHOT</fabric-sdk-java.version>
+        <hikaricp.version>2.6.1</hikaricp.version>
     </properties>
 
     <dependencies>
@@ -56,15 +57,20 @@
         </dependency>
 
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <scope>runtime</scope>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>${hikaricp.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.hyperledger.fabric-sdk-java</groupId>
             <artifactId>fabric-sdk-java</artifactId>
             <version>${fabric-sdk-java.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-core</artifactId>
         </dependency>
 
         <dependency>
@@ -76,7 +82,7 @@
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <version>1.4.194</version>
-            <!--<scope>test</scope>-->
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>net.serenity-bdd</groupId>

@@ -52,6 +52,12 @@ public class ExampleChaincodeStory {
         chaincodeAPISteps.instantiationSucceeded();
     }
 
+
+    @When("I query instantiated chaincodes on $peerId of chain $chainName")
+    public void whenQueryInstantiatedChaincodes(String peerId, String chainName){
+        chaincodeAPISteps.queryInstantiatedChaincodeOfPeer(peerId, chainName);
+    }
+
     @When("I query asset $holder with: $arg")
     public void whenIQueryForAssetOf(String holder, String arg) {
         chaincodeAPISteps.queryChainWith(arg);

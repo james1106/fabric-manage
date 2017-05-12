@@ -199,4 +199,12 @@ public class ChaincodeAPISteps {
         assertTrue("peer should have installed chaincode " + chaincodeName, chaincodeInfoOptional.isPresent());
     }
 
+    @Step("query instantiated chaincodes on {0}")
+    public void queryInstantiatedChaincodeOfPeer(String peerId, String chainName) {
+        checkChain(chainName);
+        Optional<Peer> peerOptional = fabricSDK.getPeer(peerId);
+        assertTrue("peer should have been created", peerOptional.isPresent());
+        installedChaincodes.clear();
+        installedChaincodes.addAll(fabricSDK.chaincodesOnPeer(peerOptional.get(), chain));
+    }
 }

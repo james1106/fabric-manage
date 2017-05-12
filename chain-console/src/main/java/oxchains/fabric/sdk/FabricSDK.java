@@ -218,8 +218,11 @@ public class FabricSDK {
     public boolean joinChain(String peerId, String chainName) {
         Chain chain = fabricClient.getChain(chainName);
         try {
-            boolean joined = chain.getPeers().stream().anyMatch(peer -> peerId.equals(peer.getName()));
-            if(!joined) {
+            boolean joined = chain
+              .getPeers()
+              .stream()
+              .anyMatch(peer -> peerId.equals(peer.getName()));
+            if (!joined) {
                 chain.joinPeer(PEER_CACHE.get(peerId));
                 chain.initialize();
             }
@@ -408,6 +411,25 @@ public class FabricSDK {
             return fabricClient.queryInstalledChaincodes(peer);
         } catch (Exception e) {
             LOG.error("failed to query installed chaincodes of peer {}:", peer.getName(), e);
+        }
+        return emptyList();
+    }
+
+    /**
+     * instantiated chaincodes
+     */
+    public List<ChaincodeInfo> chaincodesOnPeerForDefaultChain(Peer peer) {
+        return getChain(defaultChainName).map(chain -> chaincodesOnPeer(peer, chain)) .orElse(emptyList());
+    }
+
+    /**
+     * instantiated chaincodes
+     */
+    public List<ChaincodeInfo> chaincodesOnPeer(Peer peer, Chain chain) {
+        try {
+            return chain.queryInstantiatedChaincodes(peer);
+        } catch (Exception e) {
+            LOG.error("failed to query instantiated chaincodes of peer {}:", peer.getName(), e);
         }
         return emptyList();
     }
