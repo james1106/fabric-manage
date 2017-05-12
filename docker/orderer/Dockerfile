@@ -12,7 +12,6 @@ COPY ./peerOrg1 $ORDERER_HOME/peerOrg1
 COPY ./peerOrg2 $ORDERER_HOME/peerOrg2
 COPY ./*.yaml $ORDERER_HOME/
 
-ENV http_proxy='http://10.8.47.20:8118' https_proxy='http://10.8.47.20:8118'
 # install hyperledger fabric orderer
 RUN cd $FABRIC_HOME \ 
         && git fetch && git reset --hard fed2efa \

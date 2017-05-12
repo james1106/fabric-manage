@@ -218,8 +218,11 @@ public class FabricSDK {
     public boolean joinChain(String peerId, String chainName) {
         Chain chain = fabricClient.getChain(chainName);
         try {
-            chain.joinPeer(PEER_CACHE.get(peerId));
-            chain.initialize();
+            boolean joined = chain.getPeers().stream().anyMatch(peer -> peerId.equals(peer.getName()));
+            if(!joined) {
+                chain.joinPeer(PEER_CACHE.get(peerId));
+                chain.initialize();
+            }
             return true;
         } catch (Exception e) {
             LOG.error("{} failed to join chain {}: ", peerId, chainName, e);
@@ -327,8 +330,6 @@ public class FabricSDK {
         if (args.length > 0) transactionProposalRequest.setFcn(args[0]);
         if (args.length > 1) transactionProposalRequest.setArgs(Arrays.copyOfRange(args, 1, args.length));
         else transactionProposalRequest.setArgs(EMPTY_ARGS);
-
-        transactionProposalRequest.setProposalWaitTime(30000);
         try {
             Collection<ProposalResponse> responses = chain.sendTransactionProposal(transactionProposalRequest, singletonList(peer));
             if (responses.isEmpty()) {
