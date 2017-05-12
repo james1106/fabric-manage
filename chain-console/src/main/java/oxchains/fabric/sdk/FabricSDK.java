@@ -112,6 +112,7 @@ public class FabricSDK {
         return Optional.ofNullable(peer);
     }
 
+
     public Optional<FabricUser> createUser(String username, String affiliation) {
         FabricUser user = null;
         try {

@@ -4,12 +4,13 @@ import org.springframework.stereotype.Service;
 import oxchains.fabric.console.domain.ChainBlockInfo;
 import oxchains.fabric.console.domain.ChainInfo;
 import oxchains.fabric.console.domain.TxInfo;
-import oxchains.fabric.console.rest.common.RestResp;
 import oxchains.fabric.sdk.FabricSDK;
 
 import java.util.List;
 import java.util.Optional;
 
+import static java.util.Collections.emptyList;
+import static java.util.Optional.empty;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -25,29 +26,46 @@ public class ChainService {
     }
 
     public Optional<ChainInfo> chaininfo() {
-        return fabricSDK
+        if (noPeersYet()) return empty();
+        else return fabricSDK
           .getChaininfo()
           .map(ChainInfo::new);
     }
 
     public List<ChainBlockInfo> chainblocks() {
-        return fabricSDK
+        if (noPeersYet()) return emptyList();
+        else return fabricSDK
           .getChainBlocks()
           .stream()
           .map(ChainBlockInfo::new)
           .collect(toList());
     }
 
+    private boolean noPeersYet() {
+        return fabricSDK
+          .chainPeers()
+          .isEmpty();
+    }
+
     public Optional<ChainBlockInfo> chainBlockByNumber(long block) {
-        return fabricSDK.getChainBlock(block).map(ChainBlockInfo::new);
+        if (noPeersYet()) return empty();
+        else return fabricSDK
+          .getChainBlock(block)
+          .map(ChainBlockInfo::new);
     }
 
     public Optional<ChainBlockInfo> chainBlockByTx(String tx) {
-        return fabricSDK.getChainBlock(tx).map(ChainBlockInfo::new);
+        if (noPeersYet()) return empty();
+        else return fabricSDK
+          .getChainBlock(tx)
+          .map(ChainBlockInfo::new);
     }
 
     public Optional<TxInfo> transaction(String tx) {
-        return fabricSDK.getChainTx(tx).map(TxInfo::new);
+        if (noPeersYet()) return empty();
+        else return fabricSDK
+          .getChainTx(tx)
+          .map(TxInfo::new);
     }
 
 }

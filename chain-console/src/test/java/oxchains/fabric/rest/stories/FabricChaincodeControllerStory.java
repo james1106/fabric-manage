@@ -78,6 +78,11 @@ public class FabricChaincodeControllerStory {
         steps.chaincodeMarkedInstalled(chaincode);
     }
 
+    @Then("chaincode $chaincode is marked instantiated")
+    public void thenChaincodeInstantiated(String chaincode){
+        steps.chaincodeMarkedInstantiated(chaincode);
+    }
+
     @When("I make a query on $chaincode chaincode with: $args")
     public void whenQueryChaincodeWith(String chaincode, String args){
         steps.queryWith(chaincode, args);

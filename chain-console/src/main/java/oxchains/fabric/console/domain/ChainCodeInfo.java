@@ -44,8 +44,11 @@ public class ChainCodeInfo {
     private String version;
     private String lang;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     private Set<String> installed = new HashSet<>(4);
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    private Set<String> instantiated = new HashSet<>(4);
 
     public ChainCodeInfo(String name, String version, String lang, String path) {
         this.name = name;
@@ -54,12 +57,22 @@ public class ChainCodeInfo {
         this.lang = lang;
     }
 
+    public Set<String> getInstantiated() {
+        return instantiated;
+    }
+
+    public void setInstantiated(Set<String> instantiated) {
+        this.instantiated.clear();
+        this.instantiated.addAll(instantiated);
+    }
+
     public Set<String> getInstalled() {
-        return newHashSet(installed);
+        return installed;
     }
 
     public void setInstalled(Set<String> installed) {
-        this.installed = installed;
+        this.installed.clear();
+        this.installed.addAll(installed);
     }
 
     public void addInstalled(String installedPeer) {
@@ -120,5 +133,9 @@ public class ChainCodeInfo {
 
     public void setError(String error) {
         this.error = error;
+    }
+
+    public void addInstantiated(String peer) {
+        this.instantiated.add(peer);
     }
 }

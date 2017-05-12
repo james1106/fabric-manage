@@ -40,7 +40,7 @@ public class FabricChaincodeController {
     @PostMapping(value = "/chaincode", consumes = MULTIPART_FORM_DATA_VALUE)
     public RestResp init(@RequestParam MultipartFile endorsement, @RequestParam String name, @RequestParam String version, @RequestParam String[] args) {
         return chaincodeService
-          .instantiate(name, version, args, endorsement)
+          .instantiate(name, version, endorsement, args)
           .map(RestResp::success)
           .orElse(fail());
     }
