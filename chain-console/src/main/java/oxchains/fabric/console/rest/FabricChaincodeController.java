@@ -54,7 +54,13 @@ public class FabricChaincodeController {
     public RestResp commit(@PathVariable String chaincode, @PathVariable String version, @RequestParam String[] args) {
         return chaincodeService
           .invoke(chaincode, version, args)
-          .map(RestResp::success)
+          .map(result -> {
+              if (result.getSuccess() == 0) {
+                  return RestResp.success(result);
+              } else {
+                  return RestResp.fail("invocation failed", result);
+              }
+          })
           .orElse(fail());
     }
 
