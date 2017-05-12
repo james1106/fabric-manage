@@ -28,3 +28,4 @@ export const UPLOAD_CHAINCODE = 'upload_chain_code';                //上传合�
 export const INSTALL_CHAINCODE = 'install_chain_code';              //部署合约
 export const INIT_CHAINCODE = 'init_chain_code';                    //初始化合约
 export const EXECUTE_CHAINCODE = 'execute_chain_code';              //执行合约
+export const FETCH_CHAINCODE_INFO = 'fetch_chain_code_info';        //查询合约

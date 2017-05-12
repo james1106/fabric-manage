@@ -89,18 +89,17 @@ class ChainCodeInstall extends Component {
     return (
       <div>
         <div className="">
-            <p className="login-box-msg" style={{fontSize: 24+'px'}}></p>
             {this.renderAlert()}
             <table className="table table-bordered">
-              <tbody>
-              <tr><th>名称</th><th>版本号</th><th>语言</th></tr>
-              <tr>
-                {this.renderField('name')}
-                {this.renderField('version')}
-                {this.renderField('lang')}
-              </tr>
-              </tbody>
-            </table>
+          <tbody>
+          <tr><th>名称</th><th>版本号</th><th>语言</th></tr>
+          <tr>
+            {this.renderField('name')}
+            {this.renderField('version')}
+            {this.renderField('lang')}
+          </tr>
+          </tbody>
+        </table>
             <form className="form" onSubmit={handleSubmit(this.handleFormSubmit.bind(this))}>
               <div className="">
                 <table className="table table-bordered">

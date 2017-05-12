@@ -77,7 +77,7 @@ class BlockList extends Component {
                   </div>
                 </div>
                 <div className="box-body table-responsive no-padding">
-                  <table className="table table-bordered table-hover">
+                  <table className="table table-bordered table-hover multi-line-table">
                     <tbody>
                     <tr>
                       <th>区块号</th>

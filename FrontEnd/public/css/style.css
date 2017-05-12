@@ -11,3 +11,8 @@ body {
     border-bottom: 1px dotted lightgray;
     padding-bottom: 20px;
 }
+
+.multi-line-table {
+    table-layout: fixed;
+    word-wrap: break-word;
+}

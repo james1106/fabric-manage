@@ -22,6 +22,9 @@ import {
 } from 'react-modal-bootstrap';
 import ChaincodeUpload from './chaincode_upload';
 import ChaincodeInstall from './chaincode_install';
+import ChaincodeInit from './chaincode_init';
+import ChaincodeExecute from './chaincode_execute';
+import ChaincodeQuery from './chaincode_query';
 
 class ChainCodeList extends Component {
   constructor() {
@@ -30,6 +33,9 @@ class ChainCodeList extends Component {
       isModalOpen: false,
       isAddModalOpen : false,
       isInstallModalOpen : false,
+      isInitModalOpen : false,
+      isExecuteModalOpen : false,
+      isQueryModalOpen: false,
       actionSuccess: null,
       actionResult: '',
       selectedItem: null
@@ -47,6 +53,8 @@ class ChainCodeList extends Component {
     });
   };
 
+  //////// upload ////////
+
   handleAddClick() {
     this.setState({isAddModalOpen: true});
   }
@@ -54,6 +62,15 @@ class ChainCodeList extends Component {
   hideAddModal = () => {
     this.setState({ isAddModalOpen : false });
   };
+
+  uploadCallback(err) {
+    if(!err){
+      this.props.fetchChainCodeList();
+      this.setState({isAddModalOpen : false, isModalOpen: true ,actionSuccess:true, actionResult:'合约上传成功!' });
+    }
+  }
+
+  //////// install ////////
 
   handleInstallClick(row) {
     this.setState({isInstallModalOpen: true, selectedItem: row});
@@ -63,19 +80,56 @@ class ChainCodeList extends Component {
     this.setState({ isInstallModalOpen : false, selectedItem: null });
   };
 
-  uploadCallback(err) {
-    if(!err){
-      this.props.fetchChainCodeList();
-      this.setState({isAddModalOpen : false, isModalOpen: true ,actionSuccess:true, actionResult:'添加成功!' });
-    }
-  }
-
   installCallback(err) {
     if(!err){
       this.props.fetchChainCodeList();
       this.setState({isInstallModalOpen : false, isModalOpen: true ,actionSuccess:true, actionResult:'部署成功!' });
     }
   }
+
+  //////// init ////////
+
+  handleInitClick(row) {
+    this.setState({isInitModalOpen: true, selectedItem: row});
+  }
+
+  hideInitModal = () => {
+    this.setState({ isInitModalOpen : false, selectedItem: null });
+  };
+
+  initCallback(err) {
+    if(!err){
+      this.props.fetchChainCodeList();
+      this.setState({isInitModalOpen : false, isModalOpen: true ,actionSuccess:true, actionResult:'初始化成功!' });
+    }
+  }
+
+  //////// execute ////////
+
+  handleExecuteClick(row) {
+    this.setState({isExecuteModalOpen: true, selectedItem: row});
+  }
+
+  hideExecuteModal = () => {
+    this.setState({ isExecuteModalOpen : false, selectedItem: null });
+  };
+
+  executeCallback(err) {
+    if(!err){
+      this.props.fetchChainCodeList();
+      this.setState({isExecuteModalOpen : false, isModalOpen: true ,actionSuccess:true, actionResult:'合约执行成功!' });
+    }
+  }
+
+  //////// query ////////
+
+  handleQueryClick(row) {
+    this.setState({isQueryModalOpen: true, selectedItem: row});
+  }
+
+  hideQueryModal = () => {
+    this.setState({ isQueryModalOpen : false, selectedItem: null });
+  };
 
 
   renderRows() {
@@ -85,9 +139,10 @@ class ChainCodeList extends Component {
         <td>{row.version}</td>
         <td>{row.lang}</td>
         <td>
-          <button className='btn btn-sm btn-default margin-r-5'>执行</button>
-          <button className='btn btn-sm btn-default margin-r-5'>初始化</button>
           <button className='btn btn-sm btn-default margin-r-5' onClick={this.handleInstallClick.bind(this, row)}>部署</button>
+          <button className='btn btn-sm btn-default margin-r-5' onClick={this.handleInitClick.bind(this, row)}>初始化</button>
+          <button className='btn btn-sm btn-default margin-r-5' onClick={this.handleExecuteClick.bind(this, row)}>执行</button>
+          <button className='btn btn-sm btn-default margin-r-5' onClick={this.handleQueryClick.bind(this, row)}>查询</button>
         </td>
       </tr>);
     });
@@ -131,9 +186,10 @@ class ChainCodeList extends Component {
           </div>
         </section>
 
-        <Modal isOpen={this.state.isModalOpen} onRequestHide={this.hideModal}>
+        {/* Result Modal */}
+        <Modal isOpen={this.state.isModalOpen} onRequestHide={this.hideModal.bind(this)}>
           <ModalHeader>
-            <ModalClose onClick={this.hideModal}/>
+            <ModalClose onClick={this.hideModal.bind(this)}/>
             <ModalTitle>结果</ModalTitle>
           </ModalHeader>
           <ModalBody>
@@ -145,9 +201,10 @@ class ChainCodeList extends Component {
           </ModalFooter>
         </Modal>
 
-        <Modal isOpen={this.state.isAddModalOpen} onRequestHide={this.hideAddModal}>
+        {/* Upload Modal */}
+        <Modal isOpen={this.state.isAddModalOpen} onRequestHide={this.hideAddModal.bind(this)}>
           <ModalHeader>
-            <ModalClose onClick={this.hideAddModal}/>
+            <ModalClose onClick={this.hideAddModal.bind(this)}/>
             <ModalTitle>上传合约</ModalTitle>
           </ModalHeader>
           <ModalBody>
@@ -157,13 +214,53 @@ class ChainCodeList extends Component {
           </ModalFooter>
         </Modal>
 
-        <Modal isOpen={this.state.isInstallModalOpen} onRequestHide={this.hideInstallModal}>
+        {/* Install Modal */}
+        <Modal isOpen={this.state.isInstallModalOpen} onRequestHide={this.hideInstallModal.bind(this)}>
           <ModalHeader>
-            <ModalClose onClick={this.hideInstallModal}/>
+            <ModalClose onClick={this.hideInstallModal.bind(this)}/>
             <ModalTitle>部署合约</ModalTitle>
           </ModalHeader>
           <ModalBody>
             <ChaincodeInstall actionCallback={this.installCallback.bind(this)} selectedItem={this.state.selectedItem}/>
+          </ModalBody>
+          <ModalFooter>
+          </ModalFooter>
+        </Modal>
+
+        {/* Init Modal */}
+        <Modal isOpen={this.state.isInitModalOpen} onRequestHide={this.hideInitModal.bind(this)}>
+          <ModalHeader>
+            <ModalClose onClick={this.hideInitModal.bind(this)}/>
+            <ModalTitle>初始化合约</ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <ChaincodeInit actionCallback={this.initCallback.bind(this)} selectedItem={this.state.selectedItem}/>
+          </ModalBody>
+          <ModalFooter>
+          </ModalFooter>
+        </Modal>
+
+        {/* Execute Modal */}
+        <Modal isOpen={this.state.isExecuteModalOpen} onRequestHide={this.hideExecuteModal.bind(this)}>
+          <ModalHeader>
+            <ModalClose onClick={this.hideExecuteModal.bind(this)}/>
+            <ModalTitle>执行合约</ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <ChaincodeExecute actionCallback={this.executeCallback.bind(this)} selectedItem={this.state.selectedItem}/>
+          </ModalBody>
+          <ModalFooter>
+          </ModalFooter>
+        </Modal>
+
+        {/* Query Modal */}
+        <Modal isOpen={this.state.isQueryModalOpen} onRequestHide={this.hideQueryModal.bind(this)}>
+          <ModalHeader>
+            <ModalClose onClick={this.hideQueryModal.bind(this)}/>
+            <ModalTitle>查询合约</ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <ChaincodeQuery selectedItem={this.state.selectedItem}/>
           </ModalBody>
           <ModalFooter>
           </ModalFooter>

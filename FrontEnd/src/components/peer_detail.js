@@ -21,7 +21,7 @@ class PeerDetail extends Component {
   }
 
   componentWillMount() {
-    //this.props.fetchPeerList();
+    this.props.fetchPeerList();
     this.props.fetchEventHubList();
   }
 
@@ -30,7 +30,7 @@ class PeerDetail extends Component {
 
     return chaincodes.map((row, idx) => {
       return (
-        <dl className="dl-horizontal">
+        <dl className="dl-horizontal" key={idx}>
           <dt>Name</dt>
           <dd>{row.name}</dd>
           <dt>Input</dt>
