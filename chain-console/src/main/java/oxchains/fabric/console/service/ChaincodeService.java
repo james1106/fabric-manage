@@ -91,7 +91,9 @@ public class ChaincodeService {
         if (noPeersYet()) return emptyList();
 
         try {
-            ChainCodeInfo chainCodeInfo = chaincodeRepo.findByNameAndVersion(name, version);
+            Optional<ChainCodeInfo> chainCodeInfoOptional = chaincodeRepo.findByNameAndVersion(name, version);
+            if(!chainCodeInfoOptional.isPresent()) return emptyList();
+            ChainCodeInfo chainCodeInfo = chainCodeInfoOptional.get();
             Set<String> installedPeers = chainCodeInfo.getInstalled();
             List<String> peers2Install = Arrays.asList(peers);
             installedPeers.retainAll(peers2Install);
@@ -147,7 +149,9 @@ public class ChaincodeService {
         if (noPeersYet()) return empty();
 
         try {
-            ChainCodeInfo chainCodeInfo = chaincodeRepo.findByNameAndVersion(name, version);
+            Optional<ChainCodeInfo> chainCodeInfoOptional = chaincodeRepo.findByNameAndVersion(name, version);
+            if(!chainCodeInfoOptional.isPresent()) return empty();
+            ChainCodeInfo chainCodeInfo = chainCodeInfoOptional.get();
             File dir = new File(String.format("%s/endorsement/%s", path, name));
             if (!dir.exists()) FileUtils.forceMkdir(dir);
             File endorsementYaml = new File(String.format("%s/endorsement/%s/%s-%s-(%s).yaml", path, name, name, version, now().toString()));
@@ -228,7 +232,7 @@ public class ChaincodeService {
         try {
             LOG.info("querying chaincode {}-{} with {}", name, version, args);
             return Optional
-              .of(fabricSDK.queryChaincode(chaincode, args))
+              .ofNullable(fabricSDK.queryChaincode(chaincode, args))
               .map(QueryResult::new);
         } catch (Exception e) {
             LOG.error("failed to invoke chaincode {}-{} with {}", name, version, args, e);

@@ -62,9 +62,11 @@ public class UserService {
         try {
             boolean revoked = fabricSDK.revokeUser(username, reason);
             if (revoked) {
-                User user = userRepo.findUserByUsername(username);
-                userRepo.delete(user);
-                return true;
+                Optional<User> userOptional = userRepo.findUserByUsername(username);
+                if(userOptional.isPresent()) {
+                    userRepo.delete(userOptional.get());
+                    return true;
+                }
             }
         } catch (Exception e) {
             LOG.error("failed to revoke user {}", username, e);
@@ -74,11 +76,11 @@ public class UserService {
 
     public Optional<UserToken> tokenForUser(User user) {
         try {
-            User foundUser = userRepo.findUserByUsernameAndPassword(user.getUsername(), user.getPassword());
-            if (nonNull(foundUser)) {
+            Optional<User> userOptional = userRepo.findUserByUsernameAndPassword(user.getUsername(), user.getPassword());
+            if (userOptional.isPresent()) {
                 Optional<Enrollment> enrollmentOptional = fabricSDK.enroll(user.getUsername(), user.getPassword());
                 if(enrollmentOptional.isPresent()) {
-                    UserToken userToken = new UserToken(foundUser, UUID
+                    UserToken userToken = new UserToken(userOptional.get(), UUID
                       .randomUUID()
                       .toString());
                     //TODO what to do with the enrollment keys?

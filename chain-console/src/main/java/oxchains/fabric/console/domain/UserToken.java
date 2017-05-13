@@ -2,6 +2,7 @@ package oxchains.fabric.console.domain;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import java.util.Date;
 
 /**
  * @author aiet
@@ -13,6 +14,7 @@ public class UserToken {
 
     private String token;
     private String username;
+    private Date createtime = new Date();
 
     public UserToken() {
     }
@@ -21,6 +23,14 @@ public class UserToken {
         this.username = user.getUsername();
         this.id = user.getId();
         this.token = token;
+    }
+
+    public Date getCreatetime() {
+        return createtime;
+    }
+
+    public void setCreatetime(Date createtime) {
+        this.createtime = createtime;
     }
 
     public Long getId() {

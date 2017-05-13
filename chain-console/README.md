@@ -8,7 +8,7 @@
 - [x] fabric eventHub list
 - [x] fabric chain status
 - [x] fabric chaincode list, upload, install, instantiate, query, invoke
-- [ ] support system status restore
+- [x] support system context restore between restart
 
 ### TODO
 

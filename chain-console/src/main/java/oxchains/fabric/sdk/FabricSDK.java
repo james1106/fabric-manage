@@ -13,8 +13,12 @@ import org.hyperledger.fabric_ca.sdk.RevokeReason;
 import org.hyperledger.fabric_ca.sdk.exception.BaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import oxchains.fabric.console.data.ChainRepo;
+import oxchains.fabric.console.domain.ChainInfo;
+import oxchains.fabric.console.domain.PeerEventhub;
 import oxchains.fabric.sdk.domain.CAAdmin;
 import oxchains.fabric.sdk.domain.FabricUser;
 
@@ -48,9 +52,11 @@ public class FabricSDK {
 
     private final String caServerUrl;
     private final Properties properties = new Properties();
+    private final ChainRepo chainRepo;
     private final String[] EMPTY_ARGS = new String[] {};
 
-    public FabricSDK(@Value("${fabric.ca.server.url}") String caServerUrl, Properties properties) {
+    public FabricSDK(@Value("${fabric.ca.server.url}") String caServerUrl, @Autowired ChainRepo chainRepo, Properties properties) {
+        this.chainRepo = chainRepo;
         this.caServerUrl = caServerUrl;
         this.properties.putAll(properties);
     }
@@ -101,6 +107,14 @@ public class FabricSDK {
         userToEnroll.setEnrollment(caClient.enroll(userToEnroll.getName(), caServerAdminPass));
     }
 
+    public String getDefaultOrderer() {
+        return defaultOrdererEndpoint;
+    }
+
+    public String getDefaultChainName() {
+        return defaultChainName;
+    }
+
     public Optional<Peer> withPeer(String peerId, String peerUrl) {
         Peer peer = null;
         try {
@@ -111,7 +125,6 @@ public class FabricSDK {
         }
         return Optional.ofNullable(peer);
     }
-
 
     public Optional<FabricUser> createUser(String username, String affiliation) {
         FabricUser user = null;
@@ -176,15 +189,40 @@ public class FabricSDK {
     public Optional<Chain> constructChain(String chainName, Orderer orderer, ChainConfiguration chainConfiguration) {
         Chain chain = null;
         try {
-            chain = fabricClient.newChain(chainName, orderer, chainConfiguration);
-        } catch (TransactionException | InvalidArgumentException e) {
-            LOG.warn("failed to construct new chain {} with orderer {} and configuration {}", chainName, orderer.getName(), e.getMessage());
-            try {
-                chain = fabricClient.newChain(chainName);
-                chain.addOrderer(orderer);
-            } catch (InvalidArgumentException configuredChainExceptoin) {
-                LOG.error("failed to construct a configured chain {}", chainName, configuredChainExceptoin);
-            }
+            Optional<ChainInfo> chainInfoOptional = chainRepo.findByNameAndOrderer(chainName, orderer.getUrl());
+            chain = chainInfoOptional.map(existingChainInfo -> {
+                try {
+                    Chain existingChain = fabricClient.newChain(existingChainInfo.getName());
+                    existingChain.addOrderer(orderer);
+
+                    for (PeerEventhub peerEventhub : existingChainInfo.getPeers()) {
+                        Peer peer = fabricClient.newPeer(peerEventhub.getId(), peerEventhub.getEndpoint());
+                        PEER_CACHE.putIfAbsent(peer.getName(), peer);
+                        existingChain.addPeer(peer);
+                        existingChain.addEventHub(fabricClient.newEventHub(peerEventhub.getId(), peerEventhub.getEventhub()));
+                    }
+                    existingChain.initialize();
+                    LOG.info("chain {} exist on orderer {}, rebuilding from data source", chainName, orderer.getUrl());
+                    return existingChain;
+                } catch (InvalidArgumentException | TransactionException configuredChainException) {
+                    LOG.error("failed to construct a configured chain {}", chainName, configuredChainException);
+                }
+                return null;
+            }).orElseGet(() -> {
+                try {
+                    Chain newChain = fabricClient.newChain(chainName, orderer, chainConfiguration);
+                    ChainInfo newChainInfo = new ChainInfo(chainName, orderer.getUrl());
+                    chainRepo.save(newChainInfo);
+                    LOG.info("new chain {} constructed on orderer {}", chainName, orderer.getUrl());
+                    return newChain;
+                } catch (TransactionException | InvalidArgumentException e) {
+                    LOG.warn("failed to construct new chain {} with orderer {} and configuration {}", chainName, orderer.getName(), e.getMessage());
+                }
+                return null;
+            });
+
+        } catch (Exception e) {
+            LOG.error("failed to get current chain info of {} for orderer {}@{}", chainName, orderer.getName(), orderer.getUrl(), e);
         }
         return Optional.ofNullable(chain);
     }
@@ -209,7 +247,8 @@ public class FabricSDK {
     }
 
     public Optional<Peer> getPeer(String peerId) {
-        return Optional.ofNullable(PEER_CACHE.get(peerId));
+        return getChain(defaultChainName).map(chain -> chain.getPeers().stream().filter(peer -> peer.getName().equals(peerId)).findFirst())
+          .orElse(empty());
     }
 
     public boolean joinChain(Peer peer) {
@@ -224,8 +263,7 @@ public class FabricSDK {
               .stream()
               .anyMatch(peer -> peerId.equals(peer.getName()));
             if (!joined) {
-                chain.joinPeer(PEER_CACHE.get(peerId));
-                chain.initialize();
+                chain.joinPeer(PEER_CACHE.get(peerId)).initialize();
             }
             return true;
         } catch (Exception e) {
@@ -420,7 +458,9 @@ public class FabricSDK {
      * instantiated chaincodes
      */
     public List<ChaincodeInfo> chaincodesOnPeerForDefaultChain(Peer peer) {
-        return getChain(defaultChainName).map(chain -> chaincodesOnPeer(peer, chain)) .orElse(emptyList());
+        return getChain(defaultChainName)
+          .map(chain -> chaincodesOnPeer(peer, chain))
+          .orElse(emptyList());
     }
 
     /**

@@ -55,7 +55,7 @@ public class FabricChaincodeController {
         return chaincodeService
           .invoke(chaincode, version, args)
           .map(result -> {
-              if (result.getSuccess() == 0) {
+              if (result.getSuccess() == 1) {
                   return RestResp.success(result);
               } else {
                   return RestResp.fail("invocation failed", result);

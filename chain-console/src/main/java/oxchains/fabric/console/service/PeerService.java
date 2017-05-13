@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import oxchains.fabric.console.data.ChainRepo;
 import oxchains.fabric.console.data.PeerRepo;
 import oxchains.fabric.console.domain.ChainCodeInfo;
 import oxchains.fabric.console.domain.EventHubInfo;
@@ -27,7 +28,7 @@ import java.util.Optional;
 import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
-import static java.util.concurrent.CompletableFuture.runAsync;
+import static java.util.concurrent.CompletableFuture.supplyAsync;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -41,14 +42,15 @@ public class PeerService {
     private FabricSDK fabricSDK;
     private FabricSSH fabricSSH;
     private PeerRepo peerRepo;
+    private ChainRepo chainRepo;
 
-    @Value("${fabric.peer.connect.timeout}")
-    private int peerConnectTimeout;
+    @Value("${fabric.peer.connect.timeout}") private int peerConnectTimeout;
 
-    public PeerService(@Autowired FabricSDK fabricSDK, @Autowired FabricSSH fabricSSH, @Autowired PeerRepo peerRepo) {
+    public PeerService(@Autowired FabricSDK fabricSDK, @Autowired FabricSSH fabricSSH, @Autowired PeerRepo peerRepo, @Autowired ChainRepo chainRepo) {
         this.fabricSDK = fabricSDK;
         this.fabricSSH = fabricSSH;
         this.peerRepo = peerRepo;
+        this.chainRepo = chainRepo;
     }
 
     public List<PeerInfo> allPeers() {
@@ -107,10 +109,14 @@ public class PeerService {
             boolean eventHubAttached = eventHubAttached(peerEventhub.getId(), peerEventhub.getEventhub());
             boolean peerJoined = peerOptional.isPresent() && fabricSDK.joinChain(peerOptional.get());
             if (eventHubAttached && peerJoined) {
-                runAsync(() -> peerRepo.save(peerEventhub)).exceptionally(t -> {
-                    LOG.error("failed to save peer eventhub {}", peerEventhub, t);
-                    return null;
-                });
+                supplyAsync(() -> peerRepo.save(peerEventhub))
+                  .thenAcceptAsync(updatedPeerEventHub -> chainRepo
+                    .findByNameAndOrderer(fabricSDK.getDefaultChainName(), fabricSDK.getDefaultOrderer())
+                    .ifPresent(chainInfo -> chainRepo.save(chainInfo.addPeer(updatedPeerEventHub))))
+                  .exceptionally(t -> {
+                      LOG.error("failed to save peer eventhub {}", peerEventhub, t);
+                      return null;
+                  });
             }
             return eventHubAttached && peerJoined;
         } catch (Exception e) {

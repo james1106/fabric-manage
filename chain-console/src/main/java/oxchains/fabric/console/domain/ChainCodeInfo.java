@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.hyperledger.fabric.protos.peer.Query;
 
 import javax.persistence.*;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -43,6 +44,7 @@ public class ChainCodeInfo {
     private String path;
     private String version;
     private String lang;
+    private Date createtime;
 
     @ElementCollection(fetch = FetchType.EAGER)
     private Set<String> installed = new HashSet<>(4);
@@ -55,6 +57,15 @@ public class ChainCodeInfo {
         this.version = version;
         this.path = path;
         this.lang = lang;
+        this.createtime = new Date();
+    }
+
+    public Date getCreatetime() {
+        return createtime;
+    }
+
+    public void setCreatetime(Date createtime) {
+        this.createtime = createtime;
     }
 
     public Set<String> getInstantiated() {

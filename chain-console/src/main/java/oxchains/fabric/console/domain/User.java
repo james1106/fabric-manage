@@ -4,6 +4,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import java.util.Date;
 
 /**
  * @author aiet
@@ -18,6 +19,16 @@ public class User {
     private String username;
     private String password;
     private String affiliation;
+
+    private Date createtime = new Date();
+
+    public Date getCreatetime() {
+        return createtime;
+    }
+
+    public void setCreatetime(Date createtime) {
+        this.createtime = createtime;
+    }
 
     public String getUsername() {
         return username;
