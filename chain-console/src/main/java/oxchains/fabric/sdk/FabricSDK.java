@@ -7,6 +7,7 @@ import org.hyperledger.fabric.sdk.*;
 import org.hyperledger.fabric.sdk.exception.CryptoException;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.TransactionException;
+import org.hyperledger.fabric_ca.sdk.EnrollmentRequest;
 import org.hyperledger.fabric_ca.sdk.HFCAClient;
 import org.hyperledger.fabric_ca.sdk.RegistrationRequest;
 import org.hyperledger.fabric_ca.sdk.RevokeReason;
@@ -67,12 +68,16 @@ public class FabricSDK {
 
     private final HFClient fabricClient = HFClient.createNewInstance();
     private HFCAClient caClient;
-    private CAAdmin caServerAdminUser;
+    private CAAdmin caServerAdminUser1;
+    private CAAdmin caServerAdminUser2;
 
     @Value("${fabric.ca.server.admin}") private String caServerAdmin;
     @Value("${fabric.ca.server.admin.pass}") private String caServerAdminPass;
-    @Value("${fabric.ca.server.admin.mspid}") private String caServerAdminMSPId;
-    @Value("${fabric.ca.server.admin.affiliation}") private String caServerAdminAffiliation;
+    @Value("${fabric.ca.server.admin.mspid1}") private String caServerAdminMSPId1;
+    @Value("${fabric.ca.server.admin.affiliation1}") private String caServerAdminAffiliation1;
+    @Value("${fabric.ca.server.admin.mspid2}") private String caServerAdminMSPId2;
+    @Value("${fabric.ca.server.admin.affiliation2}") private String caServerAdminAffiliation2;
+
     @Value("${fabric.orderer.name}") private String defaultOrdererName;
     @Value("${fabric.orderer.endpoint}") String defaultOrdererEndpoint;
     @Value("${fabric.chain.name}") String defaultChainName;
@@ -84,9 +89,15 @@ public class FabricSDK {
             caClient = new HFCAClient(caServerUrl, properties);
             caClient.setCryptoSuite(getCryptoSuite());
             fabricClient.setCryptoSuite(getCryptoSuite());
-            this.caServerAdminUser = new CAAdmin(caServerAdmin, caServerAdminAffiliation, caServerAdminMSPId);
-            enroll(caServerAdminUser);
-            fabricClient.setUserContext(caServerAdminUser);
+            this.caServerAdminUser1 = new CAAdmin(caServerAdmin, caServerAdminAffiliation1, caServerAdminMSPId1);
+            this.caServerAdminUser1.setPassword(caServerAdminPass);
+            enroll(caServerAdminUser1);
+
+            this.caServerAdminUser2 = new CAAdmin(caServerAdmin, caServerAdminAffiliation2, caServerAdminMSPId2);
+            this.caServerAdminUser2.setPassword(caServerAdminPass);
+            enroll(caServerAdminUser2);
+
+            fabricClient.setUserContext(caServerAdminUser1);
             withOrderer(defaultOrdererName, defaultOrdererEndpoint).ifPresent(orderer -> {
                 constructChain(defaultChainName, orderer, defaultChainConfigurationPath);
             });
@@ -103,8 +114,8 @@ public class FabricSDK {
      * the user will be enrolled if hasn't
      */
     private void enroll(CAAdmin userToEnroll) throws BaseException {
-        //TODO check if enrolled yet
-        userToEnroll.setEnrollment(caClient.enroll(userToEnroll.getName(), caServerAdminPass));
+        //TODO check if enrolled yet if enrollment limited by MaxEnrollment
+        userToEnroll.setEnrollment(caClient.enroll(userToEnroll.getName(), userToEnroll.getPassword()));
     }
 
     public String getDefaultOrderer() {
@@ -131,10 +142,10 @@ public class FabricSDK {
         try {
             user = new FabricUser(username, affiliation);
             RegistrationRequest registrationRequest = new RegistrationRequest(username, affiliation);
-            user.setPassword(caClient.register(registrationRequest, caServerAdminUser));
+            user.setPassword(caClient.register(registrationRequest, caServerAdminUser1));
             //TODO when to enroll? difference to register?
             caClient.enroll(username, user.getPassword());
-            user.setMspId(caServerAdminMSPId);
+            user.setMspId(caServerAdminMSPId1);
         } catch (Exception e) {
             LOG.error("failed to register fabric user {} from {}", username, affiliation);
         }
@@ -477,7 +488,7 @@ public class FabricSDK {
 
     public boolean revokeUser(String username, int reason) {
         try {
-            caClient.revoke(caServerAdminUser, username, int2RevokeReason(reason));
+            caClient.revoke(caServerAdminUser1, username, int2RevokeReason(reason));
             return true;
         } catch (Exception e) {
             LOG.error("failed to revoke {} with reason {}", username, reason, e);
@@ -497,7 +508,7 @@ public class FabricSDK {
         try {
             RegistrationRequest registrationRequest = new RegistrationRequest(username, affiliation);
             registrationRequest.setSecret(password);
-            String registerResult = caClient.register(registrationRequest, caServerAdminUser);
+            String registerResult = caClient.register(registrationRequest, caServerAdminUser1);
             LOG.info("fabric registered {} of {}: {}", username, affiliation, registerResult);
             return true;
         } catch (Exception e) {

@@ -1,14 +1,9 @@
 package oxchains.fabric.rest.steps;
 
 import io.restassured.module.mockmvc.response.MockMvcResponse;
-import net.bytebuddy.matcher.CollectionElementMatcher;
-import net.bytebuddy.matcher.CollectionSizeMatcher;
 import net.thucydides.core.annotations.Step;
 import org.apache.commons.io.FileUtils;
 import org.hamcrest.Matcher;
-import org.hamcrest.collection.IsCollectionWithSize;
-import org.hamcrest.collection.IsEmptyCollection;
-import org.hamcrest.core.IsCollectionContaining;
 import org.jbehave.core.annotations.AfterStory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.context.ContextConfiguration;

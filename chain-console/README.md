@@ -28,3 +28,48 @@ All the following requirements can be modified in `src/test/resources/test.prope
 
 
 Run `mvn clean verify` to see test result in `target/site/serenity/index.html`.
+
+
+## Implementations
+
+Before the system starts, we need some preparation.
+
+What admin can do:
+
+- to enroll admin of the organization and manage peers:
+    1. CA endpoints
+    2. CA organization admin account, created on organization CA server
+
+- after enrolling in admin, we have admin's MSP certificates saved: cacerts, keystore, signcerts
+    1. register peers and users
+    2. download the certs to configure peer, and start the peer manually
+    3. add the peer to peer list
+    4. view peer detailed status
+    
+- construct a chain by uploading the chain configuration and restrict the chain to only specific organizations (no restriction by default)
+    1. select a peer to join the chain
+    2. view details of chain, blocks and transactions
+    3. install and instantiate chaincode
+
+What users can do:
+
+- enroll with username and password provided by admin
+    1. invoke chaincode
+    2. query chaincode
+    3. view peer list and status
+    3. view details of chain, blocks and transactions
+    
+
+### Membership/Identity Management
+
+based on fabric-ca
+
+every organization can have a independent CA server, i.e. 
+    - org1 : Org1CA
+    - org2 : Org2CA
+    - orderer : OrgOrdererCA
+
+CA server generates key pairs for admin and user.
+
+
+### Chaincode Manipulation
