@@ -12,8 +12,9 @@ import java.util.Optional;
 @Repository
 public interface UserRepo extends CrudRepository<User, String>{
 
-    Optional<User> findUserByUsernameAndPassword(String username, String password);
+    Optional<User> findUserByUsernameAndPasswordAndAffiliation(String username, String password, String affiliation);
 
-    Optional<User> findUserByUsername(String username);
+    Optional<User> findUserByUsernameAndAffiliation(String username, String affiliation);
 
+    Iterable<User> findUsersByAffiliation(String affiliation);
 }

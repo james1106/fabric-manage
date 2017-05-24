@@ -7,7 +7,6 @@ import org.hyperledger.fabric.sdk.*;
 import org.hyperledger.fabric.sdk.exception.CryptoException;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.TransactionException;
-import org.hyperledger.fabric_ca.sdk.EnrollmentRequest;
 import org.hyperledger.fabric_ca.sdk.HFCAClient;
 import org.hyperledger.fabric_ca.sdk.RegistrationRequest;
 import org.hyperledger.fabric_ca.sdk.RevokeReason;
@@ -52,14 +51,12 @@ public class FabricSDK {
     private final Logger LOG = LoggerFactory.getLogger(this.getClass());
 
     private final String caServerUrl;
-    private final Properties properties = new Properties();
     private final ChainRepo chainRepo;
     private final String[] EMPTY_ARGS = new String[] {};
 
-    public FabricSDK(@Value("${fabric.ca.server.url}") String caServerUrl, @Autowired ChainRepo chainRepo, Properties properties) {
+    public FabricSDK(@Value("${fabric.ca.server.url}") String caServerUrl, @Autowired ChainRepo chainRepo) {
         this.chainRepo = chainRepo;
         this.caServerUrl = caServerUrl;
-        this.properties.putAll(properties);
     }
 
     private static final WeakHashMap<String, Peer> PEER_CACHE = new WeakHashMap<>(8);
@@ -86,7 +83,7 @@ public class FabricSDK {
     @PostConstruct
     private void init() {
         try {
-            caClient = new HFCAClient(caServerUrl, properties);
+            caClient = HFCAClient.createNewInstance(caServerUrl, new Properties());
             caClient.setCryptoSuite(getCryptoSuite());
             fabricClient.setCryptoSuite(getCryptoSuite());
             this.caServerAdminUser1 = new CAAdmin(caServerAdmin, caServerAdminAffiliation1, caServerAdminMSPId1);
@@ -102,7 +99,7 @@ public class FabricSDK {
                 constructChain(defaultChainName, orderer, defaultChainConfigurationPath);
             });
         } catch (MalformedURLException e) {
-            LOG.error("failed to create CA client with url {} and properties {}", caServerUrl, properties, e);
+            LOG.error("failed to create CA client with url {} ", caServerUrl, e);
         } catch (InvalidArgumentException | CryptoException e) {
             LOG.error("failed to enable encryption for fabric client", e);
         } catch (BaseException e) {
@@ -201,36 +198,38 @@ public class FabricSDK {
         Chain chain = null;
         try {
             Optional<ChainInfo> chainInfoOptional = chainRepo.findByNameAndOrderer(chainName, orderer.getUrl());
-            chain = chainInfoOptional.map(existingChainInfo -> {
-                try {
-                    Chain existingChain = fabricClient.newChain(existingChainInfo.getName());
-                    existingChain.addOrderer(orderer);
+            chain = chainInfoOptional
+              .map(existingChainInfo -> {
+                  try {
+                      Chain existingChain = fabricClient.newChain(existingChainInfo.getName());
+                      existingChain.addOrderer(orderer);
 
-                    for (PeerEventhub peerEventhub : existingChainInfo.getPeers()) {
-                        Peer peer = fabricClient.newPeer(peerEventhub.getId(), peerEventhub.getEndpoint());
-                        PEER_CACHE.putIfAbsent(peer.getName(), peer);
-                        existingChain.addPeer(peer);
-                        existingChain.addEventHub(fabricClient.newEventHub(peerEventhub.getId(), peerEventhub.getEventhub()));
-                    }
-                    existingChain.initialize();
-                    LOG.info("chain {} exist on orderer {}, rebuilding from data source", chainName, orderer.getUrl());
-                    return existingChain;
-                } catch (InvalidArgumentException | TransactionException configuredChainException) {
-                    LOG.error("failed to construct a configured chain {}", chainName, configuredChainException);
-                }
-                return null;
-            }).orElseGet(() -> {
-                try {
-                    Chain newChain = fabricClient.newChain(chainName, orderer, chainConfiguration);
-                    ChainInfo newChainInfo = new ChainInfo(chainName, orderer.getUrl());
-                    chainRepo.save(newChainInfo);
-                    LOG.info("new chain {} constructed on orderer {}", chainName, orderer.getUrl());
-                    return newChain;
-                } catch (TransactionException | InvalidArgumentException e) {
-                    LOG.warn("failed to construct new chain {} with orderer {} and configuration {}", chainName, orderer.getName(), e.getMessage());
-                }
-                return null;
-            });
+                      for (PeerEventhub peerEventhub : existingChainInfo.getPeers()) {
+                          Peer peer = fabricClient.newPeer(peerEventhub.getId(), peerEventhub.getEndpoint());
+                          PEER_CACHE.putIfAbsent(peer.getName(), peer);
+                          existingChain.addPeer(peer);
+                          existingChain.addEventHub(fabricClient.newEventHub(peerEventhub.getId(), peerEventhub.getEventhub()));
+                      }
+                      existingChain.initialize();
+                      LOG.info("chain {} exist on orderer {}, rebuilding from data source", chainName, orderer.getUrl());
+                      return existingChain;
+                  } catch (InvalidArgumentException | TransactionException configuredChainException) {
+                      LOG.error("failed to construct a configured chain {}", chainName, configuredChainException);
+                  }
+                  return null;
+              })
+              .orElseGet(() -> {
+                  try {
+                      Chain newChain = fabricClient.newChain(chainName, orderer, chainConfiguration);
+                      ChainInfo newChainInfo = new ChainInfo(chainName, orderer.getUrl());
+                      chainRepo.save(newChainInfo);
+                      LOG.info("new chain {} constructed on orderer {}", chainName, orderer.getUrl());
+                      return newChain;
+                  } catch (TransactionException | InvalidArgumentException e) {
+                      LOG.warn("failed to construct new chain {} with orderer {} and configuration {}", chainName, orderer.getName(), e.getMessage());
+                  }
+                  return null;
+              });
 
         } catch (Exception e) {
             LOG.error("failed to get current chain info of {} for orderer {}@{}", chainName, orderer.getName(), orderer.getUrl(), e);
@@ -258,7 +257,14 @@ public class FabricSDK {
     }
 
     public Optional<Peer> getPeer(String peerId) {
-        return getChain(defaultChainName).map(chain -> chain.getPeers().stream().filter(peer -> peer.getName().equals(peerId)).findFirst())
+        return getChain(defaultChainName)
+          .map(chain -> chain
+            .getPeers()
+            .stream()
+            .filter(peer -> peer
+              .getName()
+              .equals(peerId))
+            .findFirst())
           .orElse(empty());
     }
 
@@ -274,7 +280,9 @@ public class FabricSDK {
               .stream()
               .anyMatch(peer -> peerId.equals(peer.getName()));
             if (!joined) {
-                chain.joinPeer(PEER_CACHE.get(peerId)).initialize();
+                chain
+                  .joinPeer(PEER_CACHE.get(peerId))
+                  .initialize();
             }
             return true;
         } catch (Exception e) {
@@ -321,7 +329,7 @@ public class FabricSDK {
         try {
             installProposalRequest.setChaincodeSourceLocation(new File(sourceLocation));
             installProposalRequest.setChaincodeLanguage(type);
-            Collection<ProposalResponse> responses = chain.sendInstallProposal(installProposalRequest, peers);
+            Collection<ProposalResponse> responses = fabricClient.sendInstallProposal(installProposalRequest, peers);
             if (responses.isEmpty()) {
                 LOG.warn("no response while installing chaincode {}", chaincodeId.getName());
             } else {
@@ -486,8 +494,9 @@ public class FabricSDK {
         return emptyList();
     }
 
-    public boolean revokeUser(String username, int reason) {
+    public boolean revokeUser(String username, String affiliation, int reason) {
         try {
+            //TODO
             caClient.revoke(caServerAdminUser1, username, int2RevokeReason(reason));
             return true;
         } catch (Exception e) {

@@ -73,3 +73,12 @@ CA server generates key pairs for admin and user.
 
 
 ### Chaincode Manipulation
+
+### Chain-Console JWT Token
+
+1. KeyPair Generation
+
+```commandline
+keytool -genkeypair -keyalg EC -keystore oxchain.jks -keysize 256 -alias oxecc
+keytool -export -alias oxecc -keystore oxchain.jks -file oxchain.cer
+```

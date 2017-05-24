@@ -41,7 +41,7 @@ public class UserManagementSteps {
 
     @Step("connect to fabric server {0}")
     public void fabricCAServerAt(String caServerEndpoint) throws Exception {
-        caClient = new HFCAClient(propertyParse(caServerEndpoint, testProperties), new Properties());
+        caClient = HFCAClient.createNewInstance(propertyParse(caServerEndpoint, testProperties), new Properties());
         caClient.setCryptoSuite(getCryptoSuite());
     }
 

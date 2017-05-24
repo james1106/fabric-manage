@@ -13,7 +13,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>1.5.2.RELEASE</version>
+        <version>1.5.3.RELEASE</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
@@ -21,19 +21,24 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>1.8</java.version>
-        <serenity.version>1.2.7-rc.1</serenity.version>
+        <serenity.version>1.4.0</serenity.version>
         <serenity.jbehave.version>1.24.0</serenity.jbehave.version>
-        <serenity.plugin.version>1.2.5-rc.6</serenity.plugin.version>
-        <rest-assured.version>3.0.2</rest-assured.version>
+        <serenity.plugin.version>1.4.0</serenity.plugin.version>
+        <rest-assured.version>3.0.3</rest-assured.version>
         <maven-surefire-plugin.version>2.19.1</maven-surefire-plugin.version>
         <fabric-sdk-java.version>1.0.0-SNAPSHOT</fabric-sdk-java.version>
         <hikaricp.version>2.6.1</hikaricp.version>
+        <jjwt.version>0.7.0</jjwt.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -48,6 +53,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-undertow</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt</artifactId>
+            <version>${jjwt.version}</version>
         </dependency>
 
         <dependency>
@@ -136,13 +147,18 @@
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
+                    <includes>
+                        <include>security/*</include>
+                    </includes>
                 </configuration>
-
             </plugin>
 
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <addResources>true</addResources>
+                </configuration>
             </plugin>
 
             <plugin>
