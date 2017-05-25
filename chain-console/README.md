@@ -69,7 +69,11 @@ every organization can have a independent CA server, i.e.
     - org2 : Org2CA
     - orderer : OrgOrdererCA
 
-CA server generates key pairs for admin and user.
+CA server generates key pairs for admin and user. To make use of the keys generated in unit tests, the private key needs to be converted using the following command:
+
+```commandline
+openssl pkcs8 -topk8 -inform pem -in generated_key.pem -outform pem -nocrypt -out private_key_for_test.pem
+```
 
 
 ### Chaincode Manipulation

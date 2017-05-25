@@ -1,9 +1,12 @@
 package oxchains.fabric.console.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonSetter;
 
 import javax.persistence.*;
 import java.util.Date;
+
+import static org.springframework.util.StringUtils.isEmpty;
 
 /**
  * @author aiet
@@ -19,6 +22,7 @@ public class User {
         this.affiliation = affiliation;
     }
 
+    @JsonIgnore
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -27,15 +31,13 @@ public class User {
     private String password;
     private String affiliation;
     private String msp;
-    @JsonIgnore
     private String ca;
-    @JsonIgnore
     private String uri;
     @JsonIgnore
     @Column(length = 1024)
     private String privateKey;
-    @Column(length = 1024)
-    private String certificate;
+
+    @Column(length = 1024) private String certificate;
 
     public String getMsp() {
         return msp;
@@ -61,10 +63,12 @@ public class User {
         this.certificate = certificate;
     }
 
+    @JsonIgnore
     public String getUri() {
         return uri;
     }
 
+    @JsonSetter
     public void setUri(String uri) {
         this.uri = uri;
     }
@@ -77,6 +81,7 @@ public class User {
         this.ca = ca;
     }
 
+    @JsonIgnore
     private Date createtime = new Date();
 
     public Date getCreatetime() {
@@ -103,10 +108,12 @@ public class User {
         this.id = id;
     }
 
+    @JsonIgnore
     public String getPassword() {
         return password;
     }
 
+    @JsonSetter
     public void setPassword(String password) {
         this.password = password;
     }
@@ -125,7 +132,7 @@ public class User {
     }
 
     @JsonIgnore
-    public boolean enrolled(){
-        return privateKey != null && certificate != null;
+    public boolean enrolled() {
+        return !isEmpty(privateKey) && !isEmpty(certificate);
     }
 }

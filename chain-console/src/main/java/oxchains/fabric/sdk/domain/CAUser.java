@@ -8,7 +8,7 @@ import java.util.Set;
 /**
  * @author aiet
  */
-public class CAAdmin implements User {
+public class CAUser implements User {
 
     private String name;
     private Set<String> roles;
@@ -18,7 +18,14 @@ public class CAAdmin implements User {
     private String mspId;
     private String password;
 
-    public CAAdmin(String name, String affiliation, String mspId) {
+    public CAUser(String name, String affiliation, String mspId, String password) {
+        this.name = name;
+        this.affiliation = affiliation;
+        this.mspId = mspId;
+        this.password = password;
+    }
+
+    public CAUser(String name, String affiliation, String mspId) {
         this.name = name;
         this.affiliation = affiliation;
         this.mspId = mspId;

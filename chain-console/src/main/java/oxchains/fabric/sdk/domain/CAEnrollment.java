@@ -1,5 +1,7 @@
 package oxchains.fabric.sdk.domain;
 
+import org.bouncycastle.crypto.encodings.PKCS1Encoding;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.hyperledger.fabric.sdk.Enrollment;
 import oxchains.fabric.console.domain.User;
 
@@ -16,14 +18,19 @@ public class CAEnrollment implements Enrollment {
     private PrivateKey privateKey;
 
     public CAEnrollment(User user) {
-        this.cert = user.getCertificate();
+        this(user.getCertificate(), user.getPrivateKey());
+    }
+
+    public CAEnrollment(String key, String cert){
+        this.cert = cert;
         try {
-            KeyFactory kf = KeyFactory.getInstance("EC");
+            KeyFactory kf = KeyFactory.getInstance("ECDSA", BouncyCastleProvider.PROVIDER_NAME);
             PKCS8EncodedKeySpec specPriv = new PKCS8EncodedKeySpec(Base64
               .getDecoder()
-              .decode(user.getPrivateKey()));
+              .decode(key));
             this.privateKey = kf.generatePrivate(specPriv);
         } catch (Exception ignore) {
+            ignore.printStackTrace();
         }
     }
 

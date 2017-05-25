@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import oxchains.fabric.dummy.PlainTestApplication;
-import oxchains.fabric.sdk.domain.CAAdmin;
+import oxchains.fabric.sdk.domain.CAUser;
 import oxchains.fabric.sdk.domain.FabricUser;
 
 import java.util.Map;
@@ -30,7 +30,7 @@ public class UserManagementSteps {
     @Value("#{${fabric.test.endpoints}}") private Map<String, String> testProperties;
 
     private HFCAClient caClient;
-    private CAAdmin admin;
+    private CAUser admin;
     private FabricUser user;
     private final String defaultAffilicationKey = "#affiliation";
     private String registrationResult;
@@ -47,7 +47,7 @@ public class UserManagementSteps {
 
     @Step("manager account {0}:{1}")
     public void managerAccountIs(String username, String password) {
-        admin = new CAAdmin(propertyParse(username, testProperties), propertyParse(defaultAffilicationKey, testProperties), "");
+        admin = new CAUser(propertyParse(username, testProperties), propertyParse(defaultAffilicationKey, testProperties), "");
         admin.setPassword(propertyParse(password, testProperties));
     }
 

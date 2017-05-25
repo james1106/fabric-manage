@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static oxchains.fabric.util.StoryTestUtil.propertyParse;
 
@@ -36,6 +37,7 @@ public class ChainAPISteps {
 
     @Step("given fabric sdk client created")
     public void createFabricClient() {
+        assertNotNull("sdk should not be null", sdk);
     }
 
     @Step("given orderer endpoint {0}")

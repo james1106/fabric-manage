@@ -19,14 +19,13 @@ import org.springframework.stereotype.Component;
 import oxchains.fabric.console.data.ChainRepo;
 import oxchains.fabric.console.domain.ChainInfo;
 import oxchains.fabric.console.domain.PeerEventhub;
-import oxchains.fabric.sdk.domain.CAAdmin;
+import oxchains.fabric.sdk.domain.CAUser;
 import oxchains.fabric.sdk.domain.FabricUser;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.LongStream;
@@ -50,67 +49,70 @@ public class FabricSDK {
 
     private final Logger LOG = LoggerFactory.getLogger(this.getClass());
 
-    private final String caServerUrl;
     private final ChainRepo chainRepo;
     private final String[] EMPTY_ARGS = new String[] {};
 
-    public FabricSDK(@Value("${fabric.ca.server.url}") String caServerUrl, @Autowired ChainRepo chainRepo) {
+    public FabricSDK(@Autowired ChainRepo chainRepo) {
         this.chainRepo = chainRepo;
-        this.caServerUrl = caServerUrl;
     }
 
-    private static final WeakHashMap<String, Peer> PEER_CACHE = new WeakHashMap<>(8);
-    private static final WeakHashMap<String, EventHub> EVENTHUB_CACHE = new WeakHashMap<>(8);
-    private static final WeakHashMap<String, ChainCodeID> CHAINCODE_CACHE = new WeakHashMap<>(8);
+    private final WeakHashMap<String, Peer> PEER_CACHE = new WeakHashMap<>(8);
+    private final WeakHashMap<String, EventHub> EVENTHUB_CACHE = new WeakHashMap<>(8);
+    private final WeakHashMap<String, ChainCodeID> CHAINCODE_CACHE = new WeakHashMap<>(8);
+    private final Map<String, HFCAClient> CA_CLIENTS = synchronizedMap(new WeakHashMap<String, HFCAClient>(2));
 
     private final HFClient fabricClient = HFClient.createNewInstance();
     private HFCAClient caClient;
-    private CAAdmin caServerAdminUser1;
-    private CAAdmin caServerAdminUser2;
+    private CAUser caServerAdminUser1;
+    private CAUser caServerAdminUser2;
 
-    @Value("${fabric.ca.server.admin}") private String caServerAdmin;
-    @Value("${fabric.ca.server.admin.pass}") private String caServerAdminPass;
-    @Value("${fabric.ca.server.admin.mspid1}") private String caServerAdminMSPId1;
-    @Value("${fabric.ca.server.admin.affiliation1}") private String caServerAdminAffiliation1;
-    @Value("${fabric.ca.server.admin.mspid2}") private String caServerAdminMSPId2;
-    @Value("${fabric.ca.server.admin.affiliation2}") private String caServerAdminAffiliation2;
+    //    @Value("${fabric.ca.server.admin.mspid1}") private String caServerAdminMSPId1;
+    //    @Value("${fabric.ca.server.admin.affiliation1}") private String caServerAdminAffiliation1;
+    //    @Value("${fabric.ca.server.admin.mspid2}") private String caServerAdminMSPId2;
+    //    @Value("${fabric.ca.server.admin.affiliation2}") private String caServerAdminAffiliation2;
 
     @Value("${fabric.orderer.name}") private String defaultOrdererName;
     @Value("${fabric.orderer.endpoint}") String defaultOrdererEndpoint;
     @Value("${fabric.chain.name}") String defaultChainName;
     @Value("${fabric.chain.configuration}") String defaultChainConfigurationPath;
 
+    private final ThreadLocal<User> USER_CONTEXT = new ThreadLocal<>();
+
     @PostConstruct
     private void init() {
         try {
-            caClient = HFCAClient.createNewInstance(caServerUrl, new Properties());
-            caClient.setCryptoSuite(getCryptoSuite());
+            //            caClient = HFCAClient.createNewInstance(caServerUrl, new Properties());
+            //            caClient.setCryptoSuite(getCryptoSuite());
             fabricClient.setCryptoSuite(getCryptoSuite());
-            this.caServerAdminUser1 = new CAAdmin(caServerAdmin, caServerAdminAffiliation1, caServerAdminMSPId1);
-            this.caServerAdminUser1.setPassword(caServerAdminPass);
-            enroll(caServerAdminUser1);
+            //            this.caServerAdminUser1 = new CAUser(caServerAdmin, caServerAdminAffiliation1, caServerAdminMSPId1);
+            //            this.caServerAdminUser1.setPassword(caServerAdminPass);
+            //            enroll(caServerAdminUser1);
 
-            this.caServerAdminUser2 = new CAAdmin(caServerAdmin, caServerAdminAffiliation2, caServerAdminMSPId2);
-            this.caServerAdminUser2.setPassword(caServerAdminPass);
-            enroll(caServerAdminUser2);
+            //            this.caServerAdminUser2 = new CAUser(caServerAdmin, caServerAdminAffiliation2, caServerAdminMSPId2);
+            //            this.caServerAdminUser2.setPassword(caServerAdminPass);
+            //            enroll(caServerAdminUser2);
 
-            fabricClient.setUserContext(caServerAdminUser1);
-            withOrderer(defaultOrdererName, defaultOrdererEndpoint).ifPresent(orderer -> {
-                constructChain(defaultChainName, orderer, defaultChainConfigurationPath);
-            });
-        } catch (MalformedURLException e) {
-            LOG.error("failed to create CA client with url {} ", caServerUrl, e);
+            //            fabricClient.setUserContext(caServerAdminUser1);
+            //            withOrderer(defaultOrdererName, defaultOrdererEndpoint).ifPresent(orderer -> {
+            //                constructChain(defaultChainName, orderer, defaultChainConfigurationPath);
+            //            });
+            //        } catch (MalformedURLException e) {
+            //            LOG.error("failed to create CA client with url {} ", caServerUrl, e);
         } catch (InvalidArgumentException | CryptoException e) {
             LOG.error("failed to enable encryption for fabric client", e);
-        } catch (BaseException e) {
-            LOG.error("failed to enroll admin user: ", e);
+            //        } catch (BaseException e) {
+            //            LOG.error("failed to enroll admin user: ", e);
         }
+    }
+
+    public void withUserContext(User userContext) throws InvalidArgumentException {
+        USER_CONTEXT.set(userContext);
     }
 
     /**
      * the user will be enrolled if hasn't
      */
-    private void enroll(CAAdmin userToEnroll) throws BaseException {
+    private void enroll(CAUser userToEnroll) throws BaseException {
         //TODO check if enrolled yet if enrollment limited by MaxEnrollment
         userToEnroll.setEnrollment(caClient.enroll(userToEnroll.getName(), userToEnroll.getPassword()));
     }
@@ -142,7 +144,7 @@ public class FabricSDK {
             user.setPassword(caClient.register(registrationRequest, caServerAdminUser1));
             //TODO when to enroll? difference to register?
             caClient.enroll(username, user.getPassword());
-            user.setMspId(caServerAdminMSPId1);
+            //            user.setMspId(caServerAdminMSPId1);
         } catch (Exception e) {
             LOG.error("failed to register fabric user {} from {}", username, affiliation);
         }
@@ -201,6 +203,7 @@ public class FabricSDK {
             chain = chainInfoOptional
               .map(existingChainInfo -> {
                   try {
+                      fabricClient.setUserContext(USER_CONTEXT.get());
                       Chain existingChain = fabricClient.newChain(existingChainInfo.getName());
                       existingChain.addOrderer(orderer);
 
@@ -220,7 +223,10 @@ public class FabricSDK {
               })
               .orElseGet(() -> {
                   try {
-                      Chain newChain = fabricClient.newChain(chainName, orderer, chainConfiguration);
+                      fabricClient.setUserContext(USER_CONTEXT.get());
+                      Chain newChain = fabricClient.newChain(
+                        chainName, orderer, chainConfiguration,
+                        fabricClient.getChainConfigurationSignature(chainConfiguration, USER_CONTEXT.get()));
                       ChainInfo newChainInfo = new ChainInfo(chainName, orderer.getUrl());
                       chainRepo.save(newChainInfo);
                       LOG.info("new chain {} constructed on orderer {}", chainName, orderer.getUrl());
@@ -256,8 +262,8 @@ public class FabricSDK {
         return empty();
     }
 
-    public Optional<Peer> getPeer(String peerId) {
-        return getChain(defaultChainName)
+    public Optional<Peer> getPeer(String peerId, String chainName){
+        return getChain(chainName)
           .map(chain -> chain
             .getPeers()
             .stream()
@@ -266,6 +272,10 @@ public class FabricSDK {
               .equals(peerId))
             .findFirst())
           .orElse(empty());
+    }
+
+    public Optional<Peer> getPeer(String peerId) {
+        return Optional.ofNullable(PEER_CACHE.get(peerId));
     }
 
     public boolean joinChain(Peer peer) {
@@ -526,13 +536,23 @@ public class FabricSDK {
         return false;
     }
 
-    public Optional<Enrollment> enroll(String username, String password) {
+    public Optional<Enrollment> enroll(String username, String password, String caname, String uri) {
         try {
-            Enrollment enrollment = caClient.enroll(username, password);
+            HFCAClient hfcaClient = CA_CLIENTS.computeIfAbsent(caname, key -> {
+                try {
+                    HFCAClient client = HFCAClient.createNewInstance(caname, uri, new Properties());
+                    client.setCryptoSuite(getCryptoSuite());
+                    return client;
+                } catch (Exception e) {
+                    LOG.error("failed to create ca client of {}@{}: {}", caname, uri, e.getMessage());
+                    throw new IllegalArgumentException("cannot create ca client instance for " + caname + "@" + uri);
+                }
+            });
+            Enrollment enrollment = hfcaClient.enroll(username, password);
             LOG.info("user {} enrolled", username);
             return Optional.of(enrollment);
         } catch (Exception e) {
-            LOG.error("failed to enroll user {}", username, e);
+            LOG.error("failed to enroll user {}: {}", username, e.getMessage());
         }
         return empty();
     }
@@ -543,7 +563,7 @@ public class FabricSDK {
             chain.addEventHub(eventHub);
             return true;
         } catch (Exception e) {
-            LOG.error("failed to attach eventhub {}", eventHub.getUrl(), e);
+            LOG.error("failed to attach eventhub {}", eventHub.getUrl(), e.getMessage());
         }
         return false;
     }
