@@ -8,7 +8,8 @@ I want to install chaincode on peers
 So that I can run the chaincode
 
 Scenario: chaincode can be installed on peers
-Given chain example-chain created at orderer #orderer0
+Given admin user context
+And chain example-chain created at orderer #orderer0
 And peer peer0 at #peer0
 And peer0 joined chain example-chain
 And chaincode example_chaincode of version 0.1

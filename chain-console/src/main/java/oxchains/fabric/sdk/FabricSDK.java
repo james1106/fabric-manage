@@ -200,10 +200,10 @@ public class FabricSDK {
         Chain chain = null;
         try {
             Optional<ChainInfo> chainInfoOptional = chainRepo.findByNameAndOrderer(chainName, orderer.getUrl());
+            fabricClient.setUserContext(USER_CONTEXT.get());
             chain = chainInfoOptional
               .map(existingChainInfo -> {
                   try {
-                      fabricClient.setUserContext(USER_CONTEXT.get());
                       Chain existingChain = fabricClient.newChain(existingChainInfo.getName());
                       existingChain.addOrderer(orderer);
 
@@ -223,10 +223,9 @@ public class FabricSDK {
               })
               .orElseGet(() -> {
                   try {
-                      fabricClient.setUserContext(USER_CONTEXT.get());
                       Chain newChain = fabricClient.newChain(
                         chainName, orderer, chainConfiguration,
-                        fabricClient.getChainConfigurationSignature(chainConfiguration, USER_CONTEXT.get()));
+                        fabricClient.getChainConfigurationSignature(chainConfiguration, fabricClient.getUserContext()));
                       ChainInfo newChainInfo = new ChainInfo(chainName, orderer.getUrl());
                       chainRepo.save(newChainInfo);
                       LOG.info("new chain {} constructed on orderer {}", chainName, orderer.getUrl());
@@ -369,6 +368,8 @@ public class FabricSDK {
         else instantiateProposalRequest.setArgs(EMPTY_ARGS);
         instantiateProposalRequest.setChaincodeEndorsementPolicy(policy);
         try {
+            //TODO transient map not used
+            instantiateProposalRequest.setTransientMap(emptyMap());
             Collection<ProposalResponse> responses = chain.sendInstantiationProposal(instantiateProposalRequest, singletonList(peer));
             if (responses.isEmpty()) {
                 LOG.warn("no responses while instantiating chaincode {}", chaincode.getName());
