@@ -21,6 +21,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.lang3.StringUtils.join;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.hamcrest.collection.IsMapContaining.hasKey;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
@@ -163,7 +164,7 @@ public class FabricChaincodeControllerSteps {
 
     @Step("chaincode {0} is marked installed")
     public void chaincodeMarkedInstalled(String chaincode) {
-        Matcher[] matchers = new Matcher[] { hasEntry("name", chaincode), hasEntry("installed", 1) };
+        Matcher[] matchers = new Matcher[] { hasEntry("name", chaincode), hasEntry(is("installed"), not(empty())) };
         mockMvcResponse
           .then()
           .statusCode(SC_OK)
@@ -189,4 +190,15 @@ public class FabricChaincodeControllerSteps {
           .and()
           .body("data.txid", notNullValue());
     }
+
+    @Step("chaincode {0} is marked instantiated")
+    public void chaincodeMarkedInstantiated(String chaincode) {
+        Matcher[] matchers = new Matcher[] { hasEntry("name", chaincode), hasEntry(is("instantiated"), not(empty())) };
+        mockMvcResponse
+          .then()
+          .statusCode(SC_OK)
+          .and()
+          .body("data", hasItem(allOf(matchers)));
+    }
+
 }

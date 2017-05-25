@@ -4,14 +4,17 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 import oxchains.fabric.console.domain.User;
 
+import java.util.Optional;
+
 /**
  * @author aiet
  */
 @Repository
 public interface UserRepo extends CrudRepository<User, String>{
 
-    User findUserByUsernameAndPassword(String username, String password);
+    Optional<User> findUserByUsernameAndPasswordAndAffiliation(String username, String password, String affiliation);
 
-    User findUserByUsername(String username);
+    Optional<User> findUserByUsernameAndAffiliation(String username, String affiliation);
 
+    Iterable<User> findUsersByAffiliation(String affiliation);
 }

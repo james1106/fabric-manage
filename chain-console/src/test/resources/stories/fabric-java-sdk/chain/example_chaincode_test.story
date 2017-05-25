@@ -21,6 +21,8 @@ Scenario: installed chaincode can be instantiated, invoked, and queried
 Given chain example-chain listens event-hub peer0 at #eventhub0
 When I instantiate chaincode example_chaincode with: init a 10 b 20
 Then intantiation succeed
+When I query instantiated chaincodes on peer0 of chain example-chain
+Then chaincodes should include example_chaincode
 When I query asset a with: query a
 Then should return 10
 When I transfer asset from a to b with: invoke a b 5

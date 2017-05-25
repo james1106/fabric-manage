@@ -68,9 +68,10 @@ public class ChaincodeService {
             chaincodeRepo.save(new ChainCodeInfo(name, version, lang, target
               .getPath()
               .replace(path, "")));
+            LOG.info("chaincode {}-{} written in {} cached to file {}", name, version, lang, target.getPath());
             return true;
         } catch (Exception e) {
-            LOG.error("failed to cache chaincode {}-{}", name, version, e.getMessage());
+            LOG.error("failed to cache chaincode {}-{}", name, version, e);
         }
         return false;
     }
@@ -79,7 +80,7 @@ public class ChaincodeService {
         return name + "-" + version;
     }
 
-    public List<TxResult> installCCOnPeer(String name, String version, String lang, String[] peers) {
+    public List<TxResult> installCCOnPeer(String name, String version, String lang, String... peers) {
         ChainCodeID chaincode = ChainCodeID
           .newBuilder()
           .setName(name)
@@ -87,8 +88,12 @@ public class ChaincodeService {
           .setPath(chaincodePath(name, version))
           .build();
 
+        if (noPeersYet()) return emptyList();
+
         try {
-            ChainCodeInfo chainCodeInfo = chaincodeRepo.findByNameAndVersion(name, version);
+            Optional<ChainCodeInfo> chainCodeInfoOptional = chaincodeRepo.findByNameAndVersion(name, version);
+            if(!chainCodeInfoOptional.isPresent()) return emptyList();
+            ChainCodeInfo chainCodeInfo = chainCodeInfoOptional.get();
             Set<String> installedPeers = chainCodeInfo.getInstalled();
             List<String> peers2Install = Arrays.asList(peers);
             installedPeers.retainAll(peers2Install);
@@ -111,9 +116,14 @@ public class ChaincodeService {
                 installResult
                   .stream()
                   .map(resp -> {
-                      if (resp.getStatus() == SUCCESS) chainCodeInfo.addInstalled(resp
-                        .getPeer()
-                        .getName());
+                      if (resp.getStatus() == SUCCESS) {
+                          chainCodeInfo.addInstalled(resp
+                            .getPeer()
+                            .getName());
+                          LOG.info("chaincode {}-{} installed on peer", name, version, resp
+                            .getPeer()
+                            .getName());
+                      }
                       return resp;
                   })
                   .map(RESPONSE2TXRESULT_FUNC)
@@ -123,19 +133,25 @@ public class ChaincodeService {
             return list;
 
         } catch (Exception e) {
-            LOG.error("failed to update install status of chaincode {}-{}", name, version, e.getMessage());
+            LOG.error("failed to update install status of chaincode {}-{}", name, version, e);
         }
         return emptyList();
     }
 
-    public Optional<TxPeerResult> instantiate(String name, String version, String[] params, MultipartFile endorsement) {
+    public Optional<TxPeerResult> instantiate(String name, String version, MultipartFile endorsement, String... params) {
         ChainCodeID chaincode = ChainCodeID
           .newBuilder()
           .setName(name)
           .setVersion(version)
           .setPath(chaincodePath(name, version))
           .build();
+
+        if (noPeersYet()) return empty();
+
         try {
+            Optional<ChainCodeInfo> chainCodeInfoOptional = chaincodeRepo.findByNameAndVersion(name, version);
+            if(!chainCodeInfoOptional.isPresent()) return empty();
+            ChainCodeInfo chainCodeInfo = chainCodeInfoOptional.get();
             File dir = new File(String.format("%s/endorsement/%s", path, name));
             if (!dir.exists()) FileUtils.forceMkdir(dir);
             File endorsementYaml = new File(String.format("%s/endorsement/%s/%s-%s-(%s).yaml", path, name, name, version, now().toString()));
@@ -144,12 +160,22 @@ public class ChaincodeService {
             ChaincodeEndorsementPolicy chaincodeEndorsementPolicy = new ChaincodeEndorsementPolicy();
             chaincodeEndorsementPolicy.fromYamlFile(endorsementYaml);
 
+            LOG.info("instantiating chaincode {}-{} with endorsement {}", name, version, endorsementYaml.getPath());
+
             return Optional.of(fabricSDK
               .instantiateChaincode(chaincode, chaincodeEndorsementPolicy, params)
               .thenApplyAsync(RESPONSE2TXPEERRESULT_FUNC)
+              .thenApplyAsync(txPeerResult -> {
+                  if (txPeerResult.getSuccess() == 1) {
+                      chainCodeInfo.addInstantiated(txPeerResult.getPeer());
+                      chaincodeRepo.save(chainCodeInfo);
+                      LOG.info("chaincode {}-{} instantiated on peer {}", name, version, txPeerResult.getPeer());
+                  }
+                  return txPeerResult;
+              })
               .get(txTimeout, SECONDS));
         } catch (Exception e) {
-            LOG.error("failed to instantiate chaincode {}-{} with {}", name, version, params, e.getMessage());
+            LOG.error("failed to instantiate chaincode {}-{} with {}", name, version, params, e);
         }
         return empty();
     }
@@ -158,7 +184,7 @@ public class ChaincodeService {
         try {
             return newArrayList(chaincodeRepo.findAll());
         } catch (Exception e) {
-            LOG.error("failed to fetch chaincodes");
+            LOG.error("failed to fetch chaincodes", e);
         }
         return emptyList();
     }
@@ -170,13 +196,17 @@ public class ChaincodeService {
           .setVersion(version)
           .setPath(chaincodePath(name, version))
           .build();
+
+        if (noPeersYet()) return empty();
+
         try {
+            LOG.info("invoking chaincode {}-{} with: {}", name, version, params);
             return Optional.of(fabricSDK
               .invokeChaincode(chaincode, params)
               .thenApplyAsync(RESPONSE2TXPEERRESULT_FUNC)
               .get(txTimeout, SECONDS));
         } catch (Exception e) {
-            LOG.error("failed to invoke chaincode {}-{} with {}", name, version, params, e.getMessage());
+            LOG.error("failed to invoke chaincode {}-{} with {}", name, version, params, e);
         }
         return empty();
     }
@@ -189,21 +219,31 @@ public class ChaincodeService {
       .getPeer()
       .getName(), proposalResponse.getStatus() == SUCCESS ? 1 : 0) : null;
 
-    public Optional<QueryResult> query(String name, String version, String[] args) {
+    public Optional<QueryResult> query(String name, String version, String... args) {
         ChainCodeID chaincode = ChainCodeID
           .newBuilder()
           .setName(name)
           .setVersion(version)
           .setPath(name)
           .build();
+
+        if (noPeersYet()) return empty();
+
         try {
+            LOG.info("querying chaincode {}-{} with {}", name, version, args);
             return Optional
-              .of(fabricSDK.queryChaincode(chaincode, args))
+              .ofNullable(fabricSDK.queryChaincode(chaincode, args))
               .map(QueryResult::new);
         } catch (Exception e) {
-            LOG.error("failed to invoke chaincode {}-{} with {}", name, version, args, e.getMessage());
+            LOG.error("failed to invoke chaincode {}-{} with {}", name, version, args, e);
         }
         return empty();
+    }
+
+    private boolean noPeersYet() {
+        return fabricSDK
+          .chainPeers()
+          .isEmpty();
     }
 
 }

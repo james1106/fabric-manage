@@ -2,7 +2,7 @@ package oxchains.fabric.console.data;
 
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
-import oxchains.fabric.console.domain.ChainCodeInfo;
+import oxchains.fabric.console.domain.ChainInfo;
 
 import java.util.Optional;
 
@@ -10,7 +10,8 @@ import java.util.Optional;
  * @author aiet
  */
 @Repository
-public interface ChaincodeRepo extends CrudRepository<ChainCodeInfo, String>{
+public interface ChainRepo extends CrudRepository<ChainInfo, Long>{
 
-    Optional<ChainCodeInfo> findByNameAndVersion(String name, String version);
+    Optional<ChainInfo> findByNameAndOrderer(String name, String orderer);
+
 }

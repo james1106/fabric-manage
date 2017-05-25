@@ -30,7 +30,7 @@ public class FabricSSH {
     @Value("${ssh.username}") private String username;
     @Value("${ssh.password}") private String password;
 
-    @PostConstruct
+//    @PostConstruct
     private void init() {
         try {
             sshClient = new SSHClient();

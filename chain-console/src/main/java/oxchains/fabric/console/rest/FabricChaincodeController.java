@@ -40,7 +40,7 @@ public class FabricChaincodeController {
     @PostMapping(value = "/chaincode", consumes = MULTIPART_FORM_DATA_VALUE)
     public RestResp init(@RequestParam MultipartFile endorsement, @RequestParam String name, @RequestParam String version, @RequestParam String[] args) {
         return chaincodeService
-          .instantiate(name, version, args, endorsement)
+          .instantiate(name, version, endorsement, args)
           .map(RestResp::success)
           .orElse(fail());
     }
@@ -54,7 +54,13 @@ public class FabricChaincodeController {
     public RestResp commit(@PathVariable String chaincode, @PathVariable String version, @RequestParam String[] args) {
         return chaincodeService
           .invoke(chaincode, version, args)
-          .map(RestResp::success)
+          .map(result -> {
+              if (result.getSuccess() == 1) {
+                  return RestResp.success(result);
+              } else {
+                  return RestResp.fail("invocation failed", result);
+              }
+          })
           .orElse(fail());
     }
 

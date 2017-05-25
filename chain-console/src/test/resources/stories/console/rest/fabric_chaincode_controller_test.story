@@ -20,6 +20,8 @@ When I check all chaincodes
 Then chaincode sample is marked installed
 When I instantiate sample chaincode with: init a 10 b 20
 Then sample chaincode intantiation succeed
+When I check all chaincodes
+Then chaincode sample is marked instantiated
 When I trigger a transaction on sample chaincode with: invoke a b 5
 Then transaction on sample chaincode succeed
 When I make a query on sample chaincode with: query a
