@@ -134,15 +134,20 @@ class ChainCodeList extends Component {
 
   renderRows() {
     return this.props.all.map((row, idx) => {
+      let buttons = [<button className='btn btn-sm btn-default margin-r-5' onClick={this.handleInstallClick.bind(this, row)} key="1">部署</button>];
+      if(row.installed && row.installed.length>0) {//已经部署
+        buttons.push(<button className='btn btn-sm btn-default margin-r-5' onClick={this.handleInitClick.bind(this, row)} key="2">初始化</button>);
+        if(row.instantiated && row.instantiated>0) {//已经初始化
+          buttons.push(<button className='btn btn-sm btn-default margin-r-5' onClick={this.handleExecuteClick.bind(this, row)}  key="3">执行</button>);
+          buttons.push(<button className='btn btn-sm btn-default margin-r-5' onClick={this.handleQueryClick.bind(this, row)}  key="4">查询</button>);
+        }
+      }
       return (<tr key={idx}>
         <td>{row.name}</td>
         <td>{row.version}</td>
         <td>{row.lang}</td>
         <td>
-          <button className='btn btn-sm btn-default margin-r-5' onClick={this.handleInstallClick.bind(this, row)}>部署</button>
-          <button className='btn btn-sm btn-default margin-r-5' onClick={this.handleInitClick.bind(this, row)}>初始化</button>
-          <button className='btn btn-sm btn-default margin-r-5' onClick={this.handleExecuteClick.bind(this, row)}>执行</button>
-          <button className='btn btn-sm btn-default margin-r-5' onClick={this.handleQueryClick.bind(this, row)}>查询</button>
+          {buttons}
         </td>
       </tr>);
     });
