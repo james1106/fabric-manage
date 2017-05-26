@@ -58,8 +58,9 @@ tls:
   certfile: ca-cert.pem
   keyfile: ca-key.pem
   clientauth:
-    type: noclientcert
-    # certfiles: # Comma Separated list of root certificate files (e.g. root.pem, root2.pem)
+    type: verifyclientcertifgiven
+    certfiles: tls/ca.crt
+      # Comma Separated list of root certificate files (e.g. root.pem, root2.pem)
 
 #############################################################################
 #  The CA section contains information related to the Certificate Authority
@@ -73,13 +74,13 @@ tls:
 #############################################################################
 ca:
   # Name of this CA
-  name: CA-ORG1
+  name: Org1CA
   # Key file (default: ca-key.pem)
-  keyfile: /home/aiet/Dev/fabric-test/ca/org1/ca-key.pem
+  keyfile: ca-key.pem
   # Certificate file (default: ca-cert.pem)
-  certfile: /home/aiet/Dev/fabric-test/ca/org1/ca-cert.pem
+  certfile: ca-cert.pem
   # Chain file (default: chain-cert.pem)
-  chainfile: ca-chain.pem
+  chainfile:
 
 #############################################################################
 #  The registry section controls how the fabric-ca-server does two things:
@@ -104,10 +105,10 @@ registry:
   identities:
      - name: admin
        pass: adminpw
-       type: client
+       type: ca
        affiliation: ""
        attrs:
-          hf.Registrar.Roles: "client,user,peer,validator,auditor,ca"
+          hf.Registrar.Roles: "client,user,peer,orderer,validator,auditor,ca"
           hf.Registrar.DelegateRoles: "client,user,validator,auditor"
           hf.Revoker: true
           hf.IntermediateCA: true
@@ -124,7 +125,7 @@ registry:
 #############################################################################
 db:
   type: sqlite3
-  datasource: /home/aiet/Dev/fabric-test/ca/org1/fabric-ca-server.db
+  datasource: fabric-ca-server.db
   tls:
       enabled: false
       certfiles: 
@@ -155,11 +156,12 @@ ldap:
 #  Affiliation section
 #############################################################################
 affiliations:
-   org1:
-      - department1
-      - department2
-   org2:
-      - department1
+   Org1:
+     - 
+   Org2:
+     - 
+   Orderer:
+     - 
 
 #############################################################################
 #  Signing section
@@ -174,7 +176,8 @@ signing:
            isca: true
     default:
       usage:
-        - cert sign
+        - digital signature
+        - data encipherment
       expiry: 8000h
 
 ###########################################################################
@@ -182,14 +185,17 @@ signing:
 ###########################################################################
 csr:
    cn: fabric-ca-server
+   key:
+     algo: ecdsa
+     size: 256
    names:
-      - C: US
-        ST: "North Carolina"
-        L:
-        O: Hyperledger
+      - C: CN
+        ST: Beijing
+        L: 
+        O: Oxchains
         OU: Fabric
    hosts:
-     - aiet-fabric-vm
+     - lab-fabric-vm
    ca:
       pathlen:
       pathlenzero:

@@ -10,19 +10,19 @@ So that I can run the chaincode
 Scenario: chaincode can be installed on peers
 Given admin user context
 And chain example-chain created at orderer #orderer0
-And peer peer0 at #peer0
-And peer0 joined chain example-chain
+And peer peer11 at #peer0
+And peer11 joined chain example-chain
 And chaincode example_chaincode of version 0.1
 When I install chaincode on chain example-chain
 Then installation succeed
-When I query installed chaincodes on peer0
+When I query installed chaincodes on peer11
 Then chaincodes should include example_chaincode
 
 Scenario: installed chaincode can be instantiated, invoked, and queried
-Given chain example-chain listens event-hub peer0 at #eventhub0
+Given chain example-chain listens event-hub peer11 at #eventhub0
 When I instantiate chaincode example_chaincode with: init a 10 b 20
 Then intantiation succeed
-When I query instantiated chaincodes on peer0 of chain example-chain
+When I query instantiated chaincodes on peer11 of chain example-chain
 Then chaincodes should include example_chaincode
 When I query asset a with: query a
 Then should return 10
