@@ -4,13 +4,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import oxchains.fabric.console.auth.JwtAuthentication;
 import oxchains.fabric.console.auth.JwtService;
 import oxchains.fabric.console.data.UserRepo;
 import oxchains.fabric.console.data.UserTokenRepo;
 import oxchains.fabric.console.domain.User;
 import oxchains.fabric.console.domain.UserToken;
 import oxchains.fabric.sdk.FabricSDK;
+import oxchains.fabric.sdk.domain.CAUser;
 
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
@@ -18,6 +21,8 @@ import java.util.Optional;
 import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.empty;
+import static org.springframework.security.core.context.SecurityContextHolder.getContext;
+import static oxchains.fabric.sdk.domain.CAUser.fromUser;
 
 /**
  * @author aiet
@@ -41,7 +46,9 @@ public class UserService {
 
     public List<User> userList() {
         try {
-            return newArrayList(userRepo.findAll());
+            return userContext()
+              .map(u -> newArrayList(userRepo.findUsersByAffiliation(u.getAffiliation())))
+              .orElse(new ArrayList<>());
         } catch (Exception e) {
             LOG.error("failed to fetch users: ", e);
         }
@@ -57,26 +64,41 @@ public class UserService {
         return emptyList();
     }
 
+    private Optional<User> userContext() {
+        return ((JwtAuthentication) getContext().getAuthentication()).user();
+    }
+
     public Optional<User> register(User user) {
         try {
-            boolean registered = fabricSDK.register(user.getUsername(), user.getAffiliation(), user.getPassword());
-            if (registered) return Optional.of(userRepo.save(user));
+            return userContext().map(context -> {
+                boolean registered = fabricSDK
+                  .withUserContext(fromUser(context))
+                  .register(user.getUsername(), user.getPassword(), context.getCa(), context.getUri());
+                if (registered) {
+                    user.inheritMSP(context);
+                    return userRepo.save(user);
+                }
+                return null;
+            });
         } catch (Exception e) {
             LOG.error("failed to register user {}:", user, e);
         }
         return empty();
     }
 
-    public boolean revoke(String username, String affiliation, int reason) {
+    public boolean revoke(String username, int reason) {
         try {
-            boolean revoked = fabricSDK.revokeUser(username, affiliation, reason);
-            if (revoked) {
-                Optional<User> userOptional = userRepo.findUserByUsernameAndAffiliation(username, affiliation);
-                if (userOptional.isPresent()) {
-                    userRepo.delete(userOptional.get());
-                    return true;
-                }
-            }
+            return userContext()
+              .map(context -> {
+                  boolean revoked = fabricSDK.withUserContext(fromUser(context)).revokeUser(username, reason, context.getCa(), context.getUri());
+                  if (revoked) {
+                      userRepo
+                        .findUserByUsernameAndAffiliation(username, context.getAffiliation())
+                        .ifPresent(revokedUser -> userRepo.delete(revokedUser));
+                  }
+                  return revoked;
+              })
+              .orElse(false);
         } catch (Exception e) {
             LOG.error("failed to revoke user {}", username, e);
         }
@@ -105,7 +127,7 @@ public class UserService {
                         .encodeToString(enrollment
                           .getKey()
                           .getEncoded()));
-                      LOG.info("user {} enrolled, saving msp info...");
+                      LOG.info("user {} enrolled, saving msp info...", u);
                       return userRepo.save(u);
                   })
                   .orElse(null))

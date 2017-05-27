@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonSetter;
 
 import javax.persistence.*;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.springframework.util.StringUtils.isEmpty;
 
@@ -29,6 +31,9 @@ public class User {
 
     private String username;
     private String password;
+    @ElementCollection(fetch = FetchType.EAGER)
+    @JsonIgnore
+    private Set<String> authorities = new HashSet<>();
     private String affiliation;
     private String msp;
     private String ca;
@@ -38,6 +43,21 @@ public class User {
     private String privateKey;
 
     @Column(length = 1024) private String certificate;
+
+    public void inheritMSP(User user) {
+        setCa(user.getCa());
+        setUri(user.getUri());
+        setMsp(user.getMsp());
+        setAffiliation(user.getAffiliation());
+    }
+
+    public Set<String> getAuthorities() {
+        return authorities;
+    }
+
+    public void setAuthorities(Set<String> authorities) {
+        this.authorities = authorities;
+    }
 
     public String getMsp() {
         return msp;
@@ -81,8 +101,7 @@ public class User {
         this.ca = ca;
     }
 
-    @JsonIgnore
-    private Date createtime = new Date();
+    @JsonIgnore private Date createtime = new Date();
 
     public Date getCreatetime() {
         return createtime;

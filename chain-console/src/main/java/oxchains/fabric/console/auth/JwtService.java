@@ -7,9 +7,11 @@ import io.jsonwebtoken.impl.DefaultJwtBuilder;
 import io.jsonwebtoken.impl.DefaultJwtParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
+import oxchains.fabric.console.data.UserRepo;
 import oxchains.fabric.console.domain.User;
 
 import javax.annotation.PostConstruct;
@@ -45,6 +47,12 @@ public class JwtService {
     private PrivateKey privateKey;
     private PublicKey publicKey;
 
+    private final UserRepo userRepo;
+
+    public JwtService(UserRepo userRepo) {
+        this.userRepo = userRepo;
+    }
+
     @PostConstruct
     private void init() throws Exception {
         char[] pass = keypass.toCharArray();
@@ -72,14 +80,14 @@ public class JwtService {
           .compact();
     }
 
-    public Optional<JwtAuthentication> parse(String token) {
+    Optional<JwtAuthentication> parse(String token) {
         try {
             Jws<Claims> jws = new DefaultJwtParser()
               .setSigningKey(publicKey)
               .parseClaimsJws(token);
-            //TODO check expiration
             Claims claims = jws.getBody();
-            return Optional.of(new JwtAuthentication(claims.getSubject(), claims.get("authority", String.class), token));
+            return userRepo.findUserByUsernameAndAffiliation(claims.getSubject(), claims.get("authority", String.class))
+              .map(u -> new JwtAuthentication(u, token, claims));
         } catch (Exception e) {
             LOG.error("failed to parse jwt token {}: ", token, e);
         }

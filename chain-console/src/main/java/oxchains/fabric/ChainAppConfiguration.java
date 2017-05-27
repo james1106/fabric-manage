@@ -11,9 +11,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
-import oxchains.fabric.console.auth.AuthEntryPoint;
+import oxchains.fabric.console.auth.AuthError;
 import oxchains.fabric.console.auth.JwtAuthenticationProvider;
 import oxchains.fabric.console.auth.JwtTokenFilter;
+
+import static oxchains.fabric.console.auth.Authorities.MANAGE;
 
 /**
  * @author aiet
@@ -24,10 +26,12 @@ public class ChainAppConfiguration extends WebSecurityConfigurerAdapter {
 
     private final JwtTokenFilter jwtTokenFilter;
     private final JwtAuthenticationProvider jwtAuthenticationProvider;
+    private final AuthError authError;
 
-    public ChainAppConfiguration(@Autowired JwtTokenFilter jwtTokenFilter, @Autowired JwtAuthenticationProvider jwtAuthenticationProvider) {
+    public ChainAppConfiguration(@Autowired JwtTokenFilter jwtTokenFilter, @Autowired JwtAuthenticationProvider jwtAuthenticationProvider, @Autowired AuthError authError) {
         this.jwtTokenFilter = jwtTokenFilter;
         this.jwtAuthenticationProvider = jwtAuthenticationProvider;
+        this.authError = authError;
     }
 
     @Override
@@ -38,12 +42,15 @@ public class ChainAppConfiguration extends WebSecurityConfigurerAdapter {
           .authorizeRequests()
           .antMatchers("/user/token")
           .permitAll()
-          .anyRequest()
+          .antMatchers("/user", "/user/*")
+          .hasAuthority(MANAGE)
+          .antMatchers("/**/*")
           .authenticated()
           .and()
           .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
           .exceptionHandling()
-          .authenticationEntryPoint(new AuthEntryPoint());
+          .authenticationEntryPoint(authError)
+          .accessDeniedHandler(authError);
     }
 
     @Override

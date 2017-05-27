@@ -6,36 +6,43 @@ import org.jbehave.core.annotations.BeforeStories;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.web.context.WebApplicationContext;
 import oxchains.fabric.ChainConsoleApplication;
-import oxchains.fabric.console.rest.FabricChainController;
-import oxchains.fabric.console.rest.FabricChaincodeController;
-import oxchains.fabric.console.rest.FabricPeerController;
-import oxchains.fabric.console.rest.FabricUserController;
-import oxchains.fabric.console.service.ChainService;
-import oxchains.fabric.console.service.ChaincodeService;
-import oxchains.fabric.console.service.PeerService;
-import oxchains.fabric.console.service.UserService;
+
+import javax.servlet.Filter;
+
+import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup;
 
 /**
  * @author aiet
  */
 @ContextConfiguration(classes = ChainConsoleApplication.class)
+@WebAppConfiguration
 @TestPropertySource(locations = "classpath:test.properties")
 public class ControllerTestBase extends SerenityStory {
 
-    @Autowired private UserService userService;
-    @Autowired private PeerService peerService;
-    @Autowired private ChainService chainService;
-    @Autowired private ChaincodeService chaincodeService;
+    @Autowired private WebApplicationContext context;
+
+    //    @Autowired
+    //    private JwtTokenFilter jwtTokenFilter;
+    //    @Autowired private UserService userService;
+    //    @Autowired private PeerService peerService;
+    //    @Autowired private ChainService chainService;
+    //    @Autowired private ChaincodeService chaincodeService;
+    @Autowired private Filter springSecurityFilterChain;
 
     @BeforeStories
     public void init() {
-        RestAssuredMockMvc.standaloneSetup(
-          new FabricUserController(userService),
-          new FabricPeerController(peerService),
-          new FabricChainController(chainService),
-          new FabricChaincodeController(chaincodeService)
-        );
+        RestAssuredMockMvc.mockMvc(webAppContextSetup(context)
+          .addFilter(springSecurityFilterChain)
+          .build());
+        //          .standaloneSetup(
+        //          new FabricUserController(userService),
+        //          new FabricPeerController(peerService),
+        //          new FabricChainController(chainService),
+        //          new FabricChaincodeController(chaincodeService)
+        //        );
     }
 
 }

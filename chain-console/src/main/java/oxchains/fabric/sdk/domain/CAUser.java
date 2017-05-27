@@ -12,7 +12,6 @@ public class CAUser implements User {
 
     private String name;
     private Set<String> roles;
-    private String account;
     private String affiliation;
     private Enrollment enrollment;
     private String mspId;
@@ -29,6 +28,16 @@ public class CAUser implements User {
         this.name = name;
         this.affiliation = affiliation;
         this.mspId = mspId;
+    }
+
+    public static CAUser fromUser(oxchains.fabric.console.domain.User u){
+        CAUser user = new CAUser(u.getUsername(), u.getAffiliation(), u.getMsp());
+        if(u.getPrivateKey()!=null && u.getCertificate()!=null) {
+            user.setEnrollment(new CAEnrollment(u.getPrivateKey(), u.getCertificate()));
+        }
+        user.roles = u.getAuthorities();
+        user.setPassword(u.getPassword());
+        return user;
     }
 
     public void setPassword(String password) {
@@ -51,7 +60,7 @@ public class CAUser implements User {
 
     @Override
     public String getAccount() {
-        return account;
+        return this.name;
     }
 
     @Override
@@ -72,4 +81,5 @@ public class CAUser implements User {
     public void setEnrollment(Enrollment enrollment) {
         this.enrollment = enrollment;
     }
+
 }

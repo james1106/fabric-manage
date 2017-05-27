@@ -20,14 +20,10 @@ import oxchains.fabric.sdk.domain.CAUser;
 @TestPropertySource(locations = "classpath:test.properties")
 public class CASteps {
 
-    @Autowired
-    FabricSDK fabricSDK;
+    @Autowired private FabricSDK fabricSDK;
 
     @Value("${fabric.ca.server.admin}") private String caServerAdmin;
     @Value("${fabric.ca.server.admin.pass}") private String caServerAdminPass;
-
-    @Value("${fabric.ca.server.name}") private String caName;
-    @Value("${fabric.ca.server.url}") private String caUri;
 
     @Value("${fabric.ca.server.admin.mspid}") private String msp;
     @Value("${fabric.ca.server.admin.affiliation}") private String affiliation;

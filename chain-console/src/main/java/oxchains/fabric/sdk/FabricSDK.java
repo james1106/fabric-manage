@@ -7,11 +7,9 @@ import org.hyperledger.fabric.sdk.*;
 import org.hyperledger.fabric.sdk.exception.CryptoException;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.TransactionException;
-import org.hyperledger.fabric_ca.sdk.EnrollmentRequest;
 import org.hyperledger.fabric_ca.sdk.HFCAClient;
 import org.hyperledger.fabric_ca.sdk.RegistrationRequest;
 import org.hyperledger.fabric_ca.sdk.RevokeReason;
-import org.hyperledger.fabric_ca.sdk.exception.BaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,8 +18,6 @@ import org.springframework.stereotype.Component;
 import oxchains.fabric.console.data.ChainRepo;
 import oxchains.fabric.console.domain.ChainInfo;
 import oxchains.fabric.console.domain.PeerEventhub;
-import oxchains.fabric.sdk.domain.CAUser;
-import oxchains.fabric.sdk.domain.FabricUser;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
@@ -63,14 +59,6 @@ public class FabricSDK {
     private final Map<String, HFCAClient> CA_CLIENTS = synchronizedMap(new WeakHashMap<String, HFCAClient>(2));
 
     private final HFClient fabricClient = HFClient.createNewInstance();
-    private HFCAClient caClient;
-    private CAUser caServerAdminUser1;
-    private CAUser caServerAdminUser2;
-
-    //    @Value("${fabric.ca.server.admin.mspid1}") private String caServerAdminMSPId1;
-    //    @Value("${fabric.ca.server.admin.affiliation1}") private String caServerAdminAffiliation1;
-    //    @Value("${fabric.ca.server.admin.mspid2}") private String caServerAdminMSPId2;
-    //    @Value("${fabric.ca.server.admin.affiliation2}") private String caServerAdminAffiliation2;
 
     @Value("${fabric.orderer.name}") private String defaultOrdererName;
     @Value("${fabric.orderer.endpoint}") String defaultOrdererEndpoint;
@@ -82,40 +70,15 @@ public class FabricSDK {
     @PostConstruct
     private void init() {
         try {
-            //            caClient = HFCAClient.createNewInstance(caServerUrl, new Properties());
-            //            caClient.setCryptoSuite(getCryptoSuite());
             fabricClient.setCryptoSuite(getCryptoSuite());
-            //            this.caServerAdminUser1 = new CAUser(caServerAdmin, caServerAdminAffiliation1, caServerAdminMSPId1);
-            //            this.caServerAdminUser1.setPassword(caServerAdminPass);
-            //            enroll(caServerAdminUser1);
-
-            //            this.caServerAdminUser2 = new CAUser(caServerAdmin, caServerAdminAffiliation2, caServerAdminMSPId2);
-            //            this.caServerAdminUser2.setPassword(caServerAdminPass);
-            //            enroll(caServerAdminUser2);
-
-            //            fabricClient.setUserContext(caServerAdminUser1);
-            //            withOrderer(defaultOrdererName, defaultOrdererEndpoint).ifPresent(orderer -> {
-            //                constructChain(defaultChainName, orderer, defaultChainConfigurationPath);
-            //            });
-            //        } catch (MalformedURLException e) {
-            //            LOG.error("failed to create CA client with url {} ", caServerUrl, e);
         } catch (InvalidArgumentException | CryptoException e) {
             LOG.error("failed to enable encryption for fabric client", e);
-            //        } catch (BaseException e) {
-            //            LOG.error("failed to enroll admin user: ", e);
         }
     }
 
-    public void withUserContext(User userContext) throws InvalidArgumentException {
+    public FabricSDK withUserContext(User userContext) {
         USER_CONTEXT.set(userContext);
-    }
-
-    /**
-     * the user will be enrolled if hasn't
-     */
-    private void enroll(CAUser userToEnroll) throws BaseException {
-        //TODO check if enrolled yet if enrollment limited by MaxEnrollment
-        userToEnroll.setEnrollment(caClient.enroll(userToEnroll.getName(), userToEnroll.getPassword()));
+        return this;
     }
 
     public String getDefaultOrderer() {
@@ -135,21 +98,6 @@ public class FabricSDK {
             LOG.error("failed to create peer {} on {}: ", peerId, peerUrl, e);
         }
         return Optional.ofNullable(peer);
-    }
-
-    public Optional<FabricUser> createUser(String username, String affiliation) {
-        FabricUser user = null;
-        try {
-            user = new FabricUser(username, affiliation);
-            RegistrationRequest registrationRequest = new RegistrationRequest(username, affiliation);
-            user.setPassword(caClient.register(registrationRequest, caServerAdminUser1));
-            //TODO when to enroll? difference to register?
-            caClient.enroll(username, user.getPassword());
-            //            user.setMspId(caServerAdminMSPId1);
-        } catch (Exception e) {
-            LOG.error("failed to register fabric user {} from {}", username, affiliation);
-        }
-        return Optional.ofNullable(user);
     }
 
     public Optional<Orderer> withOrderer(String ordererName, String ordererUrl) {
@@ -224,9 +172,7 @@ public class FabricSDK {
               })
               .orElseGet(() -> {
                   try {
-                      Chain newChain = fabricClient.newChain(
-                        chainName, orderer, chainConfiguration,
-                        fabricClient.getChainConfigurationSignature(chainConfiguration, fabricClient.getUserContext()));
+                      Chain newChain = fabricClient.newChain(chainName, orderer, chainConfiguration, fabricClient.getChainConfigurationSignature(chainConfiguration, fabricClient.getUserContext()));
                       ChainInfo newChainInfo = new ChainInfo(chainName, orderer.getUrl());
                       chainRepo.save(newChainInfo);
                       LOG.info("new chain {} constructed on orderer {}", chainName, orderer.getUrl());
@@ -262,7 +208,7 @@ public class FabricSDK {
         return empty();
     }
 
-    public Optional<Peer> getPeer(String peerId, String chainName){
+    public Optional<Peer> getPeer(String peerId, String chainName) {
         return getChain(chainName)
           .map(chain -> chain
             .getPeers()
@@ -506,10 +452,10 @@ public class FabricSDK {
         return emptyList();
     }
 
-    public boolean revokeUser(String username, String affiliation, int reason) {
+    public boolean revokeUser(String username, int reason, String caname, String cauri) {
         try {
-            //TODO
-            caClient.revoke(caServerAdminUser1, username, int2RevokeReason(reason));
+            HFCAClient hfcaClient = getCaClient(caname, cauri);
+            hfcaClient.revoke(USER_CONTEXT.get(), username, int2RevokeReason(reason));
             return true;
         } catch (Exception e) {
             LOG.error("failed to revoke {} with reason {}", username, reason, e);
@@ -525,31 +471,39 @@ public class FabricSDK {
         return revokeReasonOptional.orElse(UNSPECIFIED);
     }
 
-    public boolean register(String username, String affiliation, String password) {
+    public boolean register(String username, String password, String ca, String caUri) {
         try {
-            RegistrationRequest registrationRequest = new RegistrationRequest(username, affiliation);
+            User context = USER_CONTEXT.get();
+            RegistrationRequest registrationRequest = new RegistrationRequest(username, context.getAffiliation());
+            registrationRequest.setCAName(ca);
+            registrationRequest.setType("user");
             registrationRequest.setSecret(password);
-            String registerResult = caClient.register(registrationRequest, caServerAdminUser1);
-            LOG.info("fabric registered {} of {}: {}", username, affiliation, registerResult);
+            HFCAClient hfcaClient = getCaClient(ca, caUri);
+            String registerResult = hfcaClient.register(registrationRequest, context);
+            LOG.info("fabric registered {} of {}: {} by {}", username, context.getAffiliation(), registerResult, context.getName());
             return true;
         } catch (Exception e) {
-            LOG.error("failed to register new fabric user {} of {}", username, affiliation, e);
+            LOG.error("failed to register new fabric user on {}@{}: {}", ca, caUri, e.getMessage());
         }
         return false;
     }
 
+    private HFCAClient getCaClient(final String caname, final String cauri) {
+        return CA_CLIENTS.computeIfAbsent(caname, key -> {
+            try {
+                HFCAClient client = HFCAClient.createNewInstance(caname, cauri, new Properties());
+                client.setCryptoSuite(getCryptoSuite());
+                return client;
+            } catch (Exception e) {
+                LOG.error("failed to create ca client of {}@{}: {}", caname, cauri, e.getMessage());
+                throw new IllegalArgumentException("cannot create ca client instance for " + caname + "@" + cauri);
+            }
+        });
+    }
+
     public Optional<Enrollment> enroll(String username, String password, String caname, String uri) {
         try {
-            HFCAClient hfcaClient = CA_CLIENTS.computeIfAbsent(caname, key -> {
-                try {
-                    HFCAClient client = HFCAClient.createNewInstance(caname, uri, new Properties());
-                    client.setCryptoSuite(getCryptoSuite());
-                    return client;
-                } catch (Exception e) {
-                    LOG.error("failed to create ca client of {}@{}: {}", caname, uri, e.getMessage());
-                    throw new IllegalArgumentException("cannot create ca client instance for " + caname + "@" + uri);
-                }
-            });
+            HFCAClient hfcaClient = getCaClient(caname, uri);
             Enrollment enrollment = hfcaClient.enroll(username, password);
             LOG.info("user {} enrolled", username);
             return Optional.of(enrollment);
