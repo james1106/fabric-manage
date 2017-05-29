@@ -1,5 +1,8 @@
 package oxchains.fabric.console.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonSetter;
+
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import java.util.Date;
@@ -13,7 +16,18 @@ public class PeerEventhub {
     @Id private String id;
     private String endpoint;
     private String eventhub;
+    private String password;
     private Date createtime = new Date();
+
+    @JsonIgnore
+    public String getPassword() {
+        return password;
+    }
+
+    @JsonSetter
+    public void setPassword(String password) {
+        this.password = password;
+    }
 
     public Date getCreatetime() {
         return createtime;
