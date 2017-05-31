@@ -92,6 +92,7 @@ public class FabricSDK {
     public Optional<Peer> withPeer(String peerId, String peerUrl) {
         Peer peer = null;
         try {
+            fabricClient.setUserContext(USER_CONTEXT.get());
             peer = fabricClient.newPeer(peerId, peerUrl);
             PEER_CACHE.putIfAbsent(peerId, peer);
         } catch (Exception e) {
@@ -424,6 +425,7 @@ public class FabricSDK {
 
     public List<ChaincodeInfo> chaincodesOnPeer(Peer peer) {
         try {
+            fabricClient.setUserContext(USER_CONTEXT.get());
             return fabricClient.queryInstalledChaincodes(peer);
         } catch (Exception e) {
             LOG.error("failed to query installed chaincodes of peer {}:", peer.getName(), e);

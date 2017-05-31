@@ -75,6 +75,13 @@ CA server generates key pairs for admin and user. To make use of the keys genera
 openssl pkcs8 -topk8 -inform pem -in generated_key.pem -outform pem -nocrypt -out private_key_for_test.pem
 ```
 
+To use the private key generated on enrollment, split the private key into lines each has 64 characters at most, then prepend `-----BEGIN PRIVATE KEY-----` and append `-----END PRIVATE KEY-----`.
+ Say we have the result in file `enrollment_private_key.pem`, we can put `keystore.pem` under `msp/keystore/`.
+
+```commandline
+openssl ec -in enrollment_private_key.pem -out keystore.pem
+```
+
 
 ### Chaincode Manipulation
 

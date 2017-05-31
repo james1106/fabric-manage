@@ -56,4 +56,10 @@ public class FabricChainController {
           .orElse(fail());
     }
 
+    @GetMapping("/peer/eventhub")
+    public RestResp eventhubs() {
+        return success(chainService.eventhubs());
+    }
+
+
 }

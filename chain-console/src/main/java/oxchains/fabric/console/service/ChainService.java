@@ -3,6 +3,7 @@ package oxchains.fabric.console.service;
 import org.springframework.stereotype.Service;
 import oxchains.fabric.console.domain.ChainBlockInfo;
 import oxchains.fabric.console.domain.ChainInfo;
+import oxchains.fabric.console.domain.EventHubInfo;
 import oxchains.fabric.console.domain.TxInfo;
 import oxchains.fabric.sdk.FabricSDK;
 
@@ -66,6 +67,14 @@ public class ChainService {
         else return fabricSDK
           .getChainTx(tx)
           .map(TxInfo::new);
+    }
+
+    public List<EventHubInfo> eventhubs() {
+        return fabricSDK
+          .chainEventHubs()
+          .stream()
+          .map(EventHubInfo::new)
+          .collect(toList());
     }
 
 }

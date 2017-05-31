@@ -13,11 +13,6 @@ public class FabricUserControllerStory {
 
     @Steps FabricUserControllerSteps steps;
 
-    @Given("fabric console for user")
-    public void givenFabricConsole() {
-    }
-
-
     @Given("manager account $username : $password on CA $caName at $caUri")
     public void givenManager(String username, String password, String caName, String caUri) throws Exception {
         steps.givenManager(username, password, caName, caUri);

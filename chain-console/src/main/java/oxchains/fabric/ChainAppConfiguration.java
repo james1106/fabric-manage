@@ -3,6 +3,7 @@ package oxchains.fabric;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -40,12 +41,18 @@ public class ChainAppConfiguration extends WebSecurityConfigurerAdapter {
           .csrf()
           .disable()
           .authorizeRequests()
-          .antMatchers("/user/token")
+          .antMatchers("/user/token", "/peer/enrollment")
           .permitAll()
-          .antMatchers("/user", "/user/*")
+
+          .antMatchers(HttpMethod.GET, "/peer")
+          .permitAll()
+
+          .antMatchers("/user", "/user/*", "/peer", "/peer/*")
           .hasAuthority(MANAGE)
+
           .antMatchers("/**/*")
           .authenticated()
+
           .and()
           .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
           .exceptionHandling()
