@@ -78,4 +78,14 @@ public class FabricPeerControllerStory {
         steps.enrolledPeer(peerId);
     }
 
+
+    @When("I remove peer $peerId")
+    public void whenRemovePeer(String peerId){
+        steps.removePeer(peerId);
+    }
+
+    @Then("peer $peerId removed")
+    public void thenPeerRemoved(String peerId){
+        steps.operationDone();
+    }
 }

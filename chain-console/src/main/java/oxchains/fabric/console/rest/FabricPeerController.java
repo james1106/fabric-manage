@@ -30,6 +30,12 @@ public class FabricPeerController {
         return success(peerInfoList);
     }
 
+    @DeleteMapping("/peer/{peerId}")
+    public RestResp remove(@PathVariable String peerId){
+        peerService.removePeer(peerId);
+        return success(null);
+    }
+
     @PutMapping("/peer/{peerId}/status")
     public RestResp changePeerStatus(@PathVariable String peerId, @RequestParam int action) {
         boolean operationDone = false;

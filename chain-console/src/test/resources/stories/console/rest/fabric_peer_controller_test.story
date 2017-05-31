@@ -21,8 +21,14 @@ Then peer peer1 should be found
 And peer peer1 is not connected
 When I enroll peer peer1 : peerpass from org org1, CA Org1CA at #caserver0 with msp Org1MSP
 Then peer peer1 enrolled
-When connect to peer peer1
-Then peer peer1 connected
+!--When connect to peer peer1
+!--Then peer peer1 connected
+!--When I get current peers
+!--Then peer peer1 should be connected
+
+When I remove peer peer1
+Then peer peer1 removed
 When I get current peers
-Then peer peer1 should be connected
+Then there is no peer peer1 yet
+
 

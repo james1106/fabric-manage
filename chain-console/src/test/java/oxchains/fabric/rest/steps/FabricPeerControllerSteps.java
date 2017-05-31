@@ -193,4 +193,10 @@ public class FabricPeerControllerSteps {
         LOG.info("private key: \n-----BEGIN PRIVATE KEY-----\n{}-----END PRIVATE KEY-----", key.toString());
     }
 
+    @Step("remove peer")
+    public void removePeer(String peerId) {
+        mockMvcResponse = given().header(AUTHORIZATION, "Bearer " + token)
+          .when().delete("/peer/"+peerId);
+    }
+
 }

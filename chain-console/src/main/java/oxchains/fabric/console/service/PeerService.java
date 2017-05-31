@@ -208,4 +208,22 @@ public class PeerService {
         }
         return empty();
     }
+
+    public void removePeer(final String peerId) {
+        try {
+            peerRepo
+              .findPeerEventhubById(peerId)
+              .ifPresent(peer -> userContext().ifPresent(u -> fabricSDK
+                .withPeer(peerId, peer.getEndpoint())
+                .map(fabricPeer -> fabricSDK
+                  .withUserContext(fromUser(u))
+                  .chainsOfPeer(fabricPeer)
+                  .isEmpty())
+                .filter(joinedNoChains -> joinedNoChains)
+                .ifPresent(joinedNoChains -> peerRepo.delete(peerId))));
+        } catch (Exception e) {
+            LOG.error("failed to delete peer {}: {}", peerId, e.getMessage());
+        }
+    }
+
 }
