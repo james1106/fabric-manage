@@ -17,18 +17,49 @@ public class FabricChainControllerStory {
 
     @Steps FabricChainControllerSteps steps;
 
-    @Given("fabric console for chain")
-    public void givenFabricConsoleForChain() {
+    @Given("chain admin $username of org $org enrolled")
+    public void givenChainAdmin(String username, String affiliation) throws Exception {
+        steps.chainAdminEnrolled(username, affiliation);
     }
 
-    @Given("$peerId at $peerEndpoin joined chain")
-    public void givenChainHasPeer(String peerId, String peerEndpoint) {
-        steps.joinChain(peerId, peerEndpoint);
+    @Given("chain configuration $chainConfig")
+    public void givenChainConfiguration(String chainConfig) {
+        steps.chainConfig(chainConfig);
     }
 
-    @When("I get chain info")
-    public void whenIGetChainInfo() {
-        steps.getChain();
+    @Given("chain peer $peerId at $peerEndpoint with eventhub at $eventhub, password $pass added from org $org, ca $ca at $caUri with msp $msp")
+    public void givenPeerAdded(String peerId, String peerEndpoint, String eventhub, String pass, String org, String ca, String caUri, String msp) throws Exception {
+        steps.addPeer(peerId, peerEndpoint, eventhub, pass, org, ca, caUri, msp);
+    }
+
+    @When("chain peer $peerId joins $chainname")
+    public void whenPeerJoinsChain(String peerId, String chainname){
+        steps.peerJoins(peerId, chainname);
+    }
+
+    @Then("chain peer $peerId has joined $chainname")
+    public void thenPeerJoined(String peerId, String chainname){
+        steps.peerJoined(peerId, chainname);
+    }
+
+    @When("construct chain $chainName")
+    public void whenConstructChain(String chainName) {
+        steps.createChain(chainName);
+    }
+
+    @Then("$chainName constructed")
+    public void thenChainConstructed(String chainName) {
+        steps.chainConstructed();
+    }
+
+    @When("I get chain info of $chainName")
+    public void whenIGetChainInfo(String chainName) {
+        steps.getChain(chainName);
+    }
+
+    @Then("there is nothing on the chain")
+    public void thenNothingOnChain(){
+        steps.operationFail();
     }
 
     @Then("there are $height, $hash in chain")
@@ -36,9 +67,9 @@ public class FabricChainControllerStory {
         steps.infoIncludes(height, hash);
     }
 
-    @When("I get chain block")
-    public void whenIGetChainBlock() {
-        steps.getChainblocks();
+    @When("I get block of chain $chainName")
+    public void whenIGetChainBlock(String chainName) {
+        steps.getChainblocks(chainName);
     }
 
     @Then("there are $size, $hash, $previous in block")
@@ -56,9 +87,9 @@ public class FabricChainControllerStory {
           .toArray(paramArr));
     }
 
-    @When("I get block $blocknumber of chain")
-    public void whenIGetChainBlock(long blocknumber) {
-        steps.getChainblock(blocknumber);
+    @When("I get block $blocknumber of chain $chainName")
+    public void whenIGetChainBlock(long blocknumber, String chainname) {
+        steps.getChainblock(chainname, blocknumber);
     }
 
 }

@@ -131,7 +131,7 @@ public class FabricPeerControllerSteps {
           .path("data.token");
 
         Optional<User> enrolledUserOptional = userRepo.findUserByUsernameAndAffiliation(username, affiliation);
-        assertTrue("given admin should have been registered", userOptional.isPresent());
+        assertTrue("given admin should have been registered", enrolledUserOptional.isPresent());
         LOG.info("admin certificate: \n{}", enrolledUserOptional
           .get()
           .getCertificate());

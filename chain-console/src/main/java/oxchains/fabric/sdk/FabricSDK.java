@@ -195,9 +195,9 @@ public class FabricSDK {
         return Optional.ofNullable(cachedChain);
     }
 
-    public Optional<BlockchainInfo> getChaininfo() {
+    public Optional<BlockchainInfo> getChaininfo(String chainName) {
         try {
-            Optional<Chain> chainOptional = getChain(defaultChainName);
+            Optional<Chain> chainOptional = getChain(chainName);
             if (chainOptional.isPresent()) {
                 return Optional.of(chainOptional
                   .get()
@@ -226,24 +226,24 @@ public class FabricSDK {
     }
 
     public boolean joinChain(Peer peer) {
-        return joinChain(peer.getName(), defaultChainName);
+        return joinChain(peer, defaultChainName);
     }
 
-    public boolean joinChain(String peerId, String chainName) {
+    public boolean joinChain(Peer peer, String chainName) {
         Chain chain = fabricClient.getChain(chainName);
         try {
             boolean joined = chain
               .getPeers()
               .stream()
-              .anyMatch(peer -> peerId.equals(peer.getName()));
+              .anyMatch(p-> peer.getName().equals(p.getName()));
             if (!joined) {
                 chain
-                  .joinPeer(PEER_CACHE.get(peerId))
+                  .joinPeer(peer)
                   .initialize();
             }
             return true;
         } catch (Exception e) {
-            LOG.error("{} failed to join chain {}: ", peerId, chainName, e);
+            LOG.error("{} failed to join chain {}: ", peer.getName(), chainName, e);
         }
         return false;
     }
@@ -252,10 +252,6 @@ public class FabricSDK {
         return Lists.newCopyOnWriteArrayList(fabricClient
           .getChain(channelName)
           .getPeers());
-    }
-
-    public List<EventHub> chainEventHubs() {
-        return chainEventHubs(defaultChainName);
     }
 
     public List<EventHub> chainEventHubs(String channelName) {
@@ -526,9 +522,9 @@ public class FabricSDK {
         return false;
     }
 
-    public List<BlockInfo> getChainBlocks() {
+    public List<BlockInfo> getChainBlocks(String chainname) {
         try {
-            Optional<Chain> chainOptional = getChain(defaultChainName);
+            Optional<Chain> chainOptional = getChain(chainname);
             if (chainOptional.isPresent()) {
                 Chain chain = chainOptional.get();
                 long chainheight = chain
@@ -554,8 +550,8 @@ public class FabricSDK {
         return emptyList();
     }
 
-    public Optional<BlockInfo> getChainBlock(long blockNumber) {
-        Optional<Chain> chainOptional = getChain(defaultChainName);
+    public Optional<BlockInfo> getChainBlock(String chainname, long blockNumber) {
+        Optional<Chain> chainOptional = getChain(chainname);
         if (chainOptional.isPresent()) {
             Chain chain = chainOptional.get();
             try {
@@ -567,8 +563,8 @@ public class FabricSDK {
         return empty();
     }
 
-    public Optional<BlockInfo> getChainBlock(String tx) {
-        Optional<Chain> chainOptional = getChain(defaultChainName);
+    public Optional<BlockInfo> getChainBlock(String chainname, String tx) {
+        Optional<Chain> chainOptional = getChain(chainname);
         if (chainOptional.isPresent()) {
             Chain chain = chainOptional.get();
             try {
@@ -580,8 +576,8 @@ public class FabricSDK {
         return empty();
     }
 
-    public Optional<TransactionInfo> getChainTx(String tx) {
-        Optional<Chain> chainOptional = getChain(defaultChainName);
+    public Optional<TransactionInfo> getChainTx(String chainname, String tx) {
+        Optional<Chain> chainOptional = getChain(chainname);
         if (chainOptional.isPresent()) {
             Chain chain = chainOptional.get();
             try {
@@ -614,6 +610,11 @@ public class FabricSDK {
             break;
         }
         return emptyList();
+    }
+
+    public Optional<Chain> constructChain(String chain, ChainConfiguration chainConfiguration) {
+        Optional<Orderer> ordererOptional = withOrderer(defaultOrdererName, defaultOrdererEndpoint);
+        return ordererOptional.flatMap(orderer -> constructChain(chain, orderer, chainConfiguration));
     }
 
 }

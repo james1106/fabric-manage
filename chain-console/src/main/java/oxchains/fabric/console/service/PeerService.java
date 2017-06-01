@@ -143,15 +143,6 @@ public class PeerService {
         return false;
     }
 
-    private boolean eventHubAttached(String id, String endpoint) {
-        if (nonNull(endpoint)) {
-            Optional<EventHub> eventHubOptional = fabricSDK.withEventHub(id, endpoint);
-            if (eventHubOptional.isPresent()) {
-                return fabricSDK.attachEventHubToChain(eventHubOptional.get());
-            }
-        }
-        return true;
-    }
 
     private boolean reachable(String endpoint) {
         Socket s = null;

@@ -17,6 +17,7 @@ import oxchains.fabric.console.auth.JwtAuthenticationProvider;
 import oxchains.fabric.console.auth.JwtTokenFilter;
 
 import static oxchains.fabric.console.auth.Authorities.MANAGE;
+import static oxchains.fabric.console.auth.Authorities.USE;
 
 /**
  * @author aiet
@@ -45,7 +46,7 @@ public class ChainAppConfiguration extends WebSecurityConfigurerAdapter {
           .permitAll()
 
           .antMatchers(HttpMethod.GET, "/peer")
-          .permitAll()
+          .hasAnyAuthority(MANAGE, USE)
 
           .antMatchers("/user", "/user/*", "/peer", "/peer/*")
           .hasAuthority(MANAGE)
