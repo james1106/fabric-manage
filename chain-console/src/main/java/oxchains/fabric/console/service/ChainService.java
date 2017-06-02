@@ -84,7 +84,8 @@ public class ChainService {
     public List<EventHubInfo> eventHubs(String chainname) {
         return fabricSDK
           .chainEventHubs(chainname)
-          .stream() .map(EventHubInfo::new)
+          .stream()
+          .map(EventHubInfo::new)
           .collect(toList());
     }
 
@@ -92,23 +93,16 @@ public class ChainService {
         return ((JwtAuthentication) getContext().getAuthentication()).user();
     }
 
-    private boolean eventHubAttached(String id, String endpoint) {
-        if (nonNull(endpoint)) {
-            Optional<EventHub> eventHubOptional = fabricSDK.withEventHub(id, endpoint);
-            if (eventHubOptional.isPresent()) {
-                return fabricSDK.attachEventHubToChain(eventHubOptional.get());
-            }
-        }
-        return true;
-    }
-
     public boolean newChain(String chain, MultipartFile config) {
         try {
             ChainConfiguration chainConfiguration = new ChainConfiguration(config.getBytes());
-            return userContext().flatMap(context ->
-                fabricSDK.withUserContext(fromUser(context)).constructChain(chain, chainConfiguration)
-            ).isPresent();
-        }catch (Exception e){
+            LOG.info("constructing chain {}", chain);
+            return userContext()
+              .flatMap(context -> fabricSDK
+                .withUserContext(fromUser(context))
+                .constructChain(chain, chainConfiguration))
+              .isPresent();
+        } catch (Exception e) {
             LOG.error("failed to construct chain {}", e.getMessage());
         }
         return false;
@@ -116,12 +110,24 @@ public class ChainService {
     }
 
     public boolean joinChain(String chainname, String peerId) {
-        return peerRepo.findPeerEventhubById(peerId).flatMap(peerEventhub ->
-            userContext().flatMap(context ->
-                fabricSDK.withPeer(peerEventhub.getId(), peerEventhub.getEndpoint()).map(peer ->
-                    fabricSDK.withUserContext(fromUser(context)).joinChain(peer, chainname)
-                )
-            )
-        ).orElse(false);
+        return peerRepo
+          .findPeerEventhubById(peerId)
+          .flatMap(peerEventhub -> userContext().flatMap(context -> fabricSDK
+            .withPeer(peerEventhub.getId(), peerEventhub.getEndpoint())
+            .map(peer -> {
+                LOG.info("{} joining in chain {}", peerId, chainname);
+                boolean peerJoined = fabricSDK
+                  .withUserContext(fromUser(context))
+                  .joinChain(peer, chainname);
+                if (peerJoined) {
+                    LOG.info("chain {} listening on eventhub {}", chainname, peerId);
+                    fabricSDK
+                      .withEventHub(peerId, peerEventhub.getEventhub())
+                      .ifPresent(eventHub -> fabricSDK.attachEventHubToChain(chainname, eventHub));
+                }
+                return peerJoined;
+            })))
+          .orElse(false);
     }
+
 }

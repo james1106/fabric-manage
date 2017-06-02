@@ -12,5 +12,7 @@ import java.util.Optional;
 @Repository
 public interface ChaincodeRepo extends CrudRepository<ChainCodeInfo, String>{
 
-    Optional<ChainCodeInfo> findByNameAndVersion(String name, String version);
+    Optional<ChainCodeInfo> findByNameAndVersionAndAffiliation(String name, String version, String affiliation);
+
+    Iterable<ChainCodeInfo> findByAffiliation(String affiliation);
 }

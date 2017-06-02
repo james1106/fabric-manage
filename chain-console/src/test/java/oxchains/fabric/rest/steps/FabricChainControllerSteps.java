@@ -92,11 +92,6 @@ public class FabricChainControllerSteps {
           .body("data", everyItem(allOf(matchers)));
     }
 
-    @Step("{0} joining chain {2}")
-    public void joinChain(String peerId, String peerEndpoint, String chain) {
-
-    }
-
     @Step("get chain {0}'s blocks")
     public void getChainblocks(String chain) {
         mockMvcResponse = given()

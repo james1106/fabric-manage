@@ -59,11 +59,6 @@ public class FabricChainController {
           .orElse(fail());
     }
 
-    @GetMapping("/chain/{chainname}/eventhub")
-    public RestResp eventhubs(@PathVariable String chainname) {
-        return success(chainService.eventHubs(chainname));
-    }
-
     @PostMapping("/chain/{chainname}/peer/{peerId}")
     public RestResp joinChain(@PathVariable String chainname, @PathVariable String peerId){
         return chainService.joinChain(chainname, peerId) ? success(null) : fail() ;

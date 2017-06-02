@@ -1,7 +1,6 @@
 package oxchains.fabric.sdk;
 
 import com.google.common.collect.Lists;
-import org.apache.commons.io.IOUtils;
 import org.hyperledger.fabric.protos.peer.Query.ChaincodeInfo;
 import org.hyperledger.fabric.sdk.*;
 import org.hyperledger.fabric.sdk.exception.CryptoException;
@@ -21,8 +20,6 @@ import oxchains.fabric.console.domain.PeerEventhub;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.LongStream;
@@ -62,8 +59,6 @@ public class FabricSDK {
 
     @Value("${fabric.orderer.name}") private String defaultOrdererName;
     @Value("${fabric.orderer.endpoint}") String defaultOrdererEndpoint;
-    @Value("${fabric.chain.name}") String defaultChainName;
-    @Value("${fabric.chain.configuration}") String defaultChainConfigurationPath;
 
     private final ThreadLocal<User> USER_CONTEXT = new ThreadLocal<>();
 
@@ -79,14 +74,6 @@ public class FabricSDK {
     public FabricSDK withUserContext(User userContext) {
         USER_CONTEXT.set(userContext);
         return this;
-    }
-
-    public String getDefaultOrderer() {
-        return defaultOrdererEndpoint;
-    }
-
-    public String getDefaultChainName() {
-        return defaultChainName;
     }
 
     public Optional<Peer> withPeer(String peerId, String peerUrl) {
@@ -120,25 +107,6 @@ public class FabricSDK {
             LOG.error("failed to create event hub at {}", eventEndpoint, e);
         }
         return Optional.ofNullable(eventHub);
-    }
-
-    /**
-     * @param chainName chain name
-     * @param orderer with which orderer the chain will be constructed
-     * @param chainConfigurationFilePath path of chain configuration file
-     */
-    public Optional<Chain> constructChain(String chainName, Orderer orderer, String chainConfigurationFilePath) {
-        try {
-            InputStream inputStream = getClass()
-              .getClassLoader()
-              .getResourceAsStream(chainConfigurationFilePath);
-            if (inputStream != null) {
-                return constructChain(chainName, orderer, new ChainConfiguration(IOUtils.toByteArray(inputStream)));
-            }
-        } catch (IOException e) {
-            LOG.error("failed to read chain configuration file {}", chainConfigurationFilePath, e);
-        }
-        return empty();
     }
 
     /**
@@ -225,17 +193,15 @@ public class FabricSDK {
         return Optional.ofNullable(PEER_CACHE.get(peerId));
     }
 
-    public boolean joinChain(Peer peer) {
-        return joinChain(peer, defaultChainName);
-    }
-
     public boolean joinChain(Peer peer, String chainName) {
         Chain chain = fabricClient.getChain(chainName);
         try {
             boolean joined = chain
               .getPeers()
               .stream()
-              .anyMatch(p-> peer.getName().equals(p.getName()));
+              .anyMatch(p -> peer
+                .getName()
+                .equals(p.getName()));
             if (!joined) {
                 chain
                   .joinPeer(peer)
@@ -258,10 +224,6 @@ public class FabricSDK {
         return Lists.newCopyOnWriteArrayList(fabricClient
           .getChain(channelName)
           .getEventHubs());
-    }
-
-    public List<Peer> chainPeers() {
-        return chainPeers(defaultChainName);
     }
 
     public List<ProposalResponse> installChaincodeOnPeer(ChainCodeID chaincodeId, Chain chain, String lang, String sourceLocation, Collection<Peer> peers) {
@@ -295,8 +257,8 @@ public class FabricSDK {
         return emptyList();
     }
 
-    public CompletableFuture<ProposalResponse> instantiateChaincode(ChainCodeID chaincode, ChaincodeEndorsementPolicy policy, String... params) {
-        return getChain(defaultChainName)
+    public CompletableFuture<ProposalResponse> instantiateChaincode(ChainCodeID chaincode, String chainname, ChaincodeEndorsementPolicy policy, String... params) {
+        return getChain(chainname)
           .map(chain -> instantiateChaincode(chaincode, chain, chain
             .getPeers()
             .iterator()
@@ -369,8 +331,8 @@ public class FabricSDK {
         return supplyAsync(() -> null);
     }
 
-    public CompletableFuture<ProposalResponse> invokeChaincode(ChainCodeID chaincode, String... params) {
-        return getChain(defaultChainName)
+    public CompletableFuture<ProposalResponse> invokeChaincode(String chainname, ChainCodeID chaincode, String... params) {
+        return getChain(chainname)
           .map(chain -> invokeChaincode(chaincode, chain, chain
             .getPeers()
             .iterator()
@@ -378,8 +340,8 @@ public class FabricSDK {
           .orElse(supplyAsync(() -> null));
     }
 
-    public ProposalResponse queryChaincode(ChainCodeID chaincode, String... args) {
-        return getChain(defaultChainName)
+    public ProposalResponse queryChaincode(String chainname, ChainCodeID chaincode, String... args) {
+        return getChain(chainname)
           .map(chain -> queryChaincode(chaincode, chain, chain
             .getPeers()
             .iterator()
@@ -427,15 +389,6 @@ public class FabricSDK {
             LOG.error("failed to query installed chaincodes of peer {}:", peer.getName(), e);
         }
         return emptyList();
-    }
-
-    /**
-     * instantiated chaincodes
-     */
-    public List<ChaincodeInfo> chaincodesOnPeerForDefaultChain(Peer peer) {
-        return getChain(defaultChainName)
-          .map(chain -> chaincodesOnPeer(peer, chain))
-          .orElse(emptyList());
     }
 
     /**
@@ -511,10 +464,11 @@ public class FabricSDK {
         return empty();
     }
 
-    public boolean attachEventHubToChain(EventHub eventHub) {
+    public boolean attachEventHubToChain(String chainname, EventHub eventHub) {
         try {
-            Chain chain = fabricClient.getChain(defaultChainName);
+            Chain chain = fabricClient.getChain(chainname);
             chain.addEventHub(eventHub);
+            chain.initialize();
             return true;
         } catch (Exception e) {
             LOG.error("failed to attach eventhub {}", eventHub.getUrl(), e.getMessage());
@@ -596,14 +550,14 @@ public class FabricSDK {
         });
     }
 
-    public List<ProposalResponse> installChaincodeOnPeer(ChainCodeID chaincode, String path, String lang, List<Peer> peers) {
+    public List<ProposalResponse> installChaincodeOnPeer(ChainCodeID chaincode, String chainname, String path, String lang, List<Peer> peers) {
         switch (lang) {
         case "go":
-            return getChain(defaultChainName)
+            return getChain(chainname)
               .map(chain -> installChaincodeOnPeer(chaincode, chain, GO_LANG, path, peers))
               .orElse(emptyList());
         case "java":
-            return getChain(defaultChainName)
+            return getChain(chainname)
               .map(chain -> installChaincodeOnPeer(chaincode, chain, JAVA, path, peers))
               .orElse(emptyList());
         default:

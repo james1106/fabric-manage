@@ -32,6 +32,19 @@ public class FabricChainControllerStory {
         steps.addPeer(peerId, peerEndpoint, eventhub, pass, org, ca, caUri, msp);
     }
 
+    @Given("chain $chainname constructed")
+    public void givenChain(String chainname){
+        steps.createChain(chainname);
+        steps.chainConstructed();
+    }
+
+
+    @Given("chain peer $peerId joined $chainname and listened")
+    public void givenPeerJoinedChain(String peerId, String chainname){
+        steps.peerJoins(peerId, chainname);
+        steps.peerJoined(peerId, chainname);
+    }
+
     @When("chain peer $peerId joins $chainname")
     public void whenPeerJoinsChain(String peerId, String chainname){
         steps.peerJoins(peerId, chainname);

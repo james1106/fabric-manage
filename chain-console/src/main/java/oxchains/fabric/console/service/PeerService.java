@@ -1,6 +1,5 @@
 package oxchains.fabric.console.service;
 
-import org.hyperledger.fabric.sdk.EventHub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,8 +12,6 @@ import oxchains.fabric.console.domain.PeerEventhub;
 import oxchains.fabric.console.domain.PeerInfo;
 import oxchains.fabric.console.domain.User;
 import oxchains.fabric.sdk.FabricSDK;
-import oxchains.fabric.sdk.FabricSSH;
-import oxchains.fabric.sdk.FabricSSH.SSHResponse;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -27,7 +24,6 @@ import java.util.Optional;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Collections.emptyList;
-import static java.util.Objects.nonNull;
 import static java.util.Optional.empty;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.security.core.context.SecurityContextHolder.getContext;
@@ -42,14 +38,12 @@ public class PeerService {
     private Logger LOG = LoggerFactory.getLogger(this.getClass());
 
     private FabricSDK fabricSDK;
-    private FabricSSH fabricSSH;
     private PeerRepo peerRepo;
 
     @Value("${fabric.peer.connect.timeout}") private int peerConnectTimeout;
 
-    public PeerService(@Autowired FabricSDK fabricSDK, @Autowired FabricSSH fabricSSH, @Autowired PeerRepo peerRepo) {
+    public PeerService(@Autowired FabricSDK fabricSDK, @Autowired PeerRepo peerRepo) {
         this.fabricSDK = fabricSDK;
-        this.fabricSSH = fabricSSH;
         this.peerRepo = peerRepo;
     }
 
@@ -93,28 +87,6 @@ public class PeerService {
         return emptyList();
     }
 
-    public boolean start(String peerId) {
-        Optional<SSHResponse> responseOptional = fabricSSH.startPeer(peerId);
-        if (responseOptional.isPresent()) return responseOptional
-          .map(SSHResponse::succeeded)
-          .orElse(false);
-        return false;
-    }
-
-    public boolean stop(String peerId) {
-        try {
-            PeerEventhub peerEventhub = peerRepo.findOne(peerId);
-            if (nonNull(peerEventhub.getEventhub())) fabricSDK.stopEventhub(peerId);
-        } catch (Exception e) {
-            LOG.error("failed to stop cached eventhub {}", peerId, e);
-        }
-        Optional<SSHResponse> responseOptional = fabricSSH.stopPeer(peerId);
-        if (responseOptional.isPresent()) return responseOptional
-          .map(SSHResponse::succeeded)
-          .orElse(false);
-        return false;
-    }
-
     private Optional<User> userContext() {
         return ((JwtAuthentication) getContext().getAuthentication()).user();
     }
@@ -142,7 +114,6 @@ public class PeerService {
         }
         return false;
     }
-
 
     private boolean reachable(String endpoint) {
         Socket s = null;

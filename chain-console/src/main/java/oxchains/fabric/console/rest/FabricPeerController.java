@@ -36,21 +36,6 @@ public class FabricPeerController {
         return success(null);
     }
 
-    @PutMapping("/peer/{peerId}/status")
-    public RestResp changePeerStatus(@PathVariable String peerId, @RequestParam int action) {
-        boolean operationDone = false;
-        switch (action) {
-        case 1:
-            operationDone = peerService.start(peerId);
-            break;
-        case 0:
-            operationDone = peerService.stop(peerId);
-        default:
-            break;
-        }
-        return operationDone ? success(null) : fail();
-    }
-
     @PostMapping("/peer")
     public RestResp addPeer(@RequestBody PeerEventhub peerEventhub) {
         boolean added = peerService.addPeer(peerEventhub);

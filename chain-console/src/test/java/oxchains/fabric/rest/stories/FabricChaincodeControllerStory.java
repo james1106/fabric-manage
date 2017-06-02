@@ -13,14 +13,9 @@ public class FabricChaincodeControllerStory {
 
     @Steps FabricChaincodeControllerSteps steps;
 
-    @Given("fabric console for chaincode")
-    public void givenFabricConsoleForChaincode() {
-    }
-
-
-    @Given("added peer $peerId at $peerEndpoint with eventhub at $eventHub")
-    public void givenPeerAndEventhub(String peerId, String peerEndpoint, String eventHub){
-        steps.withPeerAndEventHub(peerId, peerEndpoint, eventHub);
+    @Given("token of chain admin $username from org $affiliation")
+    public void givenAdmin(String username, String affiliation) throws Exception {
+        steps.withTokenOf(username, affiliation);
     }
 
     @When("I upload chaincode $chaincode")
@@ -33,9 +28,9 @@ public class FabricChaincodeControllerStory {
         steps.uploaded();
     }
 
-    @When("I install chaincode $chaincode on $peerId")
-    public void whenIInstallChaincodeOnPeer(String chaincode, String peerId) {
-        steps.installChaincodeOn(chaincode, peerId);
+    @When("I install chaincode $chaincode on $peerId of chain $chain")
+    public void whenIInstallChaincodeOnPeer(String chaincode, String peerId, String chain) {
+        steps.installChaincodeOn(chaincode, chain, peerId);
     }
 
     @Then("chaincode $chaincode installed on $peerId")
@@ -43,9 +38,9 @@ public class FabricChaincodeControllerStory {
         steps.installed(chaincode, peerId);
     }
 
-    @When("I instantiate $chaincode chaincode with: $args")
-    public void whenIInstantiateChaincodeWith(String chaincode, String args) {
-        steps.instantiateWith(chaincode, args);
+    @When("I instantiate $chaincode chaincode of chain $chain with: $args")
+    public void whenIInstantiateChaincodeWith(String chaincode, String chain, String args) {
+        steps.instantiateWith(chaincode, chain, args);
     }
 
     @Then("$chaincode chaincode intantiation succeed")
@@ -53,9 +48,9 @@ public class FabricChaincodeControllerStory {
         steps.instantiated(chaincode);
     }
 
-    @When("I trigger a transaction on $chaincode chaincode with: $args")
-    public void whenITriggerTransactionOnChaincodeWith(String chaincode, String args) {
-        steps.triggerTransaction(chaincode, args);
+    @When("I trigger a transaction on $chaincode chaincode of chain $chain with: $args")
+    public void whenITriggerTransactionOnChaincodeWith(String chaincode, String chain, String args) {
+        steps.triggerTransaction(chaincode, chain, args);
     }
 
     @Then("transaction on $chaincode chaincode succeed")
@@ -83,9 +78,9 @@ public class FabricChaincodeControllerStory {
         steps.chaincodeMarkedInstantiated(chaincode);
     }
 
-    @When("I make a query on $chaincode chaincode with: $args")
-    public void whenQueryChaincodeWith(String chaincode, String args){
-        steps.queryWith(chaincode, args);
+    @When("I make a query on $chaincode chaincode of chain $chain with: $args")
+    public void whenQueryChaincodeWith(String chaincode, String chain, String args){
+        steps.queryWith(chaincode, chain, args);
     }
 
     @Then("result of $chaincode chaincode has $key of $value")
