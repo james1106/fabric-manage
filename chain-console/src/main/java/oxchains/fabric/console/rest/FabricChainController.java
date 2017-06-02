@@ -24,8 +24,8 @@ public class FabricChainController {
         this.chainService = chainService;
     }
 
-    @PostMapping("/chain/{chainname}")
-    public RestResp newChain(@PathVariable String chainname, @RequestParam("config") MultipartFile config) {
+    @PostMapping("/chain")
+    public RestResp newChain(@RequestParam String chainname, @RequestParam("config") MultipartFile config) {
         return chainService.newChain(chainname, config) ? success(null) : fail();
     }
 
@@ -59,9 +59,9 @@ public class FabricChainController {
           .orElse(fail());
     }
 
-    @PostMapping("/chain/{chainname}/peer/{peerId}")
-    public RestResp joinChain(@PathVariable String chainname, @PathVariable String peerId){
-        return chainService.joinChain(chainname, peerId) ? success(null) : fail() ;
+    @PostMapping("/chain/{chainname}/peer")
+    public RestResp joinChain(@PathVariable String chainname, @RequestParam String peer){
+        return chainService.joinChain(chainname, peer) ? success(null) : fail() ;
     }
 
 }

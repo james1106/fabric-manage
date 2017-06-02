@@ -141,8 +141,9 @@ public class FabricChainControllerSteps {
           .header(AUTHORIZATION, "Bearer " + token)
           .contentType(MULTIPART_FORM_DATA_VALUE)
           .multiPart("config", chainConfigFile)
+          .queryParam("chain", chainName)
           .when()
-          .post("/chain/" + chainName);
+          .post("/chain");
     }
 
     public void chainConstructed() {
@@ -245,8 +246,9 @@ public class FabricChainControllerSteps {
     public void peerJoins(String peerId, String chainname) {
         mockMvcResponse = given()
           .header(AUTHORIZATION, "Bearer " + token)
+          .queryParam("peer", peerId)
           .when()
-          .post("chain/" + chainname + "/peer/" + peerId);
+          .post("/chain/" + chainname + "/peer");
     }
 
     @Step("peer {0} has joined chain {1}")
