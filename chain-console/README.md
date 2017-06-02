@@ -4,15 +4,14 @@
 ## Features
 
 - [x] fabric-ca user enroll, register, revoke
-- [x] fabric peer start, stop, status
-- [x] fabric eventHub list
+- [x] fabric peer start, stop, status, list (including eventHub)
 - [x] fabric chain status
 - [x] fabric chaincode list, upload, install, instantiate, query, invoke
 - [x] support system context restore between restart
+- [x] fabric chain management: new-chain
 
 ### TODO
 
-- [ ] fabric chain management: new-chain
 - [ ] fabric transaction performance visualization
 
 
