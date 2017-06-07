@@ -39,6 +39,8 @@ public class ChainAppConfiguration extends WebSecurityConfigurerAdapter {
     @Override
     public void configure(HttpSecurity http) throws Exception {
         http
+          .cors()
+          .and()
           .csrf()
           .disable()
           .authorizeRequests()
@@ -77,7 +79,8 @@ public class ChainAppConfiguration extends WebSecurityConfigurerAdapter {
                 registry
                   .addMapping("/**")
                   .allowedOrigins("*")
-                  .allowedMethods("GET", "POST", "PUT", "OPTIONS", "DELETE");
+                  .allowedMethods("GET", "POST", "PUT", "OPTIONS", "DELETE")
+                  .allowedHeaders("*");
             }
         };
     }

@@ -11,7 +11,6 @@ import oxchains.fabric.console.data.UserTokenRepo;
 import oxchains.fabric.console.domain.User;
 import oxchains.fabric.console.domain.UserToken;
 import oxchains.fabric.sdk.FabricSDK;
-import oxchains.fabric.sdk.domain.CAUser;
 
 import java.util.ArrayList;
 import java.util.Base64;
@@ -55,15 +54,6 @@ public class UserService {
         return emptyList();
     }
 
-    public List<User> userList(String affiliation) {
-        try {
-            return newArrayList(userRepo.findUsersByAffiliation(affiliation));
-        } catch (Exception e) {
-            LOG.error("failed to fetch users: ", e);
-        }
-        return emptyList();
-    }
-
     private Optional<User> userContext() {
         return ((JwtAuthentication) getContext().getAuthentication()).user();
     }
@@ -90,7 +80,9 @@ public class UserService {
         try {
             return userContext()
               .map(context -> {
-                  boolean revoked = fabricSDK.withUserContext(fromUser(context)).revokeUser(username, reason, context.getCa(), context.getUri());
+                  boolean revoked = fabricSDK
+                    .withUserContext(fromUser(context))
+                    .revokeUser(username, reason, context.getCa(), context.getUri());
                   if (revoked) {
                       userRepo
                         .findUserByUsernameAndAffiliation(username, context.getAffiliation())
@@ -119,7 +111,7 @@ public class UserService {
               .map(u -> u.enrolled()
                 ? u
                 : fabricSDK
-                  .enroll(user.getUsername(), user.getPassword(), user.getCa(), user.getUri())
+                  .enroll(user.getUsername(), user.getPassword(), u.getCa(), u.getUri())
                   .map(enrollment -> {
                       u.setCertificate(enrollment.getCert());
                       u.setPrivateKey(Base64

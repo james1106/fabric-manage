@@ -2,7 +2,6 @@ package oxchains.fabric.sdk.steps;
 
 import net.thucydides.core.annotations.Step;
 import org.apache.commons.io.IOUtils;
-import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
@@ -34,8 +33,8 @@ public class CASteps {
     @Step("prepare admin user context")
     public void adminContext() throws Exception {
         CAUser user = new CAUser(caServerAdmin, affiliation, msp, caServerAdminPass);
-        String keyStr =  IOUtils.toString(new ClassPathResource(key).getInputStream());
-        String certStr =  IOUtils.toString(new ClassPathResource(cert).getInputStream());
+        String keyStr = IOUtils.toString(new ClassPathResource(key).getInputStream());
+        String certStr = IOUtils.toString(new ClassPathResource(cert).getInputStream());
         user.setEnrollment(new CAEnrollment(keyStr, certStr));
         fabricSDK.withUserContext(user);
     }

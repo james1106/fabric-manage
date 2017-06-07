@@ -23,9 +23,11 @@
         <java.version>1.8</java.version>
         <serenity.version>1.4.0</serenity.version>
         <serenity.jbehave.version>1.24.0</serenity.jbehave.version>
-        <serenity.plugin.version>1.4.0</serenity.plugin.version>
         <rest-assured.version>3.0.3</rest-assured.version>
-        <maven-surefire-plugin.version>2.19.1</maven-surefire-plugin.version>
+
+        <maven.surefire.plugin.version>2.19.1</maven.surefire.plugin.version>
+        <maven.compiler.plugin.version>3.6.1</maven.compiler.plugin.version>
+
         <fabric-sdk-java.version>1.0.0-SNAPSHOT</fabric-sdk-java.version>
         <hikaricp.version>2.6.1</hikaricp.version>
         <jjwt.version>0.7.0</jjwt.version>
@@ -144,12 +146,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven.compiler.plugin.version}</version>
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
-                    <includes>
-                        <include>security/*</include>
-                    </includes>
                 </configuration>
             </plugin>
 
@@ -164,7 +164,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>${maven-surefire-plugin.version}</version>
+                <version>${maven.surefire.plugin.version}</version>
                 <configuration>
                     <testFailureIgnore>true</testFailureIgnore>
                 </configuration>
@@ -172,7 +172,7 @@
             <plugin>
                 <groupId>net.serenity-bdd.maven.plugins</groupId>
                 <artifactId>serenity-maven-plugin</artifactId>
-                <version>${serenity.plugin.version}</version>
+                <version>${serenity.version}</version>
                 <executions>
                     <execution>
                         <id>serenity-reports</id>
