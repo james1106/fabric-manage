@@ -7,7 +7,6 @@ import io.jsonwebtoken.impl.DefaultJwtBuilder;
 import io.jsonwebtoken.impl.DefaultJwtParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
@@ -27,6 +26,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static java.util.Optional.empty;
+import static java.util.stream.Collectors.joining;
 
 /**
  * @author aiet
@@ -75,7 +75,11 @@ public class JwtService {
             .now()
             .plusWeeks(1)
             .toInstant()))
-          .claim("authority", user.getAffiliation())
+          .claim("authority", user
+            .getAuthorities()
+            .stream()
+            .collect(joining(",")))
+          .claim("affiliation", user.getAffiliation())
           .signWith(SignatureAlgorithm.ES256, privateKey)
           .compact();
     }
@@ -86,7 +90,8 @@ public class JwtService {
               .setSigningKey(publicKey)
               .parseClaimsJws(token);
             Claims claims = jws.getBody();
-            return userRepo.findUserByUsernameAndAffiliation(claims.getSubject(), claims.get("authority", String.class))
+            return userRepo
+              .findUserByUsernameAndAffiliation(claims.getSubject(), claims.get("affiliation", String.class))
               .map(u -> new JwtAuthentication(u, token, claims));
         } catch (Exception e) {
             LOG.error("failed to parse jwt token {}: ", token, e);
