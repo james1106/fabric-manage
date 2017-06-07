@@ -3,6 +3,7 @@ package oxchains.fabric.console.domain;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Transient;
@@ -15,7 +16,7 @@ import java.util.Date;
 public class UserToken {
 
     @Id private Long id;
-
+    @Column(length = 512)
     private String token;
     @JsonFormat(pattern = "yyy-MM-dd hh:mm:ss") private Date createtime = new Date();
     @Transient private User user;
