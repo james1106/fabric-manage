@@ -29,6 +29,11 @@ public class FabricChainController {
         return chainService.newChain(chainname, config) ? success(null) : fail();
     }
 
+    @GetMapping("/chain")
+    public RestResp chains(){
+        return success(chainService.chains());
+    }
+
     @GetMapping("/chain/{chainname}")
     public RestResp chaininfo(@PathVariable String chainname) {
         return chainService

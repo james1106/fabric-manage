@@ -143,6 +143,7 @@ public class FabricSDK {
                   try {
                       Chain newChain = fabricClient.newChain(chainName, orderer, chainConfiguration, fabricClient.getChainConfigurationSignature(chainConfiguration, fabricClient.getUserContext()));
                       ChainInfo newChainInfo = new ChainInfo(chainName, orderer.getUrl());
+                      newChainInfo.setAffiliation(fabricClient.getUserContext().getAffiliation());
                       chainRepo.save(newChainInfo);
                       LOG.info("new chain {} constructed on orderer {}", chainName, orderer.getUrl());
                       return newChain;
@@ -571,4 +572,7 @@ public class FabricSDK {
         return ordererOptional.flatMap(orderer -> constructChain(chain, orderer, chainConfiguration));
     }
 
+    public List<ChainInfo> chains() {
+        return newArrayList(chainRepo.findByAffiliation(fabricClient.getUserContext().getAffiliation()));
+    }
 }

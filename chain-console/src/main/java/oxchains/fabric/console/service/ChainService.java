@@ -130,4 +130,9 @@ public class ChainService {
           .orElse(false);
     }
 
+    public List<ChainInfo> chains() {
+        return userContext().map(context ->
+            fabricSDK.withUserContext(fromUser(context)).chains()
+        ).orElse(emptyList());
+    }
 }

@@ -14,4 +14,6 @@ public interface ChainRepo extends CrudRepository<ChainInfo, Long>{
 
     Optional<ChainInfo> findByNameAndOrderer(String name, String orderer);
 
+    Iterable<ChainInfo> findByAffiliation(String affiliation);
+
 }

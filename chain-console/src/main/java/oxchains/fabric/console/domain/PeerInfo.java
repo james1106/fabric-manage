@@ -15,6 +15,7 @@ public class PeerInfo {
     private String endpoint;
     private String status = "N/A";
     private int statusCode = -1;
+    private String affiliation;
 
     private List<ChainCodeInfo> chaincodes = emptyList();
     private List<ChainCodeInfo> runnablecodes = emptyList();
@@ -26,6 +27,14 @@ public class PeerInfo {
     public PeerInfo(Peer peer) {
         this.id = peer.getName();
         this.endpoint = peer.getUrl();
+    }
+
+    public String getAffiliation() {
+        return affiliation;
+    }
+
+    public void setAffiliation(String affiliation) {
+        this.affiliation = affiliation;
     }
 
     public List<ChainCodeInfo> getRunnablecodes() {

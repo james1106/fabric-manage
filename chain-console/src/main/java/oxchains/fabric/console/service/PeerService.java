@@ -57,6 +57,7 @@ public class PeerService {
                   .withPeer(peer.getId(), peer.getEndpoint())
                   .map(fabricPeer -> {
                       PeerInfo peerInfo = new PeerInfo(fabricPeer);
+                      peerInfo.setAffiliation(u.getAffiliation());
                       if (reachable(fabricPeer.getUrl())) {
                           peerInfo.setStatusCode(1);
                           peerInfo.setChaincodes(fabricSDK
@@ -65,12 +66,11 @@ public class PeerService {
                             .stream()
                             .map(ChainCodeInfo::new)
                             .collect(toList()));
-                          //FIXME find all chaincodes on the peer despite of the chain it is on
-                          // peerInfo.setRunnablecodes(fabricSDK
-                          //   .chaincodesOnPeerForDefaultChain(peer)
-                          //   .stream()
-                          //   .map(ChainCodeInfo::new)
-                          //   .collect(toList()));
+                          peerInfo.setRunnablecodes(fabricSDK
+                            .chaincodesOnPeer(fabricPeer)
+                            .stream()
+                            .map(ChainCodeInfo::new)
+                            .collect(toList()));
                           peerInfo.setChains(newArrayList(fabricSDK
                             .withUserContext(fromUser(u))
                             .chainsOfPeer(fabricPeer)));
@@ -148,20 +148,20 @@ public class PeerService {
     public Optional<PeerEventhub> enrollPeer(PeerEventhub peer) {
         try {
             /* admin users should be submitted to the system beforehand */
-            Optional<PeerEventhub> userOptional = peerRepo.findPeerEventhubByIdAndPasswordAndAffiliation(peer.getId(), peer.getPassword(), peer.getAffiliation());
-            return userOptional.map(u -> u.enrolled()
-              ? u
+            Optional<PeerEventhub> peerOptional = peerRepo.findPeerEventhubByIdAndPasswordAndAffiliation(peer.getId(), peer.getPassword(), peer.getAffiliation());
+            return peerOptional.map(savedPeer -> savedPeer.enrolled()
+              ? savedPeer
               : fabricSDK
-                .enroll(peer.getId(), peer.getPassword(), peer.getCa(), peer.getUri())
+                .enroll(savedPeer.getId(), savedPeer.getPassword(), savedPeer.getCa(), savedPeer.getUri())
                 .map(enrollment -> {
-                    u.setCertificate(enrollment.getCert());
-                    u.setPrivateKey(Base64
+                    savedPeer.setCertificate(enrollment.getCert());
+                    savedPeer.setPrivateKey(Base64
                       .getEncoder()
                       .encodeToString(enrollment
                         .getKey()
                         .getEncoded()));
-                    LOG.info("peer {} enrolled, saving msp info...", u);
-                    return peerRepo.save(u);
+                    LOG.info("peer {} enrolled, saving msp info...", savedPeer);
+                    return peerRepo.save(savedPeer);
                 })
                 .orElse(null));
 
