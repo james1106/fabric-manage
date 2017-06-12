@@ -28,6 +28,7 @@
   "dependencies": {
     "axios": "^0.16.1",
     "babel-preset-stage-1": "^6.24.1",
+    "jwt-decode": "^2.2.0",
     "lodash": "^4.17.4",
     "moment": "^2.18.1",
     "moment-timezone": "^0.5.13",

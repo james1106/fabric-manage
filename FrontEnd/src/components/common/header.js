@@ -8,8 +8,8 @@ class Header extends  Component {
 
   renderUserInfo() {
     if(this.props.authenticated) {
-      //const user = JSON.parse(localStorage.getItem('user'));
-      const username= localStorage.getItem('username');
+      const user = JSON.parse(localStorage.getItem('user'));
+      const username= user.username;
       const avatar = `https://gravatar.com/avatar/oxchain-${username}?s=100&d=retro`;
 
       return (
@@ -35,7 +35,7 @@ class Header extends  Component {
               </li>
               <li className="user-footer">
                 <div className="pull-left">
-                  <Link to="#" className="btn btn-default btn-flat">个人设置</Link>
+                  <Link to="/profile" className="btn btn-default btn-flat">个人信息</Link>
                 </div>
                 <div className="pull-right">
                   <Link to="/signout" className="btn btn-default btn-flat">退出登录</Link>

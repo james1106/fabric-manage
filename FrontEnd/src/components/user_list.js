@@ -11,23 +11,31 @@ import {
   ModalBody,
   ModalFooter
 } from 'react-modal-bootstrap';
+import jwtDecode from 'jwt-decode';
 import AddUser from './user_add';
+
 
 class UserList extends Component {
   constructor(props) {
     super(props);
+
+    const { authority } = jwtDecode(localStorage.getItem('token'));
     this.state = {
       isModalOpen: false,
       isAddModalOpen : false,
       actionSuccess: null,
-      actionResult: ''
+      actionResult: '',
+      isAdmin: authority === 'MANAGE',
+      currentUser: JSON.parse(localStorage.getItem('user'))
     };
-
   }
 
   componentWillMount() {
 
-    this.props.fetchUserList();
+    this.props.fetchUserList(function (err) {
+      //console.log(err);
+      if(err) alert(err);
+    });
   }
 
   hideModal = () => {
@@ -38,13 +46,15 @@ class UserList extends Component {
 
   renderRows() {
     return this.props.all.map((row, idx) => {
+      let button = null;
+      if(this.state.isAdmin && row.username != this.state.currentUser.username) {
+        button = <button className="btn btn-sm btn-danger margin-r-5" onClick={this.handleStopClick.bind(this, row)}>禁用</button>;
+      }
       return (<tr key={idx}>
         <td>{row.username}</td>
         <td>{row.affiliation}</td>
-        <td>
-          <button className="btn btn-sm btn-danger margin-r-5"
-                  onClick={this.handleStopClick.bind(this, row)}>禁用</button>
-        </td>
+        <td>{row.ca}</td>
+        <td>{button}</td>
       </tr>);
     });
   }
@@ -80,6 +90,10 @@ class UserList extends Component {
       return <div><section className="content"><h1>Loading...</h1></section></div>
     }
 
+    let button = null;
+    if(this.state.isAdmin) {
+      button = <button className="btn btn-success pull-right" onClick={this.handleAddClick.bind(this)}><i className="fa fa-plus"></i> 注册用户</button>;
+    }
     return (
       <div>
         <section className="content-header"><h1></h1></section>
@@ -89,14 +103,15 @@ class UserList extends Component {
               <div className="box box-info">
                 <div className="box-header">
                   <h3 className="box-title">用户</h3>
-                  <button className="btn btn-success pull-right" onClick={this.handleAddClick.bind(this)}><i className="fa fa-plus"></i> 注册用户</button>
+                  {button}
                 </div>
                 <div className="box-body table-responsive no-padding">
                   <table className="table table-bordered table-hover">
                     <tbody>
                     <tr>
                       <th>ID</th>
-                      <th>从属</th>
+                      <th>机构</th>
+                      <th>CA</th>
                       <th>操作</th>
                     </tr>
                     { this.renderRows() }

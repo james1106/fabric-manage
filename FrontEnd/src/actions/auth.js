@@ -8,17 +8,17 @@ import {
 
 
 // 登录
-export function signinAction({ username, password }, callback) {
+export function signinAction({ username, password,affiliation }, callback) {
   return function(dispatch) {
-    axios.post(`${ROOT_URL}/user/token`, { username, password })
+    axios.post(`${ROOT_URL}/user/token`, { username, password,affiliation })
     //axios.get('http://localhost:3000/signin')
       .then(response => {
 
         if(response.data.status == 1) {//auth success
           // - Save the JWT token
           localStorage.setItem('token', response.data.data.token);
-          //localStorage.setItem('user', JSON.stringify(response.data.data));
-          localStorage.setItem('username', response.data.data.username);
+          localStorage.setItem('user', JSON.stringify(response.data.data.user));
+          //localStorage.setItem('username', response.data.data.user.username);
 
           dispatch({type: AUTH_USER});
           // - redirect to the route '/'

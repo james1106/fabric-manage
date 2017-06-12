@@ -20,10 +20,10 @@ class AddPeer extends Component {
     this.state = { error:null, spin:false };
   }
 
-  handleFormSubmit({ id, endpoint, eventhub }) {
-    if(id && endpoint && eventhub) {
+  handleFormSubmit({ id, endpoint, eventhub, password }) {
+    if(id && endpoint && eventhub && password) {
       this.setState({ spin:true });
-      this.props.addPeer({ id, endpoint, eventhub }, err => {
+      this.props.addPeer({ id, endpoint, eventhub, password }, err => {
         this.setState({ error: err ? err : null, spin:false });
         this.props.addCallback(err);
       });
@@ -63,6 +63,7 @@ class AddPeer extends Component {
               <Field name="id" component={this.renderField} type="text"  label="节点ID" />
               <Field name="endpoint" component={this.renderField} type="text"  label="EndPoint" />
               <Field name="eventhub" component={this.renderField} type="text" label="EventHub" />
+              <Field name="password" component={this.renderField} type="text" label="Password" />
               <div className="row">
                 <div className="col-xs-8">
                 </div>
@@ -93,6 +94,10 @@ const validate = values => {
 
   if(!values.eventhub) {
     errors.eventhub = 'EventHub不能为空';
+  }
+
+  if(!values.password) {
+    errors.password = '密码不能为空';
   }
 
   return errors

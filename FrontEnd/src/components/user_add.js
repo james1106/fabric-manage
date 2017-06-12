@@ -20,10 +20,10 @@ class AddUser extends Component {
     this.state = { error:null, spin:false };
   }
 
-  handleFormSubmit({ username, affiliation, password }) {
-    if(username && password && affiliation) {
+  handleFormSubmit({ username, password }) {
+    if(username && password) {
       this.setState({ spin:true });
-      this.props.addUser({username, affiliation, password}, err => {
+      this.props.addUser({username, password}, err => {
         this.setState({ error: err ? err : null, spin:false });
         this.props.addCallback(err);
       });
@@ -62,7 +62,6 @@ class AddUser extends Component {
             {this.renderAlert()}
             <form className="form-signin" onSubmit={handleSubmit(this.handleFormSubmit.bind(this))}>
               <Field name="username" component={this.renderField} type="text"  label="用户名" icon="user" />
-              <Field name="affiliation" component={this.renderField} type="text"  label="机构" icon="home" />
               <Field name="password" component={this.renderField} type="text" label="密码" icon="lock" />
               <div className="row">
                 <div className="col-xs-8">
@@ -86,10 +85,6 @@ const validate = values => {
 
   if(!values.username) {
     errors.username = '用户名不能为空';
-  }
-
-  if(!values.affiliation) {
-    errors.affiliation = '机构不能为空';
   }
 
   if(!values.password) {
