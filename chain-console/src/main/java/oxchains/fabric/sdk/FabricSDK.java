@@ -573,6 +573,6 @@ public class FabricSDK {
     }
 
     public List<ChainInfo> chains() {
-        return newArrayList(chainRepo.findByAffiliation(fabricClient.getUserContext().getAffiliation()));
+        return newArrayList(chainRepo.findByAffiliation(USER_CONTEXT.get().getAffiliation()));
     }
 }
