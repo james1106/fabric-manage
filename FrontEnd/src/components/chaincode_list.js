@@ -137,7 +137,7 @@ class ChainCodeList extends Component {
       let buttons = [<button className='btn btn-sm btn-default margin-r-5' onClick={this.handleInstallClick.bind(this, row)} key="1">部署</button>];
       if(row.installed && row.installed.length>0) {//已经部署
         buttons.push(<button className='btn btn-sm btn-default margin-r-5' onClick={this.handleInitClick.bind(this, row)} key="2">初始化</button>);
-        if(row.instantiated && row.instantiated>0) {//已经初始化
+        if(row.instantiated && row.instantiated.length>0) {//已经初始化
           buttons.push(<button className='btn btn-sm btn-default margin-r-5' onClick={this.handleExecuteClick.bind(this, row)}  key="3">执行</button>);
           buttons.push(<button className='btn btn-sm btn-default margin-r-5' onClick={this.handleQueryClick.bind(this, row)}  key="4">查询</button>);
         }

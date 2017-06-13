@@ -66,8 +66,6 @@ class PeerDetail extends Component {
           <dd>{row.path}</dd>
           <dt>Version</dt>
           <dd>{row.version}</dd>
-          <dt>Init</dt>
-          <dd>{row.init?'true':'false'}</dd>
           <dt>Error</dt>
           <dd>{row.error}</dd>
         </dl>

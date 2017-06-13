@@ -18,7 +18,8 @@ import {
   INSTALL_CHAINCODE,
   INIT_CHAINCODE,
   EXECUTE_CHAINCODE,
-  FETCH_CHAINCODE_INFO
+  FETCH_CHAINCODE_INFO,
+  getAuthorizedHeader
 } from './types';
 import _ from 'lodash';
 
@@ -32,7 +33,7 @@ export function requestError(error) {
 //合约列表
 export function fetchChainCodeList() {
   return function(dispatch) {
-    axios.get(`${ROOT_URL}/chaincode`)
+    axios.get(`${ROOT_URL}/chaincode`, { headers: getAuthorizedHeader() })
       .then(response => dispatch({ type: FETCH_CHAINCODE_LIST, payload:response }))
       .catch( err => dispatch(requestError(err.message)) );
   }
@@ -58,10 +59,8 @@ export function uploadChainCode({ name, version, lang, chaincode }, callback) {
     formData.append('version', version)
     formData.append('lang', lang)
     formData.append('chaincode', chaincode[0])
-    const config = {
-      headers: { 'content-type': 'multipart/form-data' }
-    }
-    axios.post(`${ROOT_URL}/chaincode/file`, formData, config)
+    const headers = getAuthorizedHeader();
+    axios.post(`${ROOT_URL}/chaincode/file`, formData, {headers: { 'content-type': 'multipart/form-data', ...headers }})
       .then(function(response) {
         if(response.data.status == 1) {// success
           dispatch({ type: UPLOAD_CHAINCODE, payload:response });
@@ -81,17 +80,18 @@ export function uploadChainCode({ name, version, lang, chaincode }, callback) {
 
 /**
  * 部署合约
- * @param name
+ * @param chain           :  链名称
+ * @param name            :  合约名称
  * @param version
  * @param lang
- * @param peers
+ * @param peers           :  部署节点, 多个节点逗号分隔
  * @param callback(err)   :  callback when http request response. if(success) err=null ; else err=[error message].
  */
-export function installChainCode({ name, version, lang, peers }, callback) {
-  console.log(`installChainCode: ${name}, ${version}, ${lang}, ${peers}`);
+export function installChainCode({ chain, name, version, lang, peers }, callback) {
+  console.log(`installChainCode: ${chain}, ${name}, ${version}, ${lang}, ${peers}`);
 
   return function(dispatch) {
-    axios.post(`${ROOT_URL}/chaincode/install/${name}?version=${version}&lang=${lang}&peers=${peers.join()}`)
+    axios.post(`${ROOT_URL}/chaincode/install?chain=${chain}&chaincode=${name}&version=${version}&lang=${lang}&peers=${peers.join()}`, null, { headers: getAuthorizedHeader() })
       .then(response => {
 
         if(response.data.status == 1) {// success
@@ -134,19 +134,18 @@ export function installChainCode({ name, version, lang, peers }, callback) {
  * @param endorsement  : yaml file
  * @param callback(err)   :  callback when http request response. if(success) err=null ; else err=[error message].
  */
-export function initChainCode({ name, version, args, endorsement }, callback) {
-  console.log(`initChainCode: ${name}, ${version}, ${args}, ${endorsement}`);
+export function initChainCode({ chain, name, version, args, endorsement }, callback) {
+  console.log(`initChainCode: ${chain}, ${name}, ${version}, ${args}, ${endorsement}`);
 
   return function(dispatch) {
     let formData = new FormData();
+    formData.append('chain', chain)
     formData.append('name', name)
     formData.append('version', version)
     formData.append('args', args)
     formData.append('endorsement', endorsement[0])
-    const config = {
-      headers: { 'content-type': 'multipart/form-data' }
-    }
-    axios.post(`${ROOT_URL}/chaincode`, formData, config)
+    const headers = getAuthorizedHeader();
+    axios.post(`${ROOT_URL}/chaincode`, formData, {headers: { 'content-type': 'multipart/form-data', ...headers }})
       .then(function(response) {
         if(response.data.status == 1) {// success
           dispatch({ type: INIT_CHAINCODE, payload:response });
@@ -170,11 +169,11 @@ export function initChainCode({ name, version, args, endorsement }, callback) {
  * @param args
  * @param callback(err)   :  callback when http request response. if(success) err=null ; else err=[error message].
  */
-export function executeChainCode({ name, version, args }, callback) {
-  console.log(`executeChainCode: ${name}, ${version}, ${args}`);
+export function executeChainCode({ chain, name, version, args }, callback) {
+  console.log(`executeChainCode: ${chain}, ${name}, ${version}, ${args}`);
 
   return function(dispatch) {
-    axios.post(`${ROOT_URL}/chaincode/tx/${name}/${version}?args=${args}`)
+    axios.post(`${ROOT_URL}/chaincode/tx?chain=${chain}&chaincode=${name}&version=${version}&args=${args}`, null, { headers: getAuthorizedHeader() })
       .then(response => {
         if(response.data.status == 1 && response.data.data.success == 1) {// success
           const data = response.data.data;
@@ -199,9 +198,9 @@ export function executeChainCode({ name, version, args }, callback) {
  * @param args
  * @param callback(err)   :  callback when http request response. if(success) err=null ; else err=[error message].
  */
-export function fetchChainCodeInfo({ name, version, args }, callback) {
+export function fetchChainCodeInfo({ chain, name, version, args }, callback) {
   return function(dispatch) {
-    axios.get(`${ROOT_URL}/chaincode/tx/${name}/${version}?args=${args}`)
+    axios.get(`${ROOT_URL}/chaincode/tx?chain=${chain}&chaincode=${name}&version=${version}&args=${args}`, { headers: getAuthorizedHeader() })
       .then(response => {
         dispatch({ type: FETCH_CHAINCODE_INFO, payload:response })
         if(response.data.status == 1) {
