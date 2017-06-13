@@ -113,22 +113,9 @@ public class ChainService {
     public boolean joinChain(String chainname, String peerId) {
         return peerRepo
           .findPeerEventhubById(peerId)
-          .flatMap(peerEventhub -> userContext().flatMap(context -> fabricSDK
-            .withPeer(peerEventhub.getId(), peerEventhub.getEndpoint())
-            .map(peer -> {
-                LOG.info("{} joining in chain {}", peerId, chainname);
-                boolean peerJoined = fabricSDK
-                  .withUserContext(fromUser(context))
-                  .joinChain(peer, chainname);
-                if (peerJoined) {
-                    LOG.info("chain {} listening on eventhub {}", chainname, peerId);
-                    fabricSDK
-                      .withEventHub(peerId, peerEventhub.getEventhub())
-                      .ifPresent(eventHub -> fabricSDK.attachEventHubToChain(chainname, eventHub));
-                }
-                return peerJoined;
-            })))
-          .orElse(false);
+          .flatMap(peerEventhub -> userContext().map(context ->
+            fabricSDK.withUserContext(fromUser(context)).joinChain(peerEventhub, chainname)
+          )).orElse(false);
     }
 
     public List<ChainInfo> chains() {

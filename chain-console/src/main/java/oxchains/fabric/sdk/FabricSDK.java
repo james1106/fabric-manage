@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.method.P;
 import org.springframework.stereotype.Component;
 import oxchains.fabric.console.data.ChainRepo;
 import oxchains.fabric.console.domain.ChainInfo;
@@ -199,19 +200,29 @@ public class FabricSDK {
         return Optional.ofNullable(PEER_CACHE.get(peerId));
     }
 
+    public boolean joinChain(PeerEventhub peerEventhub, String chainName){
+        return withPeer(peerEventhub.getId(), peerEventhub.getEndpoint()).map(peer -> {
+              boolean joined = joinChain(peer, chainName) && withEventHub(peerEventhub.getId(), peerEventhub.getEventhub())
+                .map(eventHub -> attachEventHubToChain(chainName, eventHub))
+                .orElse(false);
+              LOG.info("peer {} joined chain {}, updating db...", peerEventhub.getId(), chainName);
+              chainRepo.findByNameAndOrderer(chainName, defaultOrdererEndpoint)
+                .ifPresent(chainInfo -> {
+                    chainRepo.save(chainInfo.addPeer(peerEventhub));
+                    LOG.info("peer {} joined chain {}, db updated!", peerEventhub.getId(), chainName);
+                });
+              return joined;
+          }
+        ).orElse(false);
+    }
+
     public boolean joinChain(Peer peer, String chainName) {
         Chain chain = fabricClient.getChain(chainName);
+        LOG.info("{} joining in chain {}", peer.getName(), chainName);
         try {
-            boolean joined = chain
-              .getPeers()
-              .stream()
-              .anyMatch(p -> peer
-                .getName()
-                .equals(p.getName()));
+            boolean joined = chain.getPeers().stream().anyMatch(p -> peer.getName().equals(p.getName()));
             if (!joined) {
-                chain
-                  .joinPeer(peer)
-                  .initialize();
+                chain.joinPeer(peer).initialize();
             }
             return true;
         } catch (Exception e) {
@@ -478,6 +489,7 @@ public class FabricSDK {
             Chain chain = fabricClient.getChain(chainname);
             chain.addEventHub(eventHub);
             chain.initialize();
+            LOG.info("chain {} listening on eventhub {}", chainname, chainname, eventHub.getName());
             return true;
         } catch (Exception e) {
             LOG.error("failed to attach eventhub {}", eventHub.getUrl(), e.getMessage());
