@@ -56,8 +56,7 @@ What users can do:
     1. invoke chaincode
     2. query chaincode
     3. view peer list and status
-    3. view details of chain, blocks and transactions
-    
+    4. view details of chain, blocks and transactions
 
 ### Membership/Identity Management
 

@@ -117,6 +117,9 @@ public class FabricSDK {
     public Optional<Chain> constructChain(String chainName, Orderer orderer, ChainConfiguration chainConfiguration) {
         Chain chain = null;
         try {
+            Chain availableChain = fabricClient.getChain(chainName);
+            if (availableChain != null) return Optional.of(availableChain);
+
             Optional<ChainInfo> chainInfoOptional = chainRepo.findByNameAndOrderer(chainName, orderer.getUrl());
             fabricClient.setUserContext(USER_CONTEXT.get());
             chain = chainInfoOptional
@@ -131,7 +134,7 @@ public class FabricSDK {
                           existingChain.addPeer(peer);
                           existingChain.addEventHub(fabricClient.newEventHub(peerEventhub.getId(), peerEventhub.getEventhub()));
                       }
-                      existingChain.initialize();
+                      if(!existingChainInfo.getPeers().isEmpty()) existingChain.initialize();
                       LOG.info("chain {} exist on orderer {}, rebuilding from data source", chainName, orderer.getUrl());
                       return existingChain;
                   } catch (InvalidArgumentException | TransactionException configuredChainException) {
@@ -143,7 +146,9 @@ public class FabricSDK {
                   try {
                       Chain newChain = fabricClient.newChain(chainName, orderer, chainConfiguration, fabricClient.getChainConfigurationSignature(chainConfiguration, fabricClient.getUserContext()));
                       ChainInfo newChainInfo = new ChainInfo(chainName, orderer.getUrl());
-                      newChainInfo.setAffiliation(fabricClient.getUserContext().getAffiliation());
+                      newChainInfo.setAffiliation(fabricClient
+                        .getUserContext()
+                        .getAffiliation());
                       chainRepo.save(newChainInfo);
                       LOG.info("new chain {} constructed on orderer {}", chainName, orderer.getUrl());
                       return newChain;
@@ -216,9 +221,12 @@ public class FabricSDK {
     }
 
     public List<Peer> chainPeers(String channelName) {
-        return Lists.newCopyOnWriteArrayList(fabricClient
-          .getChain(channelName)
-          .getPeers());
+        LOG.debug("current peers of chain {}", channelName);
+        return withOrderer(defaultOrdererName, defaultOrdererEndpoint)
+          .map(orderer -> constructChain(channelName, orderer, null)
+            .map(chain -> newArrayList(chain.getPeers()))
+            .orElse(newArrayList()))
+          .orElse(newArrayList());
     }
 
     public List<EventHub> chainEventHubs(String channelName) {
@@ -573,6 +581,8 @@ public class FabricSDK {
     }
 
     public List<ChainInfo> chains() {
-        return newArrayList(chainRepo.findByAffiliation(USER_CONTEXT.get().getAffiliation()));
+        return newArrayList(chainRepo.findByAffiliation(USER_CONTEXT
+          .get()
+          .getAffiliation()));
     }
 }

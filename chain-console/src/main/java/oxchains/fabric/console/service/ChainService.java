@@ -1,7 +1,6 @@
 package oxchains.fabric.console.service;
 
 import org.hyperledger.fabric.sdk.ChainConfiguration;
-import org.hyperledger.fabric.sdk.EventHub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +15,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static java.util.Collections.emptyList;
-import static java.util.Objects.nonNull;
 import static java.util.Optional.empty;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.security.core.context.SecurityContextHolder.getContext;
@@ -55,8 +53,11 @@ public class ChainService {
     }
 
     private boolean noPeersYet(String chainname) {
-        return fabricSDK
-          .chainPeers(chainname)
+        return userContext()
+          .map(u -> fabricSDK
+            .withUserContext(fromUser(u))
+            .chainPeers(chainname))
+          .orElse(emptyList())
           .isEmpty();
     }
 
@@ -131,8 +132,10 @@ public class ChainService {
     }
 
     public List<ChainInfo> chains() {
-        return userContext().map(context ->
-            fabricSDK.withUserContext(fromUser(context)).chains()
-        ).orElse(emptyList());
+        return userContext()
+          .map(context -> fabricSDK
+            .withUserContext(fromUser(context))
+            .chains())
+          .orElse(emptyList());
     }
 }
