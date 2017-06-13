@@ -8,7 +8,8 @@ I want to have peers
 So that I can join a chain for transactions
 
 Scenario: Fabric peer can join built chain
-Given chain bar created at orderer #orderer0
+Given admin user context
+And chain bar created at orderer #orderer0
 And peer peer0 at #peer0
 When peer0 joins chain bar
 Then peer0 has joined bar

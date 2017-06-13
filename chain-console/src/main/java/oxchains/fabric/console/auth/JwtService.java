@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
+import oxchains.fabric.console.data.UserRepo;
 import oxchains.fabric.console.domain.User;
 
 import javax.annotation.PostConstruct;
@@ -25,6 +26,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static java.util.Optional.empty;
+import static java.util.stream.Collectors.joining;
 
 /**
  * @author aiet
@@ -44,6 +46,12 @@ public class JwtService {
 
     private PrivateKey privateKey;
     private PublicKey publicKey;
+
+    private final UserRepo userRepo;
+
+    public JwtService(UserRepo userRepo) {
+        this.userRepo = userRepo;
+    }
 
     @PostConstruct
     private void init() throws Exception {
@@ -67,19 +75,24 @@ public class JwtService {
             .now()
             .plusWeeks(1)
             .toInstant()))
-          .claim("authority", user.getAffiliation())
+          .claim("authority", user
+            .getAuthorities()
+            .stream()
+            .collect(joining(",")))
+          .claim("affiliation", user.getAffiliation())
           .signWith(SignatureAlgorithm.ES256, privateKey)
           .compact();
     }
 
-    public Optional<JwtAuthentication> parse(String token) {
+    Optional<JwtAuthentication> parse(String token) {
         try {
             Jws<Claims> jws = new DefaultJwtParser()
               .setSigningKey(publicKey)
               .parseClaimsJws(token);
-            //TODO check expiration
             Claims claims = jws.getBody();
-            return Optional.of(new JwtAuthentication(claims.getSubject(), claims.get("authority", String.class), token));
+            return userRepo
+              .findUserByUsernameAndAffiliation(claims.getSubject(), claims.get("affiliation", String.class))
+              .map(u -> new JwtAuthentication(u, token, claims));
         } catch (Exception e) {
             LOG.error("failed to parse jwt token {}: ", token, e);
         }

@@ -7,6 +7,9 @@ import oxchains.fabric.console.domain.User;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * @author aiet
@@ -15,15 +18,21 @@ public class JwtAuthentication implements Authentication {
 
     private String token;
     private User user;
+    private Map<String, Object> details;
 
-    JwtAuthentication(String subject, String affiliation, String token) {
-        this.user = new User(subject, affiliation);
+    JwtAuthentication(User user, String token, Map<String, Object> details) {
+        this.user = user;
         this.token = token;
+        this.details = details;
+    }
+
+    public Optional<User> user(){
+        return Optional.ofNullable(user);
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(new SimpleGrantedAuthority(user.getAffiliation()));
+        return user.getAuthorities().stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());
     }
 
     @Override
@@ -33,7 +42,7 @@ public class JwtAuthentication implements Authentication {
 
     @Override
     public Object getDetails() {
-        return user.getAffiliation();
+        return details;
     }
 
     @Override
@@ -43,7 +52,7 @@ public class JwtAuthentication implements Authentication {
 
     @Override
     public boolean isAuthenticated() {
-        return user != null;
+        return user != null && user.getCertificate() != null;
     }
 
     @Override

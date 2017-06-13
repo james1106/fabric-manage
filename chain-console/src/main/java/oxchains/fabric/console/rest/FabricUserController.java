@@ -28,11 +28,6 @@ public class FabricUserController {
         return success(userService.userList());
     }
 
-    @GetMapping("/user/{affiliation}")
-    public RestResp listOf(@PathVariable String affiliation) {
-        return success(userService.userList(affiliation));
-    }
-
     @PostMapping("/user")
     public RestResp register(@RequestBody User user) {
         Optional<User> savedUser = userService.register(user);
@@ -41,10 +36,10 @@ public class FabricUserController {
           .orElseGet(RestResp::fail);
     }
 
-    @PutMapping("/user/{affiliation}/{username}")
-    public RestResp revoke(@PathVariable String username, @PathVariable String affiliation, @RequestParam int action, @RequestParam int reason) {
+    @PutMapping("/user/{username}")
+    public RestResp revoke(@PathVariable String username, @RequestParam int action, @RequestParam int reason) {
         if (action == 0) {
-            boolean revoked = userService.revoke(username, affiliation, reason);
+            boolean revoked = userService.revoke(username, reason);
             if (revoked) return success(null);
         }
         return fail();

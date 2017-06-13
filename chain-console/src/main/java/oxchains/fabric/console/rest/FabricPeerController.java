@@ -7,6 +7,7 @@ import oxchains.fabric.console.rest.common.RestResp;
 import oxchains.fabric.console.service.PeerService;
 
 import java.util.List;
+import java.util.Optional;
 
 import static oxchains.fabric.console.rest.common.RestResp.fail;
 import static oxchains.fabric.console.rest.common.RestResp.success;
@@ -29,19 +30,10 @@ public class FabricPeerController {
         return success(peerInfoList);
     }
 
-    @PutMapping("/peer/{peerId}/status")
-    public RestResp changePeerStatus(@PathVariable String peerId, @RequestParam int action) {
-        boolean operationDone = false;
-        switch (action) {
-        case 1:
-            operationDone = peerService.start(peerId);
-            break;
-        case 0:
-            operationDone = peerService.stop(peerId);
-        default:
-            break;
-        }
-        return operationDone ? success(null) : fail();
+    @DeleteMapping("/peer/{peerId}")
+    public RestResp remove(@PathVariable String peerId){
+        peerService.removePeer(peerId);
+        return success(null);
     }
 
     @PostMapping("/peer")
@@ -50,15 +42,18 @@ public class FabricPeerController {
         return added ? success(peerEventhub) : fail();
     }
 
-    @GetMapping("/peer/eventhub")
-    public RestResp eventhubs() {
-        return success(peerService.eventhubs());
+    @PostMapping("/peer/{peerId}/connection")
+    public RestResp connectPeerAndEventHub(@PathVariable String peerId) {
+        boolean reachable = peerService.connectToPeer(peerId);
+        return reachable ? success(null) : fail();
     }
 
-    @PostMapping("/peer/chaincode/{chaincode}")
-    public RestResp installChaincode(@PathVariable String chaincode, @RequestParam String version) {
-        //TODO
-        return fail();
+    @PostMapping("/peer/enrollment")
+    public RestResp enroll(@RequestBody PeerEventhub peer) {
+        Optional<PeerEventhub> peerEnrollment = peerService.enrollPeer(peer);
+        return peerEnrollment
+          .map(RestResp::success)
+          .orElseGet(RestResp::fail);
     }
 
 }

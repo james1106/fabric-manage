@@ -147,7 +147,7 @@ public class ChaincodeAPISteps {
         assertEquals(SUCCESS, invokeResponse.getStatus());
     }
 
-    @Step("chain {0} listens on event hub at {2}")
+    @Step("chain {0} listens on event hub at {1}")
     public void chainWithEventHub(String eventName, String eventEndpoint) throws Exception {
         Optional<EventHub> eventHubOptional = fabricSDK.withEventHub(eventName, propertyParse(eventEndpoint, testProperties));
         assertTrue(eventHubOptional.isPresent());

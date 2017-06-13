@@ -33,7 +33,9 @@ public class PeerAPISteps {
 
     @Step("peer {0} joins chain {1}")
     public void peerJoinChain(String peerId, String chainName) {
-        fabricSDK.joinChain(peerId, chainName);
+        Optional<Peer> peerOptional = fabricSDK.getPeer(peerId);
+        assertTrue(peerOptional.isPresent());
+        fabricSDK.joinChain(peerOptional.get(), chainName);
     }
 
     @Step("peer {0} joined chain {1}")

@@ -13,8 +13,10 @@ public class FabricPeerControllerStory {
 
     @Steps FabricPeerControllerSteps steps;
 
-    @Given("fabric console for peer")
-    public void givenFabricConsole(){}
+    @Given("peer admin $username of org $affiliation enrolled")
+    public void enrollWithGivenAccount(String username, String affiliation) throws Exception {
+        steps.enrolledAdmin(username, affiliation);
+    }
 
     @When("I get current peers")
     public void whenIGetCurrentPeers() {
@@ -26,14 +28,14 @@ public class FabricPeerControllerStory {
         steps.noPeerYet(peerId);
     }
 
-    @When("I add peer $peerId at $peerEndpoint with eventhub at $eventHubEndpoint")
-    public void whenIAddPeerAt(String peerId, String peerEndpoint, String eventHubEndpoint) {
-        steps.addPeerWithEventhub(peerId, peerEndpoint, eventHubEndpoint);
+    @When("I add peer $peerId at $peerEndpoint with eventhub at $eventHubEndpoint, password $pass")
+    public void whenIAddPeer(String peerId, String peerEndpoint, String eventHubEndpoint, String pass) throws Exception {
+        steps.addPeerWithEventhub(peerId, peerEndpoint, eventHubEndpoint, pass);
     }
 
     @Then("new peer added")
     public void thenPeerAdded() {
-        steps.newPeerAdded();
+        steps.operationDone();
     }
 
     @Then("peer $peerId should be found")
@@ -41,13 +43,9 @@ public class FabricPeerControllerStory {
         steps.foundPeer(peerId);
     }
 
-    @When("I get current eventhubs")
-    public void whenIGetCurrentEventHubs(){
-        steps.getEventhubs();
-    }
-    @Then("eventhub $eventhubId should be found")
-    public void thenEventhubFound(String eventhubId){
-        steps.foundEventHub(eventhubId);
+    @Then("peer $peerId not connected")
+    public void notConnectedToPeer(String peerId){
+        steps.peerNotConnected(peerId);
     }
 
     @Then("chain $chainName should be found")
@@ -55,19 +53,39 @@ public class FabricPeerControllerStory {
         steps.foundChain(chainName);
     }
 
-    @When("I stop $peerId")
-    public void stopPeer(String peerId){
-        steps.stopPeer(peerId);
+    @When("connect to peer $peerId")
+    public void whenConnectToPeer(String peerId) throws Exception {
+        steps.connectPeer(peerId);
     }
 
-    @When("I start $peerId")
-    public void startPeer(String peerId){
-        steps.startPeer(peerId);
-    }
-
-    @Then("operation success")
-    public void thenPeerOperationSuccess(){
+    @Then("peer $peerId connected")
+    public void thenConnectedPeer(String peerId){
         steps.operationDone();
     }
 
+    @Then("peer $peerId should be connected")
+    public void thenPeerConnectedInList(String peerId){
+        steps.peerInListConnected(peerId);
+    }
+
+    @When("I enroll peer $peerId : $pass from org $org, CA $ca at $caUri with msp $msp")
+    public void whenEnrollPeer(String peerId, String pass, String org, String ca, String caUri, String msp) throws Exception {
+        steps.enrollPeer(peerId, pass, org, ca, caUri, msp);
+    }
+
+    @Then("peer $peerId enrolled")
+    public void thenEnrolledPeer(String peerId){
+        steps.enrolledPeer(peerId);
+    }
+
+
+    @When("I remove peer $peerId")
+    public void whenRemovePeer(String peerId){
+        steps.removePeer(peerId);
+    }
+
+    @Then("peer $peerId removed")
+    public void thenPeerRemoved(String peerId){
+        steps.operationDone();
+    }
 }

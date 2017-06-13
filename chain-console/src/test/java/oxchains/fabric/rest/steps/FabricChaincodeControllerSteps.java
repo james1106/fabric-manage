@@ -1,18 +1,26 @@
 package oxchains.fabric.rest.steps;
 
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.module.mockmvc.response.MockMvcResponse;
 import net.thucydides.core.annotations.Step;
 import org.apache.commons.io.FileUtils;
 import org.hamcrest.Matcher;
 import org.jbehave.core.annotations.AfterStory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import oxchains.fabric.ChainConsoleApplication;
+import oxchains.fabric.console.data.UserRepo;
 import oxchains.fabric.console.domain.PeerEventhub;
+import oxchains.fabric.console.domain.User;
 
 import java.io.File;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 
 import static io.restassured.http.ContentType.JSON;
@@ -24,6 +32,9 @@ import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.hamcrest.collection.IsMapContaining.hasKey;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 import static oxchains.fabric.util.StoryTestUtil.propertyParse;
 
@@ -34,7 +45,8 @@ import static oxchains.fabric.util.StoryTestUtil.propertyParse;
 @TestPropertySource(locations = "classpath:test.properties")
 public class FabricChaincodeControllerSteps {
 
-    MockMvcResponse mockMvcResponse;
+    private Logger LOG = LoggerFactory.getLogger(getClass());
+    private MockMvcResponse mockMvcResponse;
 
     @Value("#{${fabric.test.endpoints}}") private Map<String, String> testProperties;
     @Value("${fabric.chaincode.path}") private String path;
@@ -52,6 +64,7 @@ public class FabricChaincodeControllerSteps {
         byte[] bytes = new byte[1024];
         new Random().nextBytes(bytes);
         mockMvcResponse = given()
+          .header(AUTHORIZATION, "Bearer " + token)
           .contentType(MULTIPART_FORM_DATA_VALUE)
           .formParam("name", chaincode)
           .formParam("version", "1.0")
@@ -70,13 +83,16 @@ public class FabricChaincodeControllerSteps {
     }
 
     @Step("installing chaincode {0} on peer {1}")
-    public void installChaincodeOn(String chaincode, String peerId) {
+    public void installChaincodeOn(String chaincode, String chain, String peerId) {
         mockMvcResponse = given()
+          .header(AUTHORIZATION, "Bearer " + token)
+          .queryParam("chain", chain)
+          .queryParam("chaincode", chaincode)
           .queryParam("peers", peerId)
           .queryParam("version", "1.0")
           .queryParam("lang", "go")
           .when()
-          .post(String.format("/chaincode/install/%s", chaincode));
+          .post("/chaincode/install");
     }
 
     @Step("chaincode {0} installed on peer {1}")
@@ -90,11 +106,13 @@ public class FabricChaincodeControllerSteps {
     }
 
     @Step("instantiating chaincode {0} with {1}")
-    public void instantiateWith(String chaincode, String args) {
+    public void instantiateWith(String chaincode, String chain, String args) {
 
         File endorsementPolicy = new File("src/test/resources/chain_configuration/" + chaincode + "_endorsement_policy.yaml");
 
         mockMvcResponse = given()
+          .header(AUTHORIZATION, "Bearer " + token)
+          .queryParam("chain", chain)
           .queryParam("name", chaincode)
           .queryParam("version", "1.0")
           .queryParam("args", join(args.split(" "), ","))
@@ -111,12 +129,16 @@ public class FabricChaincodeControllerSteps {
           .body("data.txid", notNullValue());
     }
 
-    @Step("committing a transaction on {0} with {1}")
-    public void triggerTransaction(String chaincode, String args) {
+    @Step("committing a transaction on {0} of {1} with {2}")
+    public void triggerTransaction(String chaincode, String chain, String args) {
         mockMvcResponse = given()
+          .header(AUTHORIZATION, "Bearer " + token)
+          .queryParam("version", "1.0")
+          .queryParam("chaincode", chaincode)
+          .queryParam("chain", chain)
           .queryParam("args", join(args.split(" "), ","))
           .when()
-          .post(String.format("/chaincode/tx/%s/" + "1.0", chaincode));
+          .post("/chaincode/tx");
     }
 
     @Step("transaction done on {0}")
@@ -127,28 +149,10 @@ public class FabricChaincodeControllerSteps {
           .body("data.txid", notNullValue());
     }
 
-    @Step("connecting peer {0}@{1} and eventhub {2}")
-    public void withPeerAndEventHub(String peerId, String peerEndpoint, String eventHub) {
-        PeerEventhub peerInfo = new PeerEventhub();
-        peerInfo.setId(peerId);
-        peerInfo.setEndpoint(propertyParse(peerEndpoint, testProperties));
-        peerInfo.setEventhub(propertyParse(eventHub, testProperties));
-        mockMvcResponse = given()
-          .contentType(JSON.withCharset(UTF_8))
-          .body(peerInfo)
-          .when()
-          .post("/peer");
-
-        mockMvcResponse
-          .then()
-          .statusCode(SC_OK)
-          .and()
-          .body("status", is(1));
-    }
-
     @Step("fetching all chaincodes")
     public void chaincodes() {
         mockMvcResponse = given()
+          .header(AUTHORIZATION, "Bearer " + token)
           .when()
           .get("/chaincode");
     }
@@ -173,11 +177,15 @@ public class FabricChaincodeControllerSteps {
     }
 
     @Step("query chaincode {0} with args {1}")
-    public void queryWith(String chaincode, String args) {
+    public void queryWith(String chaincode, String chain, String args) {
         mockMvcResponse = given()
+          .header(AUTHORIZATION, "Bearer " + token)
+          .queryParam("chaincode", chaincode)
+          .queryParam("version", "1.0")
+          .queryParam("chain", chain)
           .queryParam("args", join(args.split(" "), ","))
           .when()
-          .get("/chaincode/tx/" + chaincode + "/1.0");
+          .get("/chaincode/tx");
     }
 
     @Step("query result of chaincode {0} is {1}:{2}")
@@ -201,4 +209,33 @@ public class FabricChaincodeControllerSteps {
           .body("data", hasItem(allOf(matchers)));
     }
 
+    @Autowired private UserRepo userRepo;
+    private String token;
+
+    @Step("with token of {0} from {1}")
+    public void withTokenOf(String username, String affiliation) throws Exception {
+        Optional<User> userOptional = userRepo.findUserByUsernameAndAffiliation(username, affiliation);
+        assertTrue("given admin should have been registered", userOptional.isPresent());
+
+        User givenAccount = userOptional.get();
+        ObjectMapper mapper = new ObjectMapper().disable(MapperFeature.USE_ANNOTATIONS);
+        this.token = given()
+          .contentType(JSON)
+          .body(mapper.writeValueAsString(givenAccount))
+          .when()
+          .post("/user/token")
+          .then()
+          .body("data.token", notNullValue())
+          .and()
+          .extract()
+          .path("data.token");
+
+        Optional<User> savedUserOptional = userRepo.findUserByUsernameAndAffiliation(username, affiliation);
+        assertNotNull("given admin should have been enrolled", savedUserOptional
+          .get()
+          .getCertificate());
+        LOG.info("admin certificate: \n{}\n", savedUserOptional
+          .get()
+          .getCertificate());
+    }
 }

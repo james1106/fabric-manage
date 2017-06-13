@@ -41,6 +41,7 @@ public class ChainCodeInfo {
 
     private String name;
 
+    private String affiliation;
     private String path;
     private String version;
     private String lang;
@@ -58,6 +59,14 @@ public class ChainCodeInfo {
         this.path = path;
         this.lang = lang;
         this.createtime = new Date();
+    }
+
+    public String getAffiliation() {
+        return affiliation;
+    }
+
+    public void setAffiliation(String affiliation) {
+        this.affiliation = affiliation;
     }
 
     public Date getCreatetime() {

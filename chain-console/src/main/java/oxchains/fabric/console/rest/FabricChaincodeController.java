@@ -1,7 +1,10 @@
 package oxchains.fabric.console.rest;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import oxchains.fabric.console.rest.common.RestResp;
 import oxchains.fabric.console.rest.common.TxResult;
@@ -31,16 +34,16 @@ public class FabricChaincodeController {
         return saved ? success(null) : fail();
     }
 
-    @PostMapping("/chaincode/install/{chaincode}")
-    public RestResp install(@PathVariable String chaincode, @RequestParam String version, @RequestParam String lang, @RequestParam String[] peers) {
-        List<TxResult> result = chaincodeService.installCCOnPeer(chaincode, version, lang, peers);
+    @PostMapping("/chaincode/install")
+    public RestResp install(@RequestParam String chain, @RequestParam String chaincode, @RequestParam String version, @RequestParam String lang, @RequestParam String[] peers) {
+        List<TxResult> result = chaincodeService.installCCOnPeer(chain, chaincode, version, lang, peers);
         return result.isEmpty() ? fail() : success(result);
     }
 
     @PostMapping(value = "/chaincode", consumes = MULTIPART_FORM_DATA_VALUE)
-    public RestResp init(@RequestParam MultipartFile endorsement, @RequestParam String name, @RequestParam String version, @RequestParam String[] args) {
+    public RestResp init(@RequestParam String chain, @RequestParam MultipartFile endorsement, @RequestParam String name, @RequestParam String version, @RequestParam String[] args) {
         return chaincodeService
-          .instantiate(name, version, endorsement, args)
+          .instantiate(chain, name, version, endorsement, args)
           .map(RestResp::success)
           .orElse(fail());
     }
@@ -50,10 +53,10 @@ public class FabricChaincodeController {
         return success(chaincodeService.chaincodes());
     }
 
-    @PostMapping("/chaincode/tx/{chaincode}/{version}")
-    public RestResp commit(@PathVariable String chaincode, @PathVariable String version, @RequestParam String[] args) {
+    @PostMapping("/chaincode/tx")
+    public RestResp commit(@RequestParam String chain, @RequestParam String chaincode, @RequestParam String version, @RequestParam String[] args) {
         return chaincodeService
-          .invoke(chaincode, version, args)
+          .invoke(chain, chaincode, version, args)
           .map(result -> {
               if (result.getSuccess() == 1) {
                   return RestResp.success(result);
@@ -64,10 +67,10 @@ public class FabricChaincodeController {
           .orElse(fail());
     }
 
-    @GetMapping("/chaincode/tx/{chaincode}/{version}")
-    public RestResp query(@PathVariable String chaincode, @PathVariable String version, @RequestParam String[] args) {
+    @GetMapping("/chaincode/tx")
+    public RestResp query(@RequestParam String chain, @RequestParam String chaincode, @RequestParam String version, @RequestParam String[] args) {
         return chaincodeService
-          .query(chaincode, version, args)
+          .query(chain, chaincode, version, args)
           .map(RestResp::success)
           .orElse(fail());
     }

@@ -8,7 +8,8 @@ I want to install invoice chaincode on peers
 So that I can run the chaincode
 
 Scenario: chaincode invoice can be installed on peers
-Given chain invoice-chain created at orderer #orderer0
+Given admin user context
+And chain invoice-chain created at orderer #orderer0
 And peer peer0 at #peer0
 And peer0 joined chain invoice-chain
 And chaincode invoice_chaincode of version 0.1

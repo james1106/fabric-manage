@@ -1,9 +1,14 @@
 package oxchains.fabric.console.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonSetter;
 
 import javax.persistence.*;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+
+import static org.springframework.util.StringUtils.isEmpty;
 
 /**
  * @author aiet
@@ -19,23 +24,40 @@ public class User {
         this.affiliation = affiliation;
     }
 
+    @JsonIgnore
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String username;
     private String password;
+    @ElementCollection(fetch = FetchType.EAGER)
+    @JsonIgnore
+    private Set<String> authorities = new HashSet<>();
     private String affiliation;
     private String msp;
-    @JsonIgnore
     private String ca;
-    @JsonIgnore
     private String uri;
     @JsonIgnore
     @Column(length = 1024)
     private String privateKey;
-    @Column(length = 1024)
-    private String certificate;
+
+    @Column(length = 1024) private String certificate;
+
+    public void inheritMSP(User user) {
+        setCa(user.getCa());
+        setUri(user.getUri());
+        setMsp(user.getMsp());
+        setAffiliation(user.getAffiliation());
+    }
+
+    public Set<String> getAuthorities() {
+        return authorities;
+    }
+
+    public void setAuthorities(Set<String> authorities) {
+        this.authorities = authorities;
+    }
 
     public String getMsp() {
         return msp;
@@ -61,10 +83,12 @@ public class User {
         this.certificate = certificate;
     }
 
+    @JsonIgnore
     public String getUri() {
         return uri;
     }
 
+    @JsonSetter
     public void setUri(String uri) {
         this.uri = uri;
     }
@@ -77,7 +101,7 @@ public class User {
         this.ca = ca;
     }
 
-    private Date createtime = new Date();
+    @JsonIgnore private Date createtime = new Date();
 
     public Date getCreatetime() {
         return createtime;
@@ -103,10 +127,12 @@ public class User {
         this.id = id;
     }
 
+    @JsonIgnore
     public String getPassword() {
         return password;
     }
 
+    @JsonSetter
     public void setPassword(String password) {
         this.password = password;
     }
@@ -125,7 +151,7 @@ public class User {
     }
 
     @JsonIgnore
-    public boolean enrolled(){
-        return privateKey != null && certificate != null;
+    public boolean enrolled() {
+        return !isEmpty(privateKey) && !isEmpty(certificate);
     }
 }

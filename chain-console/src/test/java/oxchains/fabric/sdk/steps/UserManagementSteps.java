@@ -8,8 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import oxchains.fabric.dummy.PlainTestApplication;
-import oxchains.fabric.sdk.domain.CAAdmin;
-import oxchains.fabric.sdk.domain.FabricUser;
+import oxchains.fabric.sdk.domain.CAUser;
 
 import java.util.Map;
 import java.util.Properties;
@@ -29,9 +28,10 @@ public class UserManagementSteps {
 
     @Value("#{${fabric.test.endpoints}}") private Map<String, String> testProperties;
 
+    @Value("${fabric.ca.server.name}") private String caName;
     private HFCAClient caClient;
-    private CAAdmin admin;
-    private FabricUser user;
+    private CAUser admin;
+    private CAUser user;
     private final String defaultAffilicationKey = "#affiliation";
     private String registrationResult;
     private Exception registerException;
@@ -41,13 +41,13 @@ public class UserManagementSteps {
 
     @Step("connect to fabric server {0}")
     public void fabricCAServerAt(String caServerEndpoint) throws Exception {
-        caClient = HFCAClient.createNewInstance(propertyParse(caServerEndpoint, testProperties), new Properties());
+        caClient = HFCAClient.createNewInstance(caName, propertyParse(caServerEndpoint, testProperties), new Properties());
         caClient.setCryptoSuite(getCryptoSuite());
     }
 
     @Step("manager account {0}:{1}")
     public void managerAccountIs(String username, String password) {
-        admin = new CAAdmin(propertyParse(username, testProperties), propertyParse(defaultAffilicationKey, testProperties), "");
+        admin = new CAUser(propertyParse(username, testProperties), propertyParse(defaultAffilicationKey, testProperties), "");
         admin.setPassword(propertyParse(password, testProperties));
     }
 
@@ -55,12 +55,13 @@ public class UserManagementSteps {
     public void registerUser(String username, String password) {
         try {
             RegistrationRequest registrationRequest = new RegistrationRequest(username, propertyParse(defaultAffilicationKey, testProperties));
+            registrationRequest.setCAName(caName);
             registrationRequest.setSecret(password);
-            user = new FabricUser(username, propertyParse(defaultAffilicationKey, testProperties));
+            user = new CAUser(username, propertyParse(defaultAffilicationKey, testProperties), "");
             user.setPassword(password);
             registrationResult = caClient.register(registrationRequest, admin);
             registerException = null;
-        }catch (Exception e){
+        } catch (Exception e) {
             registerException = e;
         }
     }
@@ -113,7 +114,7 @@ public class UserManagementSteps {
 
     @Step("user {0}:{1} is already registered")
     public void userRegistered(String username, String password) {
-        user = new FabricUser(username, propertyParse(defaultAffilicationKey, testProperties));
+        user = new CAUser(username, propertyParse(defaultAffilicationKey, testProperties), "");
         user.setPassword(password);
     }
 

@@ -1,17 +1,26 @@
 package oxchains.fabric.console.service;
 
+import org.hyperledger.fabric.sdk.ChainConfiguration;
+import org.hyperledger.fabric.sdk.EventHub;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import oxchains.fabric.console.domain.ChainBlockInfo;
-import oxchains.fabric.console.domain.ChainInfo;
-import oxchains.fabric.console.domain.TxInfo;
+import org.springframework.web.multipart.MultipartFile;
+import oxchains.fabric.console.auth.JwtAuthentication;
+import oxchains.fabric.console.data.PeerRepo;
+import oxchains.fabric.console.domain.*;
 import oxchains.fabric.sdk.FabricSDK;
 
 import java.util.List;
 import java.util.Optional;
 
 import static java.util.Collections.emptyList;
+import static java.util.Objects.nonNull;
 import static java.util.Optional.empty;
 import static java.util.stream.Collectors.toList;
+import static org.springframework.security.core.context.SecurityContextHolder.getContext;
+import static oxchains.fabric.sdk.domain.CAUser.fromUser;
 
 /**
  * @author aiet
@@ -19,53 +28,111 @@ import static java.util.stream.Collectors.toList;
 @Service
 public class ChainService {
 
-    private FabricSDK fabricSDK;
+    private Logger LOG = LoggerFactory.getLogger(getClass());
 
-    public ChainService(FabricSDK fabricSDK) {
+    private FabricSDK fabricSDK;
+    private PeerRepo peerRepo;
+
+    public ChainService(@Autowired FabricSDK fabricSDK, @Autowired PeerRepo peerRepo) {
         this.fabricSDK = fabricSDK;
+        this.peerRepo = peerRepo;
     }
 
-    public Optional<ChainInfo> chaininfo() {
-        if (noPeersYet()) return empty();
+    public Optional<ChainInfo> chainInfo(String chainname) {
+        if (noPeersYet(chainname)) return empty();
         else return fabricSDK
-          .getChaininfo()
+          .getChaininfo(chainname)
           .map(ChainInfo::new);
     }
 
-    public List<ChainBlockInfo> chainblocks() {
-        if (noPeersYet()) return emptyList();
+    public List<ChainBlockInfo> chainBlocks(String chainname) {
+        if (noPeersYet(chainname)) return emptyList();
         else return fabricSDK
-          .getChainBlocks()
+          .getChainBlocks(chainname)
           .stream()
           .map(ChainBlockInfo::new)
           .collect(toList());
     }
 
-    private boolean noPeersYet() {
+    private boolean noPeersYet(String chainname) {
         return fabricSDK
-          .chainPeers()
+          .chainPeers(chainname)
           .isEmpty();
     }
 
-    public Optional<ChainBlockInfo> chainBlockByNumber(long block) {
-        if (noPeersYet()) return empty();
+    public Optional<ChainBlockInfo> chainBlockByNumber(String chainname, long block) {
+        if (noPeersYet(chainname)) return empty();
         else return fabricSDK
-          .getChainBlock(block)
+          .getChainBlock(chainname, block)
           .map(ChainBlockInfo::new);
     }
 
-    public Optional<ChainBlockInfo> chainBlockByTx(String tx) {
-        if (noPeersYet()) return empty();
+    public Optional<ChainBlockInfo> chainBlockByTx(String chainname, String tx) {
+        if (noPeersYet(chainname)) return empty();
         else return fabricSDK
-          .getChainBlock(tx)
+          .getChainBlock(chainname, tx)
           .map(ChainBlockInfo::new);
     }
 
-    public Optional<TxInfo> transaction(String tx) {
-        if (noPeersYet()) return empty();
+    public Optional<TxInfo> transaction(String chainname, String tx) {
+        if (noPeersYet(chainname)) return empty();
         else return fabricSDK
-          .getChainTx(tx)
+          .getChainTx(chainname, tx)
           .map(TxInfo::new);
     }
 
+    public List<EventHubInfo> eventHubs(String chainname) {
+        return fabricSDK
+          .chainEventHubs(chainname)
+          .stream()
+          .map(EventHubInfo::new)
+          .collect(toList());
+    }
+
+    private Optional<User> userContext() {
+        return ((JwtAuthentication) getContext().getAuthentication()).user();
+    }
+
+    public boolean newChain(String chain, MultipartFile config) {
+        try {
+            ChainConfiguration chainConfiguration = new ChainConfiguration(config.getBytes());
+            LOG.info("constructing chain {}", chain);
+            return userContext()
+              .flatMap(context -> fabricSDK
+                .withUserContext(fromUser(context))
+                .constructChain(chain, chainConfiguration))
+              .isPresent();
+        } catch (Exception e) {
+            LOG.error("failed to construct chain {}", e.getMessage());
+        }
+        return false;
+
+    }
+
+    public boolean joinChain(String chainname, String peerId) {
+        return peerRepo
+          .findPeerEventhubById(peerId)
+          .flatMap(peerEventhub -> userContext().flatMap(context -> fabricSDK
+            .withPeer(peerEventhub.getId(), peerEventhub.getEndpoint())
+            .map(peer -> {
+                LOG.info("{} joining in chain {}", peerId, chainname);
+                boolean peerJoined = fabricSDK
+                  .withUserContext(fromUser(context))
+                  .joinChain(peer, chainname);
+                if (peerJoined) {
+                    LOG.info("chain {} listening on eventhub {}", chainname, peerId);
+                    fabricSDK
+                      .withEventHub(peerId, peerEventhub.getEventhub())
+                      .ifPresent(eventHub -> fabricSDK.attachEventHubToChain(chainname, eventHub));
+                }
+                return peerJoined;
+            })))
+          .orElse(false);
+    }
+
+    public List<ChainInfo> chains() {
+        return userContext().map(context ->
+            fabricSDK.withUserContext(fromUser(context)).chains()
+        ).orElse(emptyList());
+    }
 }

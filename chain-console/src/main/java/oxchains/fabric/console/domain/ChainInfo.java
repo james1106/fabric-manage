@@ -26,6 +26,7 @@ public class ChainInfo {
     private String name;
     @ElementCollection(fetch = FetchType.EAGER, targetClass = PeerEventhub.class) private Set<PeerEventhub> peers;
     private String orderer;
+    private String affiliation;
     private Date createtime;
     @JsonIgnore
     @Id
@@ -42,6 +43,14 @@ public class ChainInfo {
         this.hash = toHexString(blockchainInfo.getCurrentBlockHash());
         this.next = toHexString(blockchainInfo.getPreviousBlockHash());
         this.height = blockchainInfo.getHeight();
+    }
+
+    public String getAffiliation() {
+        return affiliation;
+    }
+
+    public void setAffiliation(String affiliation) {
+        this.affiliation = affiliation;
     }
 
     public String getOrderer() {

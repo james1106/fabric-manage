@@ -4,15 +4,14 @@
 ## Features
 
 - [x] fabric-ca user enroll, register, revoke
-- [x] fabric peer start, stop, status
-- [x] fabric eventHub list
+- [x] fabric peer start, stop, status, list (including eventHub)
 - [x] fabric chain status
 - [x] fabric chaincode list, upload, install, instantiate, query, invoke
 - [x] support system context restore between restart
+- [x] fabric chain management: new-chain
 
 ### TODO
 
-- [ ] fabric chain management: new-chain
 - [ ] fabric transaction performance visualization
 
 
@@ -69,7 +68,18 @@ every organization can have a independent CA server, i.e.
     - org2 : Org2CA
     - orderer : OrgOrdererCA
 
-CA server generates key pairs for admin and user.
+CA server generates key pairs for admin and user. To make use of the keys generated in unit tests, the private key needs to be converted using the following command:
+
+```commandline
+openssl pkcs8 -topk8 -inform pem -in generated_key.pem -outform pem -nocrypt -out private_key_for_test.pem
+```
+
+To use the private key generated on enrollment, split the private key into lines each has 64 characters at most, then prepend `-----BEGIN PRIVATE KEY-----` and append `-----END PRIVATE KEY-----`.
+ Say we have the result in file `enrollment_private_key.pem`, we can put `keystore.pem` under `msp/keystore/`.
+
+```commandline
+openssl ec -in enrollment_private_key.pem -out keystore.pem
+```
 
 
 ### Chaincode Manipulation

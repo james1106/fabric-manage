@@ -1,7 +1,6 @@
 package oxchains.fabric.sdk;
 
 import com.google.common.collect.Lists;
-import org.apache.commons.io.IOUtils;
 import org.hyperledger.fabric.protos.peer.Query.ChaincodeInfo;
 import org.hyperledger.fabric.sdk.*;
 import org.hyperledger.fabric.sdk.exception.CryptoException;
@@ -10,7 +9,6 @@ import org.hyperledger.fabric.sdk.exception.TransactionException;
 import org.hyperledger.fabric_ca.sdk.HFCAClient;
 import org.hyperledger.fabric_ca.sdk.RegistrationRequest;
 import org.hyperledger.fabric_ca.sdk.RevokeReason;
-import org.hyperledger.fabric_ca.sdk.exception.BaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,14 +17,9 @@ import org.springframework.stereotype.Component;
 import oxchains.fabric.console.data.ChainRepo;
 import oxchains.fabric.console.domain.ChainInfo;
 import oxchains.fabric.console.domain.PeerEventhub;
-import oxchains.fabric.sdk.domain.CAAdmin;
-import oxchains.fabric.sdk.domain.FabricUser;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.LongStream;
@@ -50,103 +43,49 @@ public class FabricSDK {
 
     private final Logger LOG = LoggerFactory.getLogger(this.getClass());
 
-    private final String caServerUrl;
     private final ChainRepo chainRepo;
     private final String[] EMPTY_ARGS = new String[] {};
 
-    public FabricSDK(@Value("${fabric.ca.server.url}") String caServerUrl, @Autowired ChainRepo chainRepo) {
+    public FabricSDK(@Autowired ChainRepo chainRepo) {
         this.chainRepo = chainRepo;
-        this.caServerUrl = caServerUrl;
     }
 
-    private static final WeakHashMap<String, Peer> PEER_CACHE = new WeakHashMap<>(8);
-    private static final WeakHashMap<String, EventHub> EVENTHUB_CACHE = new WeakHashMap<>(8);
-    private static final WeakHashMap<String, ChainCodeID> CHAINCODE_CACHE = new WeakHashMap<>(8);
+    private final WeakHashMap<String, Peer> PEER_CACHE = new WeakHashMap<>(8);
+    private final WeakHashMap<String, EventHub> EVENTHUB_CACHE = new WeakHashMap<>(8);
+    private final WeakHashMap<String, ChainCodeID> CHAINCODE_CACHE = new WeakHashMap<>(8);
+    private final Map<String, HFCAClient> CA_CLIENTS = synchronizedMap(new WeakHashMap<String, HFCAClient>(2));
 
     private final HFClient fabricClient = HFClient.createNewInstance();
-    private HFCAClient caClient;
-    private CAAdmin caServerAdminUser1;
-    private CAAdmin caServerAdminUser2;
-
-    @Value("${fabric.ca.server.admin}") private String caServerAdmin;
-    @Value("${fabric.ca.server.admin.pass}") private String caServerAdminPass;
-    @Value("${fabric.ca.server.admin.mspid1}") private String caServerAdminMSPId1;
-    @Value("${fabric.ca.server.admin.affiliation1}") private String caServerAdminAffiliation1;
-    @Value("${fabric.ca.server.admin.mspid2}") private String caServerAdminMSPId2;
-    @Value("${fabric.ca.server.admin.affiliation2}") private String caServerAdminAffiliation2;
 
     @Value("${fabric.orderer.name}") private String defaultOrdererName;
     @Value("${fabric.orderer.endpoint}") String defaultOrdererEndpoint;
-    @Value("${fabric.chain.name}") String defaultChainName;
-    @Value("${fabric.chain.configuration}") String defaultChainConfigurationPath;
+
+    private final ThreadLocal<User> USER_CONTEXT = new ThreadLocal<>();
 
     @PostConstruct
     private void init() {
         try {
-            caClient = HFCAClient.createNewInstance(caServerUrl, new Properties());
-            caClient.setCryptoSuite(getCryptoSuite());
             fabricClient.setCryptoSuite(getCryptoSuite());
-            this.caServerAdminUser1 = new CAAdmin(caServerAdmin, caServerAdminAffiliation1, caServerAdminMSPId1);
-            this.caServerAdminUser1.setPassword(caServerAdminPass);
-            enroll(caServerAdminUser1);
-
-            this.caServerAdminUser2 = new CAAdmin(caServerAdmin, caServerAdminAffiliation2, caServerAdminMSPId2);
-            this.caServerAdminUser2.setPassword(caServerAdminPass);
-            enroll(caServerAdminUser2);
-
-            fabricClient.setUserContext(caServerAdminUser1);
-            withOrderer(defaultOrdererName, defaultOrdererEndpoint).ifPresent(orderer -> {
-                constructChain(defaultChainName, orderer, defaultChainConfigurationPath);
-            });
-        } catch (MalformedURLException e) {
-            LOG.error("failed to create CA client with url {} ", caServerUrl, e);
         } catch (InvalidArgumentException | CryptoException e) {
             LOG.error("failed to enable encryption for fabric client", e);
-        } catch (BaseException e) {
-            LOG.error("failed to enroll admin user: ", e);
         }
     }
 
-    /**
-     * the user will be enrolled if hasn't
-     */
-    private void enroll(CAAdmin userToEnroll) throws BaseException {
-        //TODO check if enrolled yet if enrollment limited by MaxEnrollment
-        userToEnroll.setEnrollment(caClient.enroll(userToEnroll.getName(), userToEnroll.getPassword()));
-    }
-
-    public String getDefaultOrderer() {
-        return defaultOrdererEndpoint;
-    }
-
-    public String getDefaultChainName() {
-        return defaultChainName;
+    public FabricSDK withUserContext(User userContext) {
+        USER_CONTEXT.set(userContext);
+        return this;
     }
 
     public Optional<Peer> withPeer(String peerId, String peerUrl) {
         Peer peer = null;
         try {
+            fabricClient.setUserContext(USER_CONTEXT.get());
             peer = fabricClient.newPeer(peerId, peerUrl);
             PEER_CACHE.putIfAbsent(peerId, peer);
         } catch (Exception e) {
             LOG.error("failed to create peer {} on {}: ", peerId, peerUrl, e);
         }
         return Optional.ofNullable(peer);
-    }
-
-    public Optional<FabricUser> createUser(String username, String affiliation) {
-        FabricUser user = null;
-        try {
-            user = new FabricUser(username, affiliation);
-            RegistrationRequest registrationRequest = new RegistrationRequest(username, affiliation);
-            user.setPassword(caClient.register(registrationRequest, caServerAdminUser1));
-            //TODO when to enroll? difference to register?
-            caClient.enroll(username, user.getPassword());
-            user.setMspId(caServerAdminMSPId1);
-        } catch (Exception e) {
-            LOG.error("failed to register fabric user {} from {}", username, affiliation);
-        }
-        return Optional.ofNullable(user);
     }
 
     public Optional<Orderer> withOrderer(String ordererName, String ordererUrl) {
@@ -173,31 +112,13 @@ public class FabricSDK {
     /**
      * @param chainName chain name
      * @param orderer with which orderer the chain will be constructed
-     * @param chainConfigurationFilePath path of chain configuration file
-     */
-    public Optional<Chain> constructChain(String chainName, Orderer orderer, String chainConfigurationFilePath) {
-        try {
-            InputStream inputStream = getClass()
-              .getClassLoader()
-              .getResourceAsStream(chainConfigurationFilePath);
-            if (inputStream != null) {
-                return constructChain(chainName, orderer, new ChainConfiguration(IOUtils.toByteArray(inputStream)));
-            }
-        } catch (IOException e) {
-            LOG.error("failed to read chain configuration file {}", chainConfigurationFilePath, e);
-        }
-        return empty();
-    }
-
-    /**
-     * @param chainName chain name
-     * @param orderer with which orderer the chain will be constructed
      * @param chainConfiguration chain configuration
      */
     public Optional<Chain> constructChain(String chainName, Orderer orderer, ChainConfiguration chainConfiguration) {
         Chain chain = null;
         try {
             Optional<ChainInfo> chainInfoOptional = chainRepo.findByNameAndOrderer(chainName, orderer.getUrl());
+            fabricClient.setUserContext(USER_CONTEXT.get());
             chain = chainInfoOptional
               .map(existingChainInfo -> {
                   try {
@@ -220,8 +141,9 @@ public class FabricSDK {
               })
               .orElseGet(() -> {
                   try {
-                      Chain newChain = fabricClient.newChain(chainName, orderer, chainConfiguration);
+                      Chain newChain = fabricClient.newChain(chainName, orderer, chainConfiguration, fabricClient.getChainConfigurationSignature(chainConfiguration, fabricClient.getUserContext()));
                       ChainInfo newChainInfo = new ChainInfo(chainName, orderer.getUrl());
+                      newChainInfo.setAffiliation(fabricClient.getUserContext().getAffiliation());
                       chainRepo.save(newChainInfo);
                       LOG.info("new chain {} constructed on orderer {}", chainName, orderer.getUrl());
                       return newChain;
@@ -242,9 +164,9 @@ public class FabricSDK {
         return Optional.ofNullable(cachedChain);
     }
 
-    public Optional<BlockchainInfo> getChaininfo() {
+    public Optional<BlockchainInfo> getChaininfo(String chainName) {
         try {
-            Optional<Chain> chainOptional = getChain(defaultChainName);
+            Optional<Chain> chainOptional = getChain(chainName);
             if (chainOptional.isPresent()) {
                 return Optional.of(chainOptional
                   .get()
@@ -256,8 +178,8 @@ public class FabricSDK {
         return empty();
     }
 
-    public Optional<Peer> getPeer(String peerId) {
-        return getChain(defaultChainName)
+    public Optional<Peer> getPeer(String peerId, String chainName) {
+        return getChain(chainName)
           .map(chain -> chain
             .getPeers()
             .stream()
@@ -268,25 +190,27 @@ public class FabricSDK {
           .orElse(empty());
     }
 
-    public boolean joinChain(Peer peer) {
-        return joinChain(peer.getName(), defaultChainName);
+    public Optional<Peer> getPeer(String peerId) {
+        return Optional.ofNullable(PEER_CACHE.get(peerId));
     }
 
-    public boolean joinChain(String peerId, String chainName) {
+    public boolean joinChain(Peer peer, String chainName) {
         Chain chain = fabricClient.getChain(chainName);
         try {
             boolean joined = chain
               .getPeers()
               .stream()
-              .anyMatch(peer -> peerId.equals(peer.getName()));
+              .anyMatch(p -> peer
+                .getName()
+                .equals(p.getName()));
             if (!joined) {
                 chain
-                  .joinPeer(PEER_CACHE.get(peerId))
+                  .joinPeer(peer)
                   .initialize();
             }
             return true;
         } catch (Exception e) {
-            LOG.error("{} failed to join chain {}: ", peerId, chainName, e);
+            LOG.error("{} failed to join chain {}: ", peer.getName(), chainName, e);
         }
         return false;
     }
@@ -297,18 +221,10 @@ public class FabricSDK {
           .getPeers());
     }
 
-    public List<EventHub> chainEventHubs() {
-        return chainEventHubs(defaultChainName);
-    }
-
     public List<EventHub> chainEventHubs(String channelName) {
         return Lists.newCopyOnWriteArrayList(fabricClient
           .getChain(channelName)
           .getEventHubs());
-    }
-
-    public List<Peer> chainPeers() {
-        return chainPeers(defaultChainName);
     }
 
     public List<ProposalResponse> installChaincodeOnPeer(ChainCodeID chaincodeId, Chain chain, String lang, String sourceLocation, Collection<Peer> peers) {
@@ -342,8 +258,8 @@ public class FabricSDK {
         return emptyList();
     }
 
-    public CompletableFuture<ProposalResponse> instantiateChaincode(ChainCodeID chaincode, ChaincodeEndorsementPolicy policy, String... params) {
-        return getChain(defaultChainName)
+    public CompletableFuture<ProposalResponse> instantiateChaincode(ChainCodeID chaincode, String chainname, ChaincodeEndorsementPolicy policy, String... params) {
+        return getChain(chainname)
           .map(chain -> instantiateChaincode(chaincode, chain, chain
             .getPeers()
             .iterator()
@@ -359,6 +275,8 @@ public class FabricSDK {
         else instantiateProposalRequest.setArgs(EMPTY_ARGS);
         instantiateProposalRequest.setChaincodeEndorsementPolicy(policy);
         try {
+            //TODO transient map not used
+            instantiateProposalRequest.setTransientMap(emptyMap());
             Collection<ProposalResponse> responses = chain.sendInstantiationProposal(instantiateProposalRequest, singletonList(peer));
             if (responses.isEmpty()) {
                 LOG.warn("no responses while instantiating chaincode {}", chaincode.getName());
@@ -414,8 +332,8 @@ public class FabricSDK {
         return supplyAsync(() -> null);
     }
 
-    public CompletableFuture<ProposalResponse> invokeChaincode(ChainCodeID chaincode, String... params) {
-        return getChain(defaultChainName)
+    public CompletableFuture<ProposalResponse> invokeChaincode(String chainname, ChainCodeID chaincode, String... params) {
+        return getChain(chainname)
           .map(chain -> invokeChaincode(chaincode, chain, chain
             .getPeers()
             .iterator()
@@ -423,8 +341,8 @@ public class FabricSDK {
           .orElse(supplyAsync(() -> null));
     }
 
-    public ProposalResponse queryChaincode(ChainCodeID chaincode, String... args) {
-        return getChain(defaultChainName)
+    public ProposalResponse queryChaincode(String chainname, ChainCodeID chaincode, String... args) {
+        return getChain(chainname)
           .map(chain -> queryChaincode(chaincode, chain, chain
             .getPeers()
             .iterator()
@@ -466,20 +384,12 @@ public class FabricSDK {
 
     public List<ChaincodeInfo> chaincodesOnPeer(Peer peer) {
         try {
+            fabricClient.setUserContext(USER_CONTEXT.get());
             return fabricClient.queryInstalledChaincodes(peer);
         } catch (Exception e) {
             LOG.error("failed to query installed chaincodes of peer {}:", peer.getName(), e);
         }
         return emptyList();
-    }
-
-    /**
-     * instantiated chaincodes
-     */
-    public List<ChaincodeInfo> chaincodesOnPeerForDefaultChain(Peer peer) {
-        return getChain(defaultChainName)
-          .map(chain -> chaincodesOnPeer(peer, chain))
-          .orElse(emptyList());
     }
 
     /**
@@ -494,10 +404,10 @@ public class FabricSDK {
         return emptyList();
     }
 
-    public boolean revokeUser(String username, String affiliation, int reason) {
+    public boolean revokeUser(String username, int reason, String caname, String cauri) {
         try {
-            //TODO
-            caClient.revoke(caServerAdminUser1, username, int2RevokeReason(reason));
+            HFCAClient hfcaClient = getCaClient(caname, cauri);
+            hfcaClient.revoke(USER_CONTEXT.get(), username, int2RevokeReason(reason));
             return true;
         } catch (Exception e) {
             LOG.error("failed to revoke {} with reason {}", username, reason, e);
@@ -513,44 +423,63 @@ public class FabricSDK {
         return revokeReasonOptional.orElse(UNSPECIFIED);
     }
 
-    public boolean register(String username, String affiliation, String password) {
+    public boolean register(String username, String password, String ca, String caUri) {
         try {
-            RegistrationRequest registrationRequest = new RegistrationRequest(username, affiliation);
+            User context = USER_CONTEXT.get();
+            RegistrationRequest registrationRequest = new RegistrationRequest(username, context.getAffiliation());
+            registrationRequest.setCAName(ca);
+            registrationRequest.setType("user");
             registrationRequest.setSecret(password);
-            String registerResult = caClient.register(registrationRequest, caServerAdminUser1);
-            LOG.info("fabric registered {} of {}: {}", username, affiliation, registerResult);
+            HFCAClient hfcaClient = getCaClient(ca, caUri);
+            String registerResult = hfcaClient.register(registrationRequest, context);
+            LOG.info("fabric registered {} of {}: {} by {}", username, context.getAffiliation(), registerResult, context.getName());
             return true;
         } catch (Exception e) {
-            LOG.error("failed to register new fabric user {} of {}", username, affiliation, e);
+            LOG.error("failed to register new fabric user on {}@{}: {}", ca, caUri, e.getMessage());
         }
         return false;
     }
 
-    public Optional<Enrollment> enroll(String username, String password) {
+    private HFCAClient getCaClient(final String caname, final String cauri) {
+        return CA_CLIENTS.computeIfAbsent(caname, key -> {
+            try {
+                HFCAClient client = HFCAClient.createNewInstance(caname, cauri, new Properties());
+                client.setCryptoSuite(getCryptoSuite());
+                return client;
+            } catch (Exception e) {
+                LOG.error("failed to create ca client of {}@{}: {}", caname, cauri, e.getMessage());
+                throw new IllegalArgumentException("cannot create ca client instance for " + caname + "@" + cauri);
+            }
+        });
+    }
+
+    public Optional<Enrollment> enroll(String username, String password, String caname, String uri) {
         try {
-            Enrollment enrollment = caClient.enroll(username, password);
+            HFCAClient hfcaClient = getCaClient(caname, uri);
+            Enrollment enrollment = hfcaClient.enroll(username, password);
             LOG.info("user {} enrolled", username);
             return Optional.of(enrollment);
         } catch (Exception e) {
-            LOG.error("failed to enroll user {}", username, e);
+            LOG.error("failed to enroll user {}: {}", username, e.getMessage());
         }
         return empty();
     }
 
-    public boolean attachEventHubToChain(EventHub eventHub) {
+    public boolean attachEventHubToChain(String chainname, EventHub eventHub) {
         try {
-            Chain chain = fabricClient.getChain(defaultChainName);
+            Chain chain = fabricClient.getChain(chainname);
             chain.addEventHub(eventHub);
+            chain.initialize();
             return true;
         } catch (Exception e) {
-            LOG.error("failed to attach eventhub {}", eventHub.getUrl(), e);
+            LOG.error("failed to attach eventhub {}", eventHub.getUrl(), e.getMessage());
         }
         return false;
     }
 
-    public List<BlockInfo> getChainBlocks() {
+    public List<BlockInfo> getChainBlocks(String chainname) {
         try {
-            Optional<Chain> chainOptional = getChain(defaultChainName);
+            Optional<Chain> chainOptional = getChain(chainname);
             if (chainOptional.isPresent()) {
                 Chain chain = chainOptional.get();
                 long chainheight = chain
@@ -576,8 +505,8 @@ public class FabricSDK {
         return emptyList();
     }
 
-    public Optional<BlockInfo> getChainBlock(long blockNumber) {
-        Optional<Chain> chainOptional = getChain(defaultChainName);
+    public Optional<BlockInfo> getChainBlock(String chainname, long blockNumber) {
+        Optional<Chain> chainOptional = getChain(chainname);
         if (chainOptional.isPresent()) {
             Chain chain = chainOptional.get();
             try {
@@ -589,8 +518,8 @@ public class FabricSDK {
         return empty();
     }
 
-    public Optional<BlockInfo> getChainBlock(String tx) {
-        Optional<Chain> chainOptional = getChain(defaultChainName);
+    public Optional<BlockInfo> getChainBlock(String chainname, String tx) {
+        Optional<Chain> chainOptional = getChain(chainname);
         if (chainOptional.isPresent()) {
             Chain chain = chainOptional.get();
             try {
@@ -602,8 +531,8 @@ public class FabricSDK {
         return empty();
     }
 
-    public Optional<TransactionInfo> getChainTx(String tx) {
-        Optional<Chain> chainOptional = getChain(defaultChainName);
+    public Optional<TransactionInfo> getChainTx(String chainname, String tx) {
+        Optional<Chain> chainOptional = getChain(chainname);
         if (chainOptional.isPresent()) {
             Chain chain = chainOptional.get();
             try {
@@ -622,14 +551,14 @@ public class FabricSDK {
         });
     }
 
-    public List<ProposalResponse> installChaincodeOnPeer(ChainCodeID chaincode, String path, String lang, List<Peer> peers) {
+    public List<ProposalResponse> installChaincodeOnPeer(ChainCodeID chaincode, String chainname, String path, String lang, List<Peer> peers) {
         switch (lang) {
         case "go":
-            return getChain(defaultChainName)
+            return getChain(chainname)
               .map(chain -> installChaincodeOnPeer(chaincode, chain, GO_LANG, path, peers))
               .orElse(emptyList());
         case "java":
-            return getChain(defaultChainName)
+            return getChain(chainname)
               .map(chain -> installChaincodeOnPeer(chaincode, chain, JAVA, path, peers))
               .orElse(emptyList());
         default:
@@ -638,4 +567,12 @@ public class FabricSDK {
         return emptyList();
     }
 
+    public Optional<Chain> constructChain(String chain, ChainConfiguration chainConfiguration) {
+        Optional<Orderer> ordererOptional = withOrderer(defaultOrdererName, defaultOrdererEndpoint);
+        return ordererOptional.flatMap(orderer -> constructChain(chain, orderer, chainConfiguration));
+    }
+
+    public List<ChainInfo> chains() {
+        return newArrayList(chainRepo.findByAffiliation(USER_CONTEXT.get().getAffiliation()));
+    }
 }

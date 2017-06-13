@@ -1,9 +1,11 @@
 package oxchains.fabric.sdk.stories;
 
 import net.thucydides.core.annotations.Steps;
+import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.jbehave.core.annotations.Given;
 import org.jbehave.core.annotations.Then;
 import org.jbehave.core.annotations.When;
+import oxchains.fabric.sdk.steps.CASteps;
 import oxchains.fabric.sdk.steps.ChainAPISteps;
 import oxchains.fabric.sdk.steps.PeerAPISteps;
 
@@ -16,6 +18,12 @@ public class PeerJoinChainStory {
 
     @Steps ChainAPISteps chainAPISteps;
     @Steps PeerAPISteps peerAPISteps;
+    @Steps CASteps caSteps;
+
+    @Given("admin user context")
+    public void givenAdminContext() throws Exception {
+        caSteps.adminContext();
+    }
 
     @Given("chain $chainName created at orderer $ordererEndpoint")
     public void givenChannelFooCreated(String chainName, String ordererEndpoint) throws IOException {
