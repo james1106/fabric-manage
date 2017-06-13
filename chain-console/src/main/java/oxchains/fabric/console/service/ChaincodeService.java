@@ -268,8 +268,11 @@ public class ChaincodeService {
     }
 
     private boolean noPeersYet(String chain) {
-        return fabricSDK
-          .chainPeers(chain)
+        return userContext()
+          .map(u -> fabricSDK
+            .withUserContext(fromUser(u))
+            .chainPeers(chain))
+          .orElse(emptyList())
           .isEmpty();
     }
 
