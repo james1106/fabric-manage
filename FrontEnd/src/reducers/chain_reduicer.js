@@ -12,14 +12,17 @@ import {
   REQUEST_SUCCESS,
   REQUEST_ERROR,
   FETCH_CHAIN_INFO,
+  FETCH_CHAIN_LIST,
   FETCH_BLOCK_LIST,
   FETCH_BLOCK_INFO
 } from '../actions/types';
 
-const INITIAL_STATE = { chain: null, blocks: null, block: null };
+const INITIAL_STATE = { chainList: null, chain: null, blocks: null, block: null };
 
 export default function(state = INITIAL_STATE, action) {
   switch(action.type) {
+    case FETCH_CHAIN_LIST:
+      return { ...state, chainList:action.payload.data.data };
     case FETCH_CHAIN_INFO:
       return { ...state, chain:action.payload.data.data };
     case FETCH_BLOCK_LIST:

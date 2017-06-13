@@ -24,6 +24,7 @@ import ChainDashboard from './components/chain_dashboard';
 import BlockInfo from './components/block_info';
 import ChainCodeList from './components/chaincode_list';
 import ChainCodeUpload from './components/chaincode_upload';
+import ChainList from './components/chain_list';
 import UserProfile from './components/user_profile';
 
 const createStoreWithMiddleware = compose(
@@ -53,8 +54,9 @@ ReactDOM.render(
             <PrivateRoute path="/peer" component={PeerList} />
             <PrivateRoute path="/chaincode/add" component={ChainCodeUpload} />
             <PrivateRoute path="/chaincode" component={ChainCodeList} />
-            <PrivateRoute path="/chain/block/:id" component={BlockInfo} />
-            <PrivateRoute path="/chain" component={ChainDashboard} />
+            <PrivateRoute path="/chain/:chainname/block/:blockid" component={BlockInfo} />
+            <PrivateRoute path="/chain/:name" component={ChainDashboard} />
+            <PrivateRoute path="/chain" component={ChainList} />
             <PrivateRoute path="/users" component={UserList}/>
             <PrivateRoute path="/profile" component={UserProfile} />
             <Route path="/" component={Welcome} />

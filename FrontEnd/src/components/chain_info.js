@@ -16,14 +16,14 @@ import { Link } from 'react-router-dom';
 class ChainInfo extends Component {
 
   componentWillMount() {
-    this.props.fetchChainInfo();
+    this.props.fetchChainInfo(this.props.chainName);
   }
 
   render() {
     if(this.props.chain===null) {
       return <div><section className="content"><h3>Loading...</h3></section></div>
     }
-    const {hash, next, height, init} = this.props.chain;
+    const {hash, next, height} = this.props.chain;
 
     return (
       <div>
@@ -46,8 +46,6 @@ class ChainInfo extends Component {
                     <dd>{hash}</dd>
                     <dt>Next:</dt>
                     <dd>{next}</dd>
-                    <dt>Init:</dt>
-                    <dd>{init}</dd>
                   </dl>
                 </div>
               </div>

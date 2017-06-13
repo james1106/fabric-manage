@@ -19,6 +19,8 @@ export const FETCH_USER_LIST = 'fetch_user_list';                   //获取用�
 export const ADD_USER_SUCCESS = 'add_user_success';                 //注册用户成功
 export const ADD_USER_ERROR = 'add_user_error';                     //注册用户失败
 
+export const FETCH_CHAIN_LIST = 'fetch_chain_list';                 //获取链列表信息
+export const ADD_CHAIN = 'add_chain';                               //添加链
 export const FETCH_CHAIN_INFO = 'fetch_chain_info';                 //获取Chain信息
 export const FETCH_BLOCK_LIST = 'fetch_block_list';                 //获取区块列表
 export const FETCH_BLOCK_INFO = 'fetch_block_info';                 //获取区块信息
