@@ -12,8 +12,8 @@ class NavSide extends  Component {
 
   renderUserInfo() {
     if(this.props.authenticated) {
-      //const user = JSON.parse(localStorage.getItem('user'));
-      const username= localStorage.getItem('username');
+      const user = JSON.parse(localStorage.getItem('user'));
+      const username= user.username;
       const avatar = `https://gravatar.com/avatar/oxchain-${username}?s=100&d=retro`;
       return <div className="user-panel">
         <div className="pull-left image">

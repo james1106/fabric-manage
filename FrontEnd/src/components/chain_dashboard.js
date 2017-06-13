@@ -20,17 +20,18 @@ class ChainDashboard extends Component {
   }
 
   render() {
+    const name = this.props.match.params.name;
     return (
       <div>
         <section className="content-header"><h1></h1></section>
         <section className="content">
           <div className="row">
             <div className="col-sm-8 col-xs-12">
-              <BlockList/>
+              <BlockList chainName={name}/>
             </div>
 
             <div className="col-sm-4 col-xs-12">
-              <ChainInfo/>
+              <ChainInfo chainName={name}/>
             </div>
           </div>
         </section>

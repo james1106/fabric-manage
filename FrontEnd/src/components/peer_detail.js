@@ -12,18 +12,45 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import _ from 'lodash';
 import Moment from 'react-moment';
+import {
+  Modal,
+  ModalHeader,
+  ModalTitle,
+  ModalClose,
+  ModalBody,
+  ModalFooter
+} from 'react-modal-bootstrap';
 import { fetchEventHubList,fetchPeerList } from '../actions/peer';
+import EnrollPeer from './peer_enroll';
 
 class PeerDetail extends Component {
   constructor(props) {
     super(props);
-    this.state = { error:null, spin:false };
+    this.state = {
+      error:null,
+      spin:false,
+      isEnrollModalOpen: false
+    };
   }
 
   componentWillMount() {
     this.props.fetchPeerList();
-    this.props.fetchEventHubList();
+    //this.props.fetchEventHubList();
   }
+
+  handleEnrollClick() {
+    this.setState({ isEnrollModalOpen: true });
+  }
+
+  enrollCallback(err) {
+    if(!err){
+      this.setState({isEnrollModalOpen : false });
+    }
+  }
+
+  hideEnrollModal = () => {
+    this.setState({ isEnrollModalOpen : false });
+  };
 
   renderChainCodes(chaincodes) {
     if(!chaincodes || chaincodes.length<1) return <div>没有合约</div>;
@@ -39,8 +66,6 @@ class PeerDetail extends Component {
           <dd>{row.path}</dd>
           <dt>Version</dt>
           <dd>{row.version}</dd>
-          <dt>Init</dt>
-          <dd>{row.init?'true':'false'}</dd>
           <dt>Error</dt>
           <dd>{row.error}</dd>
         </dl>
@@ -66,6 +91,24 @@ class PeerDetail extends Component {
         <dd>{eventhub.endpoint}</dd>
         <dt>上次连接时间</dt>
         <dd><Moment locale="zh-cn" format="lll">{eventhub.lastattempt}</Moment></dd>
+      </dl>
+    );
+  }
+
+  renderCert() {
+    if(!this.props.cert) return <button className="btn btn-success btn-sm" onClick={this.handleEnrollClick.bind(this)}><i className="fa fa-eye"></i> 查看证书</button>;
+
+    const cert = this.props.cert;
+    return (
+      <dl className="dl-horizontal">
+        <dt>CA</dt>
+        <dd>{cert.ca}</dd>
+        <dt>uri</dt>
+        <dd>{cert.uri}</dd>
+        <dt>私钥</dt>
+        <dd style={{wordWrap:'break-word'}}>{cert.privateKey}</dd>
+        <dt>证书</dt>
+        <dd>{cert.certificate}</dd>
       </dl>
     );
   }
@@ -103,6 +146,7 @@ class PeerDetail extends Component {
                       </dl>
                     </div>
                   </div>
+
                   <div className="panel panel-default">
                     <div className="panel-heading">合约</div>
                     <div className="panel-body">
@@ -110,12 +154,21 @@ class PeerDetail extends Component {
                     </div>
                   </div>
 
-                  <div className="panel panel-default">
+                  <div className="panel panel-default hidden">
                     <div className="panel-heading">EventHub</div>
                     <div className="panel-body">
                       {this.renderEventHub(item.id)}
                     </div>
                   </div>
+
+                  <div className="panel panel-default">
+                    <div className="panel-heading">节点证书
+                    </div>
+                    <div className="panel-body">
+                      {this.renderCert()}
+                    </div>
+                  </div>
+
                 </div>
                 <div className="box-footer clearfix">
                 </div>
@@ -123,6 +176,18 @@ class PeerDetail extends Component {
             </div>
           </div>
         </section>
+
+        <Modal isOpen={this.state.isEnrollModalOpen} onRequestHide={this.hideEnrollModal.bind(this)}>
+          <ModalHeader>
+            <ModalClose onClick={this.hideEnrollModal.bind(this)}/>
+            <ModalTitle>查看节点证书</ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <EnrollPeer peerId={peerID} affiliation={item.affiliation} callback={this.enrollCallback.bind(this)}/>
+          </ModalBody>
+          <ModalFooter>
+          </ModalFooter>
+        </Modal>
       </div>
     );
   }
@@ -131,7 +196,8 @@ class PeerDetail extends Component {
 function mapStateToProps(state) {
   return {
     all: state.peer.all,
-    eventhub: state.peer.eventhub
+    eventhub: state.peer.eventhub,
+    cert: state.peer.cert
   };
 }
 export default connect(mapStateToProps, { fetchEventHubList, fetchPeerList })(PeerDetail);

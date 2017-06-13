@@ -32,10 +32,11 @@ class BlockList extends Component {
   }
 
   componentWillMount() {
-    this.props.fetchBlockList();
+    this.props.fetchBlockList(this.props.chainName);
   }
 
   renderRows() {
+    const name = this.props.chainName;
     return this.props.blocks.map((row, idx) => {
       return (<tr key={idx}>
         <td>{row.number}</td>
@@ -45,7 +46,7 @@ class BlockList extends Component {
         <td>
           <button className={`btn btn-sm btn-warning margin-r-5 hidden`}
                   onClick={this.handleDetailClick.bind(this, row.number)}>详情</button>
-          <Link className="btn btn-sm btn-warning" to={`/chain/block/${row.number}`}>详情</Link>
+          <Link className="btn btn-sm btn-warning" to={`/chain/${name}/block/${row.number}`}>详情</Link>
         </td>
       </tr>);
     });
@@ -53,7 +54,7 @@ class BlockList extends Component {
 
   handleDetailClick(index) {
     console.log(index);
-    this.props.fetchBlockInfo(index);
+    this.props.fetchBlockInfo(this.props.chainName, index);
     this.setState({ isDetailModalOpen: true });
   }
 

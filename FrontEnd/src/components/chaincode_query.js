@@ -9,14 +9,18 @@
  */
 
 import React, { Component } from 'react';
-import { Field, reduxForm } from 'redux-form';
+import { Field, reduxForm, formValueSelector } from 'redux-form';
 import { connect } from 'react-redux';
-import { fetchChainCodeInfo } from '../actions/chaincode'
+import { fetchChainCodeInfo } from '../actions/chaincode';
+import ChainsSelector from './chains_selector';
 
 class ChainCodeQuery extends Component {
   constructor(props) {
     super(props);
     this.state = { error:null, spin:false };
+  }
+
+  componentWillMount() {
   }
 
   componentWillReceiveProps(props) {
@@ -25,15 +29,15 @@ class ChainCodeQuery extends Component {
     }
   }
 
-  handleFormSubmit({ args }) {
+  handleFormSubmit({ args, chain }) {
     if(!this.props.selectedItem) return;
 
     const { name, version } = this.props.selectedItem
-    console.log({ name, version, args })
+    console.log({ chain, name, version, args })
 
-    if(name && version && args) {
+    if(chain && name && version && args) {
       this.setState({ spin:true });
-      this.props.fetchChainCodeInfo({ name, version, args }, err => {
+      this.props.fetchChainCodeInfo({ chain, name, version, args }, err => {
         this.setState({ error: err ? err : null, spin:false });
       });
     }
@@ -82,7 +86,6 @@ class ChainCodeQuery extends Component {
     )
   }
 
-
   renderTd( key ) {
     const { selectedItem } = this.props;
     if(!selectedItem) return <td></td>;
@@ -107,6 +110,7 @@ class ChainCodeQuery extends Component {
               </tbody>
             </table>
             <form className="form-signin" onSubmit={handleSubmit(this.handleFormSubmit.bind(this))}>
+              <Field name="chain" component={ChainsSelector} className="form-control" label="选择链"/>
               <Field name="args" component={this.renderField} type="text"  label="参数" />
               <div className="row">
                 <div className="col-xs-8">
@@ -133,12 +137,19 @@ const validate = values => {
     errors.args = '参数不能为空';
   }
 
+  if(!values.chain) {
+    errors.chain = '请选择链';
+  }
+
   return errors
 };
 
+const selector = formValueSelector('executeChainCodeForm') ;
 function mapStateToProps(state) {
   return {
-    item: state.chainCode.item
+    item: state.chainCode.item,
+    chains: state.chain.chainList,
+    selectedChain:selector(state, 'chain')
   };
 }
 

@@ -19,8 +19,8 @@ class BlockInfo extends Component {
   }
 
   componentWillMount() {
-    if(this.props.match.params.id!==null)
-      this.props.fetchBlockInfo(this.props.match.params.id);
+    if(this.props.match.params.blockid!==null && this.props.match.params.chainname!==null)
+      this.props.fetchBlockInfo(this.props.match.params.chainname, this.props.match.params.blockid);
   }
 
   renderDataList(dataList) {

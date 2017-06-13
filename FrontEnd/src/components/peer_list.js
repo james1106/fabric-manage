@@ -14,8 +14,8 @@ import {
 import AddPeer from './peer_add';
 
 class PeerList extends Component {
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
     this.state = {
       isModalOpen: false,
       isAddModalOpen : false,
@@ -28,7 +28,9 @@ class PeerList extends Component {
   }
 
   componentWillMount() {
-    this.props.fetchPeerList();
+    this.props.fetchPeerList(function(err){
+      if(err) alert(err);
+    });
   }
 
   hideModal = () => {
@@ -44,14 +46,13 @@ class PeerList extends Component {
         <td>{row.endpoint}</td>
         <td>{row.status}</td>
         <td>
-          <button className={`btn btn-sm btn-success margin-r-5`}
+          <button className={`btn btn-sm btn-success margin-r-5 hidden`}
                   onClick={this.handleStopClick.bind(this, row.id, 1)}>启动</button>
-          <button className={`btn btn-sm btn-danger margin-r-5`}
+          <button className={`btn btn-sm btn-danger margin-r-5 hidden`}
                   onClick={this.handleStopClick.bind(this, row.id, 0)}>停止</button>
           <button className={`btn btn-sm btn-warning hidden margin-r-5`}
                   onClick={this.handleDetailClick.bind(this, idx)}>详情</button>
-          <Link className="btn btn-sm btn-warning" to={`/peer/${row.id}`}>详情</Link>
-          <Link className="btn btn-sm btn-default hidden" to={`/peer/${row.id}/status`}>状态</Link>
+          <Link className="btn btn-sm btn-warning margin-r-5" to={`/peer/${row.id}`}>详情</Link>
         </td>
       </tr>);
     });

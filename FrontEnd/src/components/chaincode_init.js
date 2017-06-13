@@ -9,14 +9,18 @@
  */
 
 import React, { Component } from 'react';
-import { Field, reduxForm } from 'redux-form';
+import { Field, reduxForm, formValueSelector } from 'redux-form';
 import { connect } from 'react-redux';
 import { initChainCode } from '../actions/chaincode'
+import ChainsSelector from './chains_selector';
 
 class ChainCodeInit extends Component {
   constructor(props) {
     super(props);
     this.state = { error:null, spin:false };
+  }
+
+  componentWillMount() {
   }
 
   componentWillReceiveProps(props) {
@@ -25,15 +29,16 @@ class ChainCodeInit extends Component {
     }
   }
 
-  handleFormSubmit({ args, endorsement }) {
+  handleFormSubmit({ args, endorsement, chain }) {
     if(!this.props.selectedItem) return;
 
     const { name, version } = this.props.selectedItem
-    console.log({ name, version, args, endorsement })
+    //console.log({ chain, name, version, args, endorsement });
+    //console.log(this.props.selectedChain);
 
-    if(name && version && args && endorsement) {
+    if(chain && name && version && args && endorsement) {
       this.setState({ spin:true });
-      this.props.initChainCode({ name, version, args, endorsement }, err => {
+      this.props.initChainCode({ chain, name, version, args, endorsement }, err => {
         this.setState({ error: err ? err : null, spin:false });
         this.props.actionCallback(err);
       });
@@ -67,6 +72,7 @@ class ChainCodeInit extends Component {
     return (<td>{selectedItem[key]}</td>)
   }
 
+
   render() {
     const { handleSubmit} = this.props;
     return (
@@ -87,6 +93,8 @@ class ChainCodeInit extends Component {
             <form className="form-signin" onSubmit={handleSubmit(this.handleFormSubmit.bind(this))}>
               <Field name="args" component={this.renderField} type="text"  label="初始化参数" />
               <Field name="endorsement" component={this.renderField} type="file" label="配置文件(yaml)" />
+              <Field name="chain" component={ChainsSelector} className="form-control" label="选择链"/>
+
               <div className="row">
                 <div className="col-xs-8">
                   {this.state.spin?'初始化耗时较长,请耐心等待...':''}
@@ -115,13 +123,22 @@ const validate = values => {
     errors.endorsement = '配置文件不能为空';
   }
 
+  if(!values.chain) {
+    errors.chain = '请选择链';
+  }
   return errors
 };
 
-
+const selector = formValueSelector('initChainCodeForm') ;
 const reduxChainCodeInitForm = reduxForm({
   form: 'initChainCodeForm',
   validate
 })(ChainCodeInit);
 
-export default connect(null, { initChainCode })(reduxChainCodeInitForm);
+function mapStateToProps(state) {
+  return {
+    selectedChain:selector(state, 'chain')
+  };
+}
+
+export default connect(mapStateToProps, { initChainCode })(reduxChainCodeInitForm);

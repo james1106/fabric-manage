@@ -15,9 +15,9 @@ import { signinAction } from '../../actions/auth'
 
 class Signin extends Component {
 
-  handleFormSubmit({ username, password }) {
-    if(username && password)
-      this.props.signinAction({ username, password }, ()=>{ console.log('signin callback');});
+  handleFormSubmit({ username, password, affiliation }) {
+    if(username && password && affiliation)
+      this.props.signinAction({ username, password, affiliation }, ()=>{ console.log('signin callback');});
   }
 
   renderAlert() {
@@ -59,6 +59,7 @@ class Signin extends Component {
             {this.renderAlert()}
 
             <form className="form-signin" onSubmit={handleSubmit(this.handleFormSubmit.bind(this))}>
+            <Field name="affiliation" component={this.renderField} type="text"  label="机构" icon="th-large" />
             <Field name="username" component={this.renderField} type="text"  label="用户名" icon="envelope" />
             <Field name="password" component={this.renderField} type="password" label="密码" icon="lock" />
               <div className="row">
@@ -88,6 +89,10 @@ const validate = values => {
 
   if(!values.password) {
     errors.password = 'password required'
+  }
+
+  if(!values.affiliation) {
+    errors.affiliation = 'affiliation required'
   }
 
   return errors
