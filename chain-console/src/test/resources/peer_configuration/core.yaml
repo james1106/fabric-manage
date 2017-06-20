@@ -29,13 +29,13 @@ logging:
     #
     # Developers: Please see fabric/docs/Setup/logging-control.md for more
     # options.
-    peer:       info
-    node:       warning
-    network:    info
-    version:    info
-    protoutils: info
-    error:      info
+    peer:       debug
+    cauthdsl:   debug
+    gossip:     warning
+    ledger:     debug
     msp:        warning
+    policies:   debug
+    grpc:       warning
 
     format: '%{color}%{time:2006-01-02 15:04:05.000 MST} [%{module}] %{shortfunc} -> %{level:.4s} %{id:03x}%{color:reset} %{message}'
 
@@ -66,6 +66,8 @@ peer:
     # Setting for runtime.GOMAXPROCS(n). If n < 1, it does not change the current setting
     gomaxprocs: -1
     workers: 2
+    endorser:
+        enabled: true
 
     # Gossip related configuration
     gossip:
@@ -151,32 +153,6 @@ peer:
             # Time between peer sends propose message and declare itself as a leader (sends declaration message) (unit: second)
             leaderElectionDuration: 5s
 
-    # Sync related configuration
-    sync:
-        blocks:
-            # Channel size for readonly SyncBlocks messages channel for receiving
-            # blocks from oppositie Peer Endpoints.
-            # NOTE: currently messages are not stored and forwarded, but rather
-            # lost if the channel write blocks.
-            channelSize: 10
-        state:
-            snapshot:
-                # Channel size for readonly syncStateSnapshot messages channel
-                # for receiving state deltas for snapshot from oppositie Peer Endpoints.
-                # NOTE: when the channel is exhausted, the writes block for up to the
-                # writeTimeout specified below
-                channelSize: 50
-                # Write timeout for the syncStateSnapshot messages
-                # When the channel above is exhausted, messages block before being
-                # discarded for this amount of time
-                writeTimeout: 60s
-            deltas:
-                # Channel size for readonly syncStateDeltas messages channel for
-                # receiving state deltas for a syncBlockRange from oppositie
-                # Peer Endpoints.
-                # NOTE: currently messages are not stored and forwarded,
-                # but rather lost if the channel write blocks.
-                channelSize: 20
 
     # Validator defines whether this peer is a validating peer or not, and if
     # it is enabled, what consensus plugin to load
@@ -198,20 +174,20 @@ peer:
     tls:
         enabled:  false
         cert:
-            file: testdata/server1.pem
+            file: tls/ca-cert.pem
         key:
-            file: testdata/server1.key
+            file: tls/ca-key.key
     # Root cert file for selfsigned certificates
     # This represents a self-signed x509 cert that was used to sign the cert.file,
     # this is sent to client to validate the recived certificate from server when
     # establishing TLS connection
         rootcert:
-            file: testdata/server1.pem
+            file: tls/ca.crt
         # The server name use to verify the hostname returned by TLS handshake
         serverhostoverride:
 
     # Path on the file system where peer will store data (eg ledger)
-    fileSystemPath: /home/aiet/Dev/fabric-test/peers/peer0
+    fileSystemPath: ledger
 
     # BCCSP (Blockchain crypto provider): Select which crypto implementation or
     # library to use
@@ -229,7 +205,7 @@ peer:
                 KeyStore:
 
     # Path on the file system where peer will find MSP local configurations
-    mspConfigPath: /home/aiet/Dev/fabric-test/peers/peer0/msp
+    mspConfigPath: msp
 
     # Identifier of the local MSP
     # ----!!!!IMPORTANT!!!-!!!IMPORTANT!!!-!!!IMPORTANT!!!!----
@@ -331,15 +307,15 @@ chaincode:
 
     # timeout in millisecs for starting up a container and waiting for Register
     # to come through. 1sec should be plenty for chaincode unit tests
-    startuptimeout: 300000
+    startuptimeout: 300s
 
     # timeout in millisecs for invokes and initialize commands
     # this timeout is used by all chaincodes in all the channels including
     # system chaincodes. Default is 30000ms (30 seconds)
-    executetimeout: 30000
+    executetimeout: 30s
 
     #timeout in millisecs for deploying chaincode from a remote repository.
-    deploytimeout: 30000
+    deploytimeout: 30s
 
     #mode - options are "dev", "net"
     #dev - in dev mode, user runs the chaincode after starting validator from
@@ -365,8 +341,11 @@ chaincode:
         qscc: enable
 
     # logging section for the chaincode container
-    logLevel: warning
-    logFormat: '%{color}%{time:2006-01-02 15:04:05.000 MST} [%{module}] %{shortfunc} -> %{level:.4s} %{id:03x}%{color:reset} %{message}'
+    logging:
+      level:  info
+      shim:   warning
+      format: '%{color}%{time:2006-01-02 15:04:05.000 MST} [%{module}] %{shortfunc} -> %{level:.4s} %{id:03x}%{color:reset} %{message}'
+
 
 ###############################################################################
 #
@@ -382,15 +361,22 @@ ledger:
     # stateDatabase - options are "goleveldb", "CouchDB"
     # goleveldb - default state database stored in goleveldb.
     # CouchDB - store state database in CouchDB
-    stateDatabase: goleveldb
+    stateDatabase: CouchDB
     couchDBConfig:
        couchDBAddress: 127.0.0.1:5984
        username:
        password:
-
-    # historyDatabase - options are true or false
-    # Indicates if the history of key updates should be stored in goleveldb
-    historyDatabase: true
+       # Number of retries for CouchDB errors
+       maxRetries: 3
+       # Number of retries for CouchDB errors during peer startup
+       maxRetriesOnStartup: 10
+       # CouchDB request timeout (unit: duration, e.g. 20s)
+       requestTimeout: 35s
 
     # Limit on the number of records to return per query
     queryLimit: 10000
+
+  history:
+    # enableHistoryDatabase - options are true or false
+    # Indicates if the history of key updates should be stored in goleveldb
+    enableHistoryDatabase: true

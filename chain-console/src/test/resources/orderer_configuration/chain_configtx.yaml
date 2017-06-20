@@ -9,12 +9,19 @@
 ################################################################################
 Profiles:
 
-    TwoOrgs:
+    TwoOrgsOrdererGenesis:
         Orderer:
             <<: *OrdererDefaults
             Organizations:
                 - *OrdererOrg
-        Application: 
+        Consortiums:
+            DevConsortium:
+                Organizations:
+                    - *Org1
+                    - *Org2
+    TwoOrgsChannel:
+        Consortium: DevConsortium
+        Application:
             <<: *ApplicationDefaults
             Organizations:
                 - *Org1
@@ -42,10 +49,7 @@ Organizations:
 
         # MSPDir is the filesystem path which contains the MSP configuration
         #########################################################################
-        # FIXME: this path needs to be fixed to point to the actual location of #
-        # the project 'fabric-sdk-node' in the file system                      #
-        #########################################################################
-        MSPDir: /home/aiet/Dev/fabric-test/orderer/ordererOrg1/msp
+        MSPDir: orgorderer/msp
 
         # BCCSP (Blockchain crypto provider): Select which crypto implementation or
         # library to use
@@ -72,7 +76,7 @@ Organizations:
         # FIXME: this path needs to be fixed to point to the actual location of #
         # the project 'fabric-sdk-node' in the file system                      #
         #########################################################################
-        MSPDir: /home/aiet/Dev/fabric-test/orderer/peerOrg1/msp
+        MSPDir: org1/msp
 
         # BCCSP (Blockchain crypto provider): Select which crypto implementation or
         # library to use
@@ -106,7 +110,7 @@ Organizations:
         # FIXME: this path needs to be fixed to point to the actual location of #
         # the project 'fabric-sdk-node' in the file system                      #
         #########################################################################
-        MSPDir: /home/aiet/Dev/fabric-test/orderer/peerOrg2/msp
+        MSPDir: org2/msp
 
         # BCCSP (Blockchain crypto provider): Select which crypto implementation or
         # library to use
@@ -145,7 +149,7 @@ Orderer: &OrdererDefaults
         - 10.8.47.90:7050
 
     # Batch Timeout: The amount of time to wait before creating a batch
-    BatchTimeout: 10s
+    BatchTimeout: 1s
 
     # Batch Size: Controls the number of messages batched into a block
     BatchSize:
