@@ -595,6 +595,10 @@ public class FabricSDK {
     public List<ChainInfo> chains() {
         return newArrayList(chainRepo.findByAffiliation(USER_CONTEXT
           .get()
-          .getAffiliation()));
+          .getAffiliation())).stream().map(chainInfo ->
+              getChaininfo(chainInfo.getName())
+                .map(chainInfo::withBlockchainInfo)
+                .orElse(chainInfo)
+        ).collect(toList());
     }
 }

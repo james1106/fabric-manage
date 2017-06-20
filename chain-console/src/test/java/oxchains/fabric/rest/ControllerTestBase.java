@@ -24,12 +24,6 @@ public class ControllerTestBase extends SerenityStory {
 
     @Autowired private WebApplicationContext context;
 
-    //    @Autowired
-    //    private JwtTokenFilter jwtTokenFilter;
-    //    @Autowired private UserService userService;
-    //    @Autowired private PeerService peerService;
-    //    @Autowired private ChainService chainService;
-    //    @Autowired private ChaincodeService chaincodeService;
     @Autowired private Filter springSecurityFilterChain;
 
     @BeforeStories
@@ -37,12 +31,6 @@ public class ControllerTestBase extends SerenityStory {
         RestAssuredMockMvc.mockMvc(webAppContextSetup(context)
           .addFilter(springSecurityFilterChain)
           .build());
-        //          .standaloneSetup(
-        //          new FabricUserController(userService),
-        //          new FabricPeerController(peerService),
-        //          new FabricChainController(chainService),
-        //          new FabricChaincodeController(chaincodeService)
-        //        );
     }
 
 }

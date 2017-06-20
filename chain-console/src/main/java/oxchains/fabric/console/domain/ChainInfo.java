@@ -45,6 +45,13 @@ public class ChainInfo {
         this.height = blockchainInfo.getHeight();
     }
 
+    public ChainInfo withBlockchainInfo(BlockchainInfo blockchainInfo){
+        this.hash = toHexString(blockchainInfo.getCurrentBlockHash());
+        this.next = toHexString(blockchainInfo.getPreviousBlockHash());
+        this.height = blockchainInfo.getHeight();
+        return this;
+    }
+
     public String getAffiliation() {
         return affiliation;
     }
