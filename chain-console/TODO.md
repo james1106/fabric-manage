@@ -4,6 +4,9 @@
 - [x] 已完成
 - [ ] TODO
 
+* 事件通知
+    - [ ] eventhub events listening
+
 * 集群管理
     - [ ] peer 集群
     - [ ] CA 集群
