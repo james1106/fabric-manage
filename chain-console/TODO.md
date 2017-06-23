@@ -4,8 +4,21 @@
 - [x] 已完成
 - [ ] TODO
 
-* 事件通知
+* 版本更新
+    - [ ] v1.0-beta
+    - [ ] TLS 支持
+    - [ ] v1.0-GA and release
+
+* 节点
+    - [ ] multiple endorsers support
     - [ ] eventhub events listening
+    
+* 链
+    - [ ] 链更新
+    
+* 合约
+    - [ ] 合约升级/更新
+    - [ ] 多方背书测试
 
 * 集群管理
     - [ ] peer 集群
