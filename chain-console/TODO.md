@@ -8,11 +8,15 @@
     - [ ] v1.0-beta
     - [ ] TLS 支持
     - [ ] v1.0-GA and release
+    
+* 用户
+    - [ ] 刷新 token
+    - [ ] 删除 token
 
 * 节点
     - [ ] multiple endorsers support
     - [ ] eventhub events listening
-    
+
 * 链
     - [ ] 链更新
     
