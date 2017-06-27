@@ -12,10 +12,12 @@
 * 用户
     - [ ] 刷新 token
     - [ ] 删除 token
+    - [ ] 公钥上传
 
 * 节点
     - [ ] multiple endorsers support
     - [ ] eventhub events listening
+    - [ ] 公钥上传
 
 * 链
     - [ ] 链更新
