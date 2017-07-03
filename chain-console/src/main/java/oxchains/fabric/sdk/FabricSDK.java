@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.access.method.P;
 import org.springframework.stereotype.Component;
 import oxchains.fabric.console.data.ChainRepo;
 import oxchains.fabric.console.domain.ChainInfo;
@@ -135,7 +134,9 @@ public class FabricSDK {
                           existingChain.addPeer(peer);
                           existingChain.addEventHub(fabricClient.newEventHub(peerEventhub.getId(), peerEventhub.getEventhub()));
                       }
-                      if(!existingChainInfo.getPeers().isEmpty()) existingChain.initialize();
+                      if (!existingChainInfo
+                        .getPeers()
+                        .isEmpty()) existingChain.initialize();
                       LOG.info("chain {} exist on orderer {}, rebuilding from data source", chainName, orderer.getUrl());
                       return existingChain;
                   } catch (InvalidArgumentException | TransactionException configuredChainException) {
@@ -167,7 +168,11 @@ public class FabricSDK {
 
     public Optional<Chain> getChain(String chainName) {
         final Chain cachedChain = fabricClient.getChain(chainName);
-        return Optional.ofNullable(cachedChain);
+        if (cachedChain == null) {
+            return constructChain(chainName, null);
+        } else {
+            return Optional.of(cachedChain);
+        }
     }
 
     public Optional<BlockchainInfo> getChaininfo(String chainName) {
@@ -200,29 +205,38 @@ public class FabricSDK {
         return Optional.ofNullable(PEER_CACHE.get(peerId));
     }
 
-    public boolean joinChain(PeerEventhub peerEventhub, String chainName){
-        return withPeer(peerEventhub.getId(), peerEventhub.getEndpoint()).map(peer -> {
+    public boolean joinChain(PeerEventhub peerEventhub, String chainName) {
+        return withPeer(peerEventhub.getId(), peerEventhub.getEndpoint())
+          .map(peer -> {
               boolean joined = joinChain(peer, chainName) && withEventHub(peerEventhub.getId(), peerEventhub.getEventhub())
                 .map(eventHub -> attachEventHubToChain(chainName, eventHub))
                 .orElse(false);
               LOG.info("peer {} joined chain {}, updating db...", peerEventhub.getId(), chainName);
-              chainRepo.findByNameAndOrderer(chainName, defaultOrdererEndpoint)
+              chainRepo
+                .findByNameAndOrderer(chainName, defaultOrdererEndpoint)
                 .ifPresent(chainInfo -> {
                     chainRepo.save(chainInfo.addPeer(peerEventhub));
                     LOG.info("peer {} joined chain {}, db updated!", peerEventhub.getId(), chainName);
                 });
               return joined;
-          }
-        ).orElse(false);
+          })
+          .orElse(false);
     }
 
     public boolean joinChain(Peer peer, String chainName) {
         Chain chain = fabricClient.getChain(chainName);
         LOG.info("{} joining in chain {}", peer.getName(), chainName);
         try {
-            boolean joined = chain.getPeers().stream().anyMatch(p -> peer.getName().equals(p.getName()));
+            boolean joined = chain
+              .getPeers()
+              .stream()
+              .anyMatch(p -> peer
+                .getName()
+                .equals(p.getName()));
             if (!joined) {
-                chain.joinPeer(peer).initialize();
+                chain
+                  .joinPeer(peer)
+                  .initialize();
             }
             return true;
         } catch (Exception e) {
@@ -233,10 +247,8 @@ public class FabricSDK {
 
     public List<Peer> chainPeers(String channelName) {
         LOG.debug("current peers of chain {}", channelName);
-        return withOrderer(defaultOrdererName, defaultOrdererEndpoint)
-          .map(orderer -> constructChain(channelName, orderer, null)
-            .map(chain -> newArrayList(chain.getPeers()))
-            .orElse(newArrayList()))
+        return getChain(channelName)
+          .map(chain -> newArrayList(chain.getPeers()))
           .orElse(newArrayList());
     }
 
@@ -595,10 +607,11 @@ public class FabricSDK {
     public List<ChainInfo> chains() {
         return newArrayList(chainRepo.findByAffiliation(USER_CONTEXT
           .get()
-          .getAffiliation())).stream().map(chainInfo ->
-              getChaininfo(chainInfo.getName())
-                .map(chainInfo::withBlockchainInfo)
-                .orElse(chainInfo)
-        ).collect(toList());
+          .getAffiliation()))
+          .stream()
+          .map(chainInfo -> getChaininfo(chainInfo.getName())
+            .map(chainInfo::withBlockchainInfo)
+            .orElse(chainInfo))
+          .collect(toList());
     }
 }
