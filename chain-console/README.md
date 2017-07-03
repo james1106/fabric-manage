@@ -74,14 +74,16 @@ openssl pkcs8 -topk8 -inform pem -in generated_key.pem -outform pem -nocrypt -ou
 ```
 
 To use the private key generated on enrollment, split the private key into lines each has 64 characters at most, then prepend `-----BEGIN PRIVATE KEY-----` and append `-----END PRIVATE KEY-----`.
- Say we have the result in file `enrollment_private_key.pem`, we can put `keystore.pem` under `msp/keystore/`.
+ Say we have the result in file `enrollment_private_key.pem`, we can put `signcerts.pem` under `msp/signcerts/`.
 
 ```commandline
-openssl ec -in enrollment_private_key.pem -out keystore.pem
+openssl ec -in enrollment_private_key.pem -out signcerts.pem
 ```
 
 
 ### Chaincode Manipulation
+
+**chaincode upgrade not supported yet**
 
 ### Chain-Console JWT Token
 
