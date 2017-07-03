@@ -6,22 +6,27 @@
 
 * 版本更新
     - [ ] v1.0-beta
-    - [ ] TLS 支持
-    - [ ] v1.0-GA and release
+    - [ ] v1.0-RC
+    - [ ] v1.0
     
+* 安全策略
+    - [ ] TLS 支持
+    - [ ] 公钥上传
+    - [ ] 私钥使用用户密码加密
+    - [ ] 获取私钥时使用用户密码解密并自动转换为`EC PRIVATE KEY`格式
+    - [ ] hash 存储密码
+
 * 用户
     - [ ] 刷新 token
     - [ ] 删除 token
-    - [ ] 公钥上传
 
 * 节点
     - [ ] multiple endorsers support
     - [ ] eventhub events listening
-    - [ ] 公钥上传
 
 * 链
     - [ ] 链更新
-    
+
 * 合约
     - [ ] 合约升级/更新
     - [ ] 多方背书测试
