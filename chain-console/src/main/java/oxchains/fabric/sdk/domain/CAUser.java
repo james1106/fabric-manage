@@ -7,6 +7,7 @@ import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.hyperledger.fabric.sdk.Enrollment;
 import org.hyperledger.fabric.sdk.User;
+import oxchains.fabric.sdk.FabricConfig;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -52,11 +53,10 @@ public class CAUser implements User {
 
     public static CAUser fromUser2(oxchains.fabric.console.domain.User u){
         CAUser user = null;
-        String basePath = "/Users/liuruichao/javaSRC/oxchains/fabric-manage/chain-console/src/main/resources";
         try {
-            String certificate = new String(IOUtils.toByteArray(new FileInputStream(basePath + "/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/Admin@org1.example.com-cert.pem")), "UTF-8");
-            //PrivateKey privateKey = getPrivateKeyFromFile(privateKeyFile);
-            String privateKeyFile = basePath + "/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/6b32e59640c594cf633ad8c64b5958ef7e5ba2a205cfeefd44a9e982ce624d93_sk";
+            // TODO hardcode
+            String certificate = new String(IOUtils.toByteArray(new FileInputStream(FabricConfig.RESOURCE_PATH + "/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/Admin@org1.example.com-cert.pem")), "UTF-8");
+            String privateKeyFile = FabricConfig.RESOURCE_PATH + "/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/6b32e59640c594cf633ad8c64b5958ef7e5ba2a205cfeefd44a9e982ce624d93_sk";
             final PEMParser pemParser = new PEMParser(new StringReader(new String(IOUtils.toByteArray(new FileInputStream(privateKeyFile)))));
 
             PrivateKeyInfo pemPair = (PrivateKeyInfo) pemParser.readObject();
