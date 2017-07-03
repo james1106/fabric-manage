@@ -2,8 +2,8 @@ package oxchains.fabric.sdk.steps;
 
 import net.thucydides.core.annotations.Step;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.hyperledger.fabric.sdk.Chain;
-import org.hyperledger.fabric.sdk.ChainConfiguration;
+import org.hyperledger.fabric.sdk.Channel;
+import org.hyperledger.fabric.sdk.ChannelConfiguration;
 import org.hyperledger.fabric.sdk.Orderer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,7 +30,7 @@ import static oxchains.fabric.util.StoryTestUtil.propertyParse;
 public class ChainAPISteps {
 
     @Autowired private FabricSDK sdk;
-    private ChainConfiguration chainConfiguration;
+    private ChannelConfiguration chainConfiguration;
     private Orderer orderer;
 
     @Value("#{${fabric.test.endpoints}}") private Map<String, String> testProperties;
@@ -49,14 +49,14 @@ public class ChainAPISteps {
 
     @Step("when construct a chain {0}")
     public void constructChainOf(String chainName) throws IOException {
-        chainConfiguration = new ChainConfiguration(new File(String.format("src/test/resources/chain_configuration/%s.tx", chainName)));
-        Optional<Chain> chainOptional = sdk.constructChain(chainName, orderer, chainConfiguration);
+        chainConfiguration = new ChannelConfiguration(new File(String.format("src/test/resources/chain_configuration/%s.tx", chainName)));
+        Optional<Channel> chainOptional = sdk.constructChain(chainName, orderer, chainConfiguration);
         assertTrue(chainOptional.isPresent());
     }
 
     @Step("then chain {0} should have been created")
     public void chainCreated(String chainName) {
-        Optional<Chain> chainOptional = sdk.getChain(chainName);
+        Optional<Channel> chainOptional = sdk.getChain(chainName);
         assertTrue(chainOptional.isPresent());
     }
 

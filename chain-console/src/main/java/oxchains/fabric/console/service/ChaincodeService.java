@@ -1,8 +1,8 @@
 package oxchains.fabric.console.service;
 
 import org.apache.commons.io.FileUtils;
-import org.hyperledger.fabric.sdk.ChainCodeID;
 import org.hyperledger.fabric.sdk.ChaincodeEndorsementPolicy;
+import org.hyperledger.fabric.sdk.ChaincodeID;
 import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.ProposalResponse;
 import org.slf4j.Logger;
@@ -21,6 +21,8 @@ import oxchains.fabric.console.rest.common.TxResult;
 import oxchains.fabric.sdk.FabricSDK;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.*;
 import java.util.function.Function;
 
@@ -32,9 +34,9 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.empty;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
-import static org.hyperledger.fabric.sdk.ChainCodeResponse.Status.SUCCESS;
+import static org.hyperledger.fabric.sdk.ChaincodeResponse.Status.SUCCESS;
 import static org.springframework.security.core.context.SecurityContextHolder.getContext;
-import static oxchains.fabric.sdk.domain.CAUser.fromUser;
+import static oxchains.fabric.sdk.domain.CAUser.fromUser2;
 
 /**
  * @author aiet
@@ -91,7 +93,7 @@ public class ChaincodeService {
     }
 
     public List<TxResult> installCCOnPeer(String chain, String name, String version, String lang, String... peers) {
-        ChainCodeID chaincode = ChainCodeID
+        ChaincodeID chaincode = ChaincodeID
           .newBuilder()
           .setName(name)
           .setVersion(version)
@@ -126,7 +128,7 @@ public class ChaincodeService {
 
                 if (!peerList.isEmpty()) {
                     fabricSDK
-                      .withUserContext(fromUser(context))
+                      .withUserContext(fromUser2(context))
                       .installChaincodeOnPeer(chaincode, chain, path, lang, peerList)
                       .stream()
                       .map(resp -> {
@@ -155,7 +157,7 @@ public class ChaincodeService {
     }
 
     public Optional<TxPeerResult> instantiate(String chain, String name, String version, MultipartFile endorsement, String... params) {
-        ChainCodeID chaincode = ChainCodeID
+        ChaincodeID chaincode = ChaincodeID
           .newBuilder()
           .setName(name)
           .setVersion(version)
@@ -182,7 +184,7 @@ public class ChaincodeService {
                 LOG.info("instantiating chaincode {}-{} with endorsement {}", name, version, endorsementYaml.getPath());
 
                 return Optional.ofNullable(fabricSDK
-                  .withUserContext(fromUser(context))
+                  .withUserContext(fromUser2(context))
                   .instantiateChaincode(chaincode, chain, chaincodeEndorsementPolicy, params)
                   .thenApplyAsync(RESPONSE2TXPEERRESULT_FUNC)
                   .thenApplyAsync(txPeerResult -> {
@@ -217,7 +219,7 @@ public class ChaincodeService {
     }
 
     public Optional<TxPeerResult> invoke(String chain, String name, String version, String... params) {
-        ChainCodeID chaincode = ChainCodeID
+        ChaincodeID chaincode = ChaincodeID
           .newBuilder()
           .setName(name)
           .setVersion(version)
@@ -226,16 +228,25 @@ public class ChaincodeService {
 
         if (noPeersYet(chain)) return empty();
 
-        LOG.info("invoking chaincode {}-{} with: {}", name, version, params);
+        String[] newArgs = new String[params.length];
+        for (int i = 0; i < params.length; i++) {
+            try {
+                newArgs[i] = URLDecoder.decode(params[i], "utf-8");
+            } catch (UnsupportedEncodingException ignored) {
+                newArgs[i] = params[i];
+            }
+        }
+
+        LOG.info("invoking chaincode {}-{} with: {}", name, version, newArgs);
         return userContext().map(context -> {
             try {
                 return fabricSDK
-                  .withUserContext(fromUser(context))
-                  .invokeChaincode(chain, chaincode, params)
+                  .withUserContext(fromUser2(context))
+                  .invokeChaincode(chain, chaincode, newArgs)
                   .thenApplyAsync(RESPONSE2TXPEERRESULT_FUNC)
                   .get(txTimeout, SECONDS);
             } catch (Exception e) {
-                LOG.error("failed to invoke chaincode {}-{} with {}", name, version, params, e);
+                LOG.error("failed to invoke chaincode {}-{} with {}", name, version, newArgs, e);
             }
             return null;
         });
@@ -250,7 +261,7 @@ public class ChaincodeService {
       .getName(), proposalResponse.getStatus() == SUCCESS ? 1 : 0) : null;
 
     public Optional<QueryResult> query(String chain, String name, String version, String... args) {
-        ChainCodeID chaincode = ChainCodeID
+        ChaincodeID chaincode = ChaincodeID
           .newBuilder()
           .setName(name)
           .setVersion(version)
@@ -262,7 +273,7 @@ public class ChaincodeService {
         LOG.info("querying chaincode {}-{} with {}", name, version, args);
         return userContext()
           .map(context -> fabricSDK
-            .withUserContext(fromUser(context))
+            .withUserContext(fromUser2(context))
             .queryChaincode(chain, chaincode, args))
           .map(QueryResult::new);
     }
@@ -270,7 +281,7 @@ public class ChaincodeService {
     private boolean noPeersYet(String chain) {
         return userContext()
           .map(u -> fabricSDK
-            .withUserContext(fromUser(u))
+            .withUserContext(fromUser2(u))
             .chainPeers(chain))
           .orElse(emptyList())
           .isEmpty();

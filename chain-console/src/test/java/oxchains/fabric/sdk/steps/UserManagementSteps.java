@@ -55,7 +55,7 @@ public class UserManagementSteps {
     public void registerUser(String username, String password) {
         try {
             RegistrationRequest registrationRequest = new RegistrationRequest(username, propertyParse(defaultAffilicationKey, testProperties));
-            registrationRequest.setCAName(caName);
+            //registrationRequest.setCAName(caName);
             registrationRequest.setSecret(password);
             user = new CAUser(username, propertyParse(defaultAffilicationKey, testProperties), "");
             user.setPassword(password);
@@ -121,7 +121,7 @@ public class UserManagementSteps {
     @Step("user {0} is being revoked")
     public void revokeUser(String username) {
         try {
-            caClient.revoke(admin, username, UNSPECIFIED);
+            caClient.revoke(admin, username, UNSPECIFIED.toString());
             revocationException = null;
         } catch (Exception e) {
             revocationException = e;

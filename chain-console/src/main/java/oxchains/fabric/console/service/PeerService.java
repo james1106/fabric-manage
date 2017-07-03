@@ -12,6 +12,7 @@ import oxchains.fabric.console.domain.PeerEventhub;
 import oxchains.fabric.console.domain.PeerInfo;
 import oxchains.fabric.console.domain.User;
 import oxchains.fabric.sdk.FabricSDK;
+import oxchains.fabric.sdk.domain.CAUser;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -27,7 +28,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Optional.empty;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.security.core.context.SecurityContextHolder.getContext;
-import static oxchains.fabric.sdk.domain.CAUser.fromUser;
+import static oxchains.fabric.sdk.domain.CAUser.fromUser2;
 
 /**
  * @author aiet
@@ -53,7 +54,7 @@ public class PeerService {
               .map(u -> newArrayList(peerRepo.findPeerEventhubsByAffiliation(u.getAffiliation()))
                 .parallelStream()
                 .map(peer -> fabricSDK
-                  .withUserContext(fromUser(u))
+                  .withUserContext(fromUser2(u))
                   .withPeer(peer.getId(), peer.getEndpoint())
                   .map(fabricPeer -> {
                       PeerInfo peerInfo = new PeerInfo(fabricPeer);
@@ -61,7 +62,7 @@ public class PeerService {
                       if (reachable(fabricPeer.getUrl())) {
                           peerInfo.setStatusCode(1);
                           peerInfo.setChaincodes(fabricSDK
-                            .withUserContext(fromUser(u))
+                            .withUserContext(fromUser2(u))
                             .chaincodesOnPeer(fabricPeer)
                             .stream()
                             .map(ChainCodeInfo::new)
@@ -72,7 +73,7 @@ public class PeerService {
                             .map(ChainCodeInfo::new)
                             .collect(toList()));
                           peerInfo.setChains(newArrayList(fabricSDK
-                            .withUserContext(fromUser(u))
+                            .withUserContext(fromUser2(u))
                             .chainsOfPeer(fabricPeer)));
                       }
                       return peerInfo;
@@ -99,7 +100,7 @@ public class PeerService {
                 return userContext()
                   .map(context -> {
                       boolean registered = fabricSDK
-                        .withUserContext(fromUser(context))
+                        .withUserContext(CAUser.fromUser(context))
                         .register(peerEventhub.getId(), peerEventhub.getPassword(), context.getCa(), context.getUri());
                       if (registered) {
                           peerEventhub.inheritMSP(context);
@@ -178,7 +179,7 @@ public class PeerService {
               .ifPresent(peer -> userContext().ifPresent(u -> fabricSDK
                 .withPeer(peerId, peer.getEndpoint())
                 .map(fabricPeer -> fabricSDK
-                  .withUserContext(fromUser(u))
+                  .withUserContext(fromUser2(u))
                   .chainsOfPeer(fabricPeer)
                   .isEmpty())
                 .filter(joinedNoChains -> joinedNoChains)

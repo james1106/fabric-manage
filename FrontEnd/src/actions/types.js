@@ -1,4 +1,4 @@
-export const ROOT_URL = 'http://10.8.47.4:9494';
+export const ROOT_URL = 'http://localhost:9494';
 
 
 export const AUTH_USER = 'auth_user';                               //登录

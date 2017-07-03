@@ -19,8 +19,8 @@ import java.util.Optional;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
-import static org.hyperledger.fabric.sdk.ChainCodeResponse.Status.FAILURE;
-import static org.hyperledger.fabric.sdk.ChainCodeResponse.Status.SUCCESS;
+import static org.hyperledger.fabric.sdk.ChaincodeResponse.Status.FAILURE;
+import static org.hyperledger.fabric.sdk.ChaincodeResponse.Status.SUCCESS;
 import static org.junit.Assert.*;
 import static oxchains.fabric.util.StoryTestUtil.propertyParse;
 
@@ -37,13 +37,13 @@ public class ChaincodeAPISteps {
     private ProposalResponse instantiateResponse;
     private ProposalResponse invokeResponse;
     private ProposalResponse queryResponse;
-    private ChainCodeID chaincode;
-    private Chain chain;
+    private ChaincodeID chaincode;
+    private Channel chain;
     private List<ChaincodeInfo> installedChaincodes = new ArrayList<>(2);
 
     @Step("load chaincode from path {0}")
     public void loadChaincode(String chaincodeName, String chaincodeVersion, String chaincodeLocation) {
-        chaincode = ChainCodeID
+        chaincode = ChaincodeID
           .newBuilder()
           .setName(chaincodeName)
           .setVersion(chaincodeVersion)
@@ -65,7 +65,7 @@ public class ChaincodeAPISteps {
 
     @Step("instantiate chaincode on chain {0} with {1}")
     public void instantiateWith(String chaincodeName, String arg) throws Exception {
-        Optional<ChainCodeID> chaincodeIdOptional = fabricSDK.getChaincode(chaincodeName);
+        Optional<ChaincodeID> chaincodeIdOptional = fabricSDK.getChaincode(chaincodeName);
         assertTrue("chaincode should have been created", chaincodeIdOptional.isPresent());
         chaincode = chaincodeIdOptional.get();
 
@@ -159,7 +159,7 @@ public class ChaincodeAPISteps {
 
     @Step("check chain {0} existence")
     public void checkChain(String chainName) {
-        Optional<Chain> chainOptional = fabricSDK.getChain(chainName);
+        Optional<Channel> chainOptional = fabricSDK.getChain(chainName);
         assertTrue("chain should have been created", chainOptional.isPresent());
         /* append event hub and re-initialize */
         chain = chainOptional.get();
@@ -167,7 +167,7 @@ public class ChaincodeAPISteps {
 
     @Step("check chain {0} existence")
     public void checkChaincode(String chaincodeName) {
-        Optional<ChainCodeID> chaincodeOptional = fabricSDK.getChaincode(chaincodeName);
+        Optional<ChaincodeID> chaincodeOptional = fabricSDK.getChaincode(chaincodeName);
         assertTrue("chaincode should have been created", chaincodeOptional.isPresent());
         /* append event hub and re-initialize */
         chaincode = chaincodeOptional.get();

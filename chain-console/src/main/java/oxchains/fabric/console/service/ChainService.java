@@ -1,6 +1,6 @@
 package oxchains.fabric.console.service;
 
-import org.hyperledger.fabric.sdk.ChainConfiguration;
+import org.hyperledger.fabric.sdk.ChannelConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +18,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Optional.empty;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.security.core.context.SecurityContextHolder.getContext;
-import static oxchains.fabric.sdk.domain.CAUser.fromUser;
+import static oxchains.fabric.sdk.domain.CAUser.fromUser2;
 
 /**
  * @author aiet
@@ -55,7 +55,7 @@ public class ChainService {
     private boolean noPeersYet(String chainname) {
         return userContext()
           .map(u -> fabricSDK
-            .withUserContext(fromUser(u))
+            .withUserContext(fromUser2(u))
             .chainPeers(chainname))
           .orElse(emptyList())
           .isEmpty();
@@ -96,11 +96,11 @@ public class ChainService {
 
     public boolean newChain(String chain, MultipartFile config) {
         try {
-            ChainConfiguration chainConfiguration = new ChainConfiguration(config.getBytes());
+            ChannelConfiguration chainConfiguration = new ChannelConfiguration(config.getBytes());
             LOG.info("constructing chain {}", chain);
             return userContext()
               .flatMap(context -> fabricSDK
-                .withUserContext(fromUser(context))
+                .withUserContext(fromUser2(context))
                 .constructChain(chain, chainConfiguration))
               .isPresent();
         } catch (Exception e) {
@@ -114,14 +114,14 @@ public class ChainService {
         return peerRepo
           .findPeerEventhubById(peerId)
           .flatMap(peerEventhub -> userContext().map(context ->
-            fabricSDK.withUserContext(fromUser(context)).joinChain(peerEventhub, chainname)
+            fabricSDK.withUserContext(fromUser2(context)).joinChain(peerEventhub, chainname)
           )).orElse(false);
     }
 
     public List<ChainInfo> chains() {
         return userContext()
           .map(context -> fabricSDK
-            .withUserContext(fromUser(context))
+            .withUserContext(fromUser2(context))
             .chains())
           .orElse(emptyList());
     }

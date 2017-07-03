@@ -1,7 +1,7 @@
 package oxchains.fabric.sdk;
 
 import com.google.common.collect.Lists;
-import org.hyperledger.fabric.protos.peer.Query.ChaincodeInfo;
+import org.hyperledger.fabric.protos.peer.Query;
 import org.hyperledger.fabric.sdk.*;
 import org.hyperledger.fabric.sdk.exception.CryptoException;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
@@ -30,7 +30,7 @@ import static java.util.Collections.*;
 import static java.util.Optional.empty;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 import static java.util.stream.Collectors.toList;
-import static org.hyperledger.fabric.sdk.ChainCodeResponse.Status.SUCCESS;
+import static org.hyperledger.fabric.sdk.ChaincodeResponse.Status.SUCCESS;
 import static org.hyperledger.fabric.sdk.TransactionRequest.Type.GO_LANG;
 import static org.hyperledger.fabric.sdk.TransactionRequest.Type.JAVA;
 import static org.hyperledger.fabric.sdk.security.CryptoSuite.Factory.getCryptoSuite;
@@ -53,7 +53,7 @@ public class FabricSDK {
 
     private final WeakHashMap<String, Peer> PEER_CACHE = new WeakHashMap<>(8);
     private final WeakHashMap<String, EventHub> EVENTHUB_CACHE = new WeakHashMap<>(8);
-    private final WeakHashMap<String, ChainCodeID> CHAINCODE_CACHE = new WeakHashMap<>(8);
+    private final WeakHashMap<String, ChaincodeID> CHAINCODE_CACHE = new WeakHashMap<>(8);
     private final Map<String, HFCAClient> CA_CLIENTS = synchronizedMap(new WeakHashMap<String, HFCAClient>(2));
 
     private final HFClient fabricClient = HFClient.createNewInstance();
@@ -113,12 +113,12 @@ public class FabricSDK {
     /**
      * @param chainName chain name
      * @param orderer with which orderer the chain will be constructed
-     * @param chainConfiguration chain configuration
+     * @param channelConfiguration chain configuration
      */
-    public Optional<Chain> constructChain(String chainName, Orderer orderer, ChainConfiguration chainConfiguration) {
-        Chain chain = null;
+    public Optional<Channel> constructChain(String chainName, Orderer orderer, ChannelConfiguration channelConfiguration) {
+        Channel chain = null;
         try {
-            Chain availableChain = fabricClient.getChain(chainName);
+            Channel availableChain = fabricClient.getChannel(chainName);
             if (availableChain != null) return Optional.of(availableChain);
 
             Optional<ChainInfo> chainInfoOptional = chainRepo.findByNameAndOrderer(chainName, orderer.getUrl());
@@ -126,7 +126,7 @@ public class FabricSDK {
             chain = chainInfoOptional
               .map(existingChainInfo -> {
                   try {
-                      Chain existingChain = fabricClient.newChain(existingChainInfo.getName());
+                      Channel existingChain = fabricClient.newChannel(existingChainInfo.getName());
                       existingChain.addOrderer(orderer);
 
                       for (PeerEventhub peerEventhub : existingChainInfo.getPeers()) {
@@ -145,7 +145,7 @@ public class FabricSDK {
               })
               .orElseGet(() -> {
                   try {
-                      Chain newChain = fabricClient.newChain(chainName, orderer, chainConfiguration, fabricClient.getChainConfigurationSignature(chainConfiguration, fabricClient.getUserContext()));
+                      Channel newChain = fabricClient.newChannel(chainName, orderer, channelConfiguration, fabricClient.getChannelConfigurationSignature(channelConfiguration, fabricClient.getUserContext()));
                       ChainInfo newChainInfo = new ChainInfo(chainName, orderer.getUrl());
                       newChainInfo.setAffiliation(fabricClient
                         .getUserContext()
@@ -165,14 +165,14 @@ public class FabricSDK {
         return Optional.ofNullable(chain);
     }
 
-    public Optional<Chain> getChain(String chainName) {
-        final Chain cachedChain = fabricClient.getChain(chainName);
+    public Optional<Channel> getChain(String chainName) {
+        final Channel cachedChain = fabricClient.getChannel(chainName);
         return Optional.ofNullable(cachedChain);
     }
 
     public Optional<BlockchainInfo> getChaininfo(String chainName) {
         try {
-            Optional<Chain> chainOptional = getChain(chainName);
+            Optional<Channel> chainOptional = getChain(chainName);
             if (chainOptional.isPresent()) {
                 return Optional.of(chainOptional
                   .get()
@@ -217,7 +217,7 @@ public class FabricSDK {
     }
 
     public boolean joinChain(Peer peer, String chainName) {
-        Chain chain = fabricClient.getChain(chainName);
+        Channel chain = fabricClient.getChannel(chainName);
         LOG.info("{} joining in chain {}", peer.getName(), chainName);
         try {
             boolean joined = chain.getPeers().stream().anyMatch(p -> peer.getName().equals(p.getName()));
@@ -242,23 +242,23 @@ public class FabricSDK {
 
     public List<EventHub> chainEventHubs(String channelName) {
         return Lists.newCopyOnWriteArrayList(fabricClient
-          .getChain(channelName)
+          .getChannel(channelName)
           .getEventHubs());
     }
 
-    public List<ProposalResponse> installChaincodeOnPeer(ChainCodeID chaincodeId, Chain chain, String lang, String sourceLocation, Collection<Peer> peers) {
+    public List<ProposalResponse> installChaincodeOnPeer(ChaincodeID chaincodeId, Channel channel, String lang, String sourceLocation, Collection<Peer> peers) {
         switch (lang) {
         case "go":
-            return installChaincodeOnPeer(chaincodeId, chain, GO_LANG, sourceLocation, peers);
+            return installChaincodeOnPeer(chaincodeId, channel, GO_LANG, sourceLocation, peers);
         case "java":
-            return installChaincodeOnPeer(chaincodeId, chain, JAVA, sourceLocation, peers);
+            return installChaincodeOnPeer(chaincodeId, channel, JAVA, sourceLocation, peers);
         default:
             break;
         }
         return emptyList();
     }
 
-    public List<ProposalResponse> installChaincodeOnPeer(ChainCodeID chaincodeId, Chain chain, TransactionRequest.Type type, String sourceLocation, Collection<Peer> peers) {
+    public List<ProposalResponse> installChaincodeOnPeer(ChaincodeID chaincodeId, Channel channel, TransactionRequest.Type type, String sourceLocation, Collection<Peer> peers) {
         InstallProposalRequest installProposalRequest = fabricClient.newInstallProposalRequest();
         installProposalRequest.setChaincodeID(chaincodeId);
         try {
@@ -272,12 +272,12 @@ public class FabricSDK {
                 return newArrayList(responses);
             }
         } catch (Exception e) {
-            LOG.error("failed to install chaincode {} on for chain {}", chaincodeId.getName(), chain.getName(), e);
+            LOG.error("failed to install chaincode {} on for chain {}", chaincodeId.getName(), channel.getName(), e);
         }
         return emptyList();
     }
 
-    public CompletableFuture<ProposalResponse> instantiateChaincode(ChainCodeID chaincode, String chainname, ChaincodeEndorsementPolicy policy, String... params) {
+    public CompletableFuture<ProposalResponse> instantiateChaincode(ChaincodeID chaincode, String chainname, ChaincodeEndorsementPolicy policy, String... params) {
         return getChain(chainname)
           .map(chain -> instantiateChaincode(chaincode, chain, chain
             .getPeers()
@@ -286,7 +286,7 @@ public class FabricSDK {
           .orElse(supplyAsync(() -> null));
     }
 
-    public CompletableFuture<ProposalResponse> instantiateChaincode(ChainCodeID chaincode, Chain chain, Peer peer, ChaincodeEndorsementPolicy policy, final String... args) {
+    public CompletableFuture<ProposalResponse> instantiateChaincode(ChaincodeID chaincode, Channel channel, Peer peer, ChaincodeEndorsementPolicy policy, final String... args) {
         InstantiateProposalRequest instantiateProposalRequest = fabricClient.newInstantiationProposalRequest();
         instantiateProposalRequest.setChaincodeID(chaincode);
         if (args.length > 0) instantiateProposalRequest.setFcn(args[0]);
@@ -296,7 +296,7 @@ public class FabricSDK {
         try {
             //TODO transient map not used
             instantiateProposalRequest.setTransientMap(emptyMap());
-            Collection<ProposalResponse> responses = chain.sendInstantiationProposal(instantiateProposalRequest, singletonList(peer));
+            Collection<ProposalResponse> responses = channel.sendInstantiationProposal(instantiateProposalRequest, singletonList(peer));
             if (responses.isEmpty()) {
                 LOG.warn("no responses while instantiating chaincode {}", chaincode.getName());
             } else {
@@ -304,8 +304,8 @@ public class FabricSDK {
                   .iterator()
                   .next();
                 if (response.getStatus() == SUCCESS) {
-                    return chain
-                      .sendTransaction(responses, chain.getOrderers())
+                    return channel
+                      .sendTransaction(responses, channel.getOrderers())
                       .thenApply(transactionEvent -> {
                           LOG.info("instantiation {} : transaction {} finished", Arrays.toString(args), transactionEvent.getTransactionID());
                           return response;
@@ -318,18 +318,18 @@ public class FabricSDK {
         return supplyAsync(() -> null);
     }
 
-    public Optional<ChainCodeID> getChaincode(String chaincodeName) {
+    public Optional<ChaincodeID> getChaincode(String chaincodeName) {
         return Optional.ofNullable(CHAINCODE_CACHE.get(chaincodeName));
     }
 
-    public CompletableFuture<ProposalResponse> invokeChaincode(ChainCodeID chaincode, Chain chain, Peer peer, String... args) {
+    public CompletableFuture<ProposalResponse> invokeChaincode(ChaincodeID chaincode, Channel channel, Peer peer, String... args) {
         TransactionProposalRequest transactionProposalRequest = fabricClient.newTransactionProposalRequest();
         transactionProposalRequest.setChaincodeID(chaincode);
         if (args.length > 0) transactionProposalRequest.setFcn(args[0]);
         if (args.length > 1) transactionProposalRequest.setArgs(Arrays.copyOfRange(args, 1, args.length));
         else transactionProposalRequest.setArgs(EMPTY_ARGS);
         try {
-            Collection<ProposalResponse> responses = chain.sendTransactionProposal(transactionProposalRequest, singletonList(peer));
+            Collection<ProposalResponse> responses = channel.sendTransactionProposal(transactionProposalRequest, singletonList(peer));
             if (responses.isEmpty()) {
                 LOG.warn("no responses while invoking chaincode {}", chaincode.getName());
             } else {
@@ -337,7 +337,7 @@ public class FabricSDK {
                   .iterator()
                   .next();
                 if (response.getStatus() == SUCCESS) {
-                    return chain
+                    return channel
                       .sendTransaction(responses)
                       .thenApply(transactionEvent -> {
                           LOG.info("invoking {} : transaction {} finished", Arrays.toString(args), transactionEvent.getTransactionID());
@@ -351,7 +351,7 @@ public class FabricSDK {
         return supplyAsync(() -> null);
     }
 
-    public CompletableFuture<ProposalResponse> invokeChaincode(String chainname, ChainCodeID chaincode, String... params) {
+    public CompletableFuture<ProposalResponse> invokeChaincode(String chainname, ChaincodeID chaincode, String... params) {
         return getChain(chainname)
           .map(chain -> invokeChaincode(chaincode, chain, chain
             .getPeers()
@@ -360,7 +360,7 @@ public class FabricSDK {
           .orElse(supplyAsync(() -> null));
     }
 
-    public ProposalResponse queryChaincode(String chainname, ChainCodeID chaincode, String... args) {
+    public ProposalResponse queryChaincode(String chainname, ChaincodeID chaincode, String... args) {
         return getChain(chainname)
           .map(chain -> queryChaincode(chaincode, chain, chain
             .getPeers()
@@ -369,7 +369,7 @@ public class FabricSDK {
           .orElse(null);
     }
 
-    public ProposalResponse queryChaincode(ChainCodeID chaincode, Chain chain, Peer peer, String... args) {
+    public ProposalResponse queryChaincode(ChaincodeID chaincode, Channel channel, Peer peer, String... args) {
         QueryByChaincodeRequest queryByChaincodeRequest = fabricClient.newQueryProposalRequest();
         queryByChaincodeRequest.setChaincodeID(chaincode);
         if (args.length > 0) queryByChaincodeRequest.setFcn(args[0]);
@@ -377,7 +377,7 @@ public class FabricSDK {
         else queryByChaincodeRequest.setArgs(EMPTY_ARGS);
 
         try {
-            Collection<ProposalResponse> responses = chain.queryByChaincode(queryByChaincodeRequest, singletonList(peer));
+            Collection<ProposalResponse> responses = channel.queryByChaincode(queryByChaincodeRequest, singletonList(peer));
             if (responses.isEmpty()) {
                 LOG.warn("no response while querying chaincode {}", chaincode.getName());
             } else {
@@ -401,7 +401,7 @@ public class FabricSDK {
         return emptySet();
     }
 
-    public List<ChaincodeInfo> chaincodesOnPeer(Peer peer) {
+    public List<Query.ChaincodeInfo> chaincodesOnPeer(Peer peer) {
         try {
             fabricClient.setUserContext(USER_CONTEXT.get());
             return fabricClient.queryInstalledChaincodes(peer);
@@ -414,9 +414,9 @@ public class FabricSDK {
     /**
      * instantiated chaincodes
      */
-    public List<ChaincodeInfo> chaincodesOnPeer(Peer peer, Chain chain) {
+    public List<Query.ChaincodeInfo> chaincodesOnPeer(Peer peer, Channel channel) {
         try {
-            return chain.queryInstantiatedChaincodes(peer);
+            return channel.queryInstantiatedChaincodes(peer);
         } catch (Exception e) {
             LOG.error("failed to query instantiated chaincodes of peer {}:", peer.getName(), e);
         }
@@ -426,7 +426,7 @@ public class FabricSDK {
     public boolean revokeUser(String username, int reason, String caname, String cauri) {
         try {
             HFCAClient hfcaClient = getCaClient(caname, cauri);
-            hfcaClient.revoke(USER_CONTEXT.get(), username, int2RevokeReason(reason));
+            hfcaClient.revoke(USER_CONTEXT.get(), username, int2RevokeReason(reason).toString());
             return true;
         } catch (Exception e) {
             LOG.error("failed to revoke {} with reason {}", username, reason, e);
@@ -446,7 +446,7 @@ public class FabricSDK {
         try {
             User context = USER_CONTEXT.get();
             RegistrationRequest registrationRequest = new RegistrationRequest(username, context.getAffiliation());
-            registrationRequest.setCAName(ca);
+            //registrationRequest.setCAName(ca);
             registrationRequest.setType("user");
             registrationRequest.setSecret(password);
             HFCAClient hfcaClient = getCaClient(ca, caUri);
@@ -486,9 +486,9 @@ public class FabricSDK {
 
     public boolean attachEventHubToChain(String chainname, EventHub eventHub) {
         try {
-            Chain chain = fabricClient.getChain(chainname);
-            chain.addEventHub(eventHub);
-            chain.initialize();
+            Channel channel = fabricClient.getChannel(chainname);
+            channel.addEventHub(eventHub);
+            channel.initialize();
             LOG.info("chain {} listening on eventhub {}", chainname, chainname, eventHub.getName());
             return true;
         } catch (Exception e) {
@@ -499,10 +499,10 @@ public class FabricSDK {
 
     public List<BlockInfo> getChainBlocks(String chainname) {
         try {
-            Optional<Chain> chainOptional = getChain(chainname);
+            Optional<Channel> chainOptional = getChain(chainname);
             if (chainOptional.isPresent()) {
-                Chain chain = chainOptional.get();
-                long chainheight = chain
+                Channel channel = chainOptional.get();
+                long chainheight = channel
                   .queryBlockchainInfo()
                   .getHeight();
                 return LongStream
@@ -510,7 +510,7 @@ public class FabricSDK {
                   .parallel()
                   .mapToObj(i -> {
                       try {
-                          return chain.queryBlockByNumber(i);
+                          return channel.queryBlockByNumber(i);
                       } catch (Exception e) {
                           LOG.error("failed to get {}-th block", i, e);
                       }
@@ -526,9 +526,9 @@ public class FabricSDK {
     }
 
     public Optional<BlockInfo> getChainBlock(String chainname, long blockNumber) {
-        Optional<Chain> chainOptional = getChain(chainname);
+        Optional<Channel> chainOptional = getChain(chainname);
         if (chainOptional.isPresent()) {
-            Chain chain = chainOptional.get();
+            Channel chain = chainOptional.get();
             try {
                 return Optional.of(chain.queryBlockByNumber(blockNumber));
             } catch (Exception e) {
@@ -539,9 +539,9 @@ public class FabricSDK {
     }
 
     public Optional<BlockInfo> getChainBlock(String chainname, String tx) {
-        Optional<Chain> chainOptional = getChain(chainname);
+        Optional<Channel> chainOptional = getChain(chainname);
         if (chainOptional.isPresent()) {
-            Chain chain = chainOptional.get();
+            Channel chain = chainOptional.get();
             try {
                 return Optional.of(chain.queryBlockByTransactionID(tx));
             } catch (Exception e) {
@@ -552,9 +552,9 @@ public class FabricSDK {
     }
 
     public Optional<TransactionInfo> getChainTx(String chainname, String tx) {
-        Optional<Chain> chainOptional = getChain(chainname);
+        Optional<Channel> chainOptional = getChain(chainname);
         if (chainOptional.isPresent()) {
-            Chain chain = chainOptional.get();
+            Channel chain = chainOptional.get();
             try {
                 return Optional.of(chain.queryTransactionByID(tx));
             } catch (Exception e) {
@@ -571,7 +571,7 @@ public class FabricSDK {
         });
     }
 
-    public List<ProposalResponse> installChaincodeOnPeer(ChainCodeID chaincode, String chainname, String path, String lang, List<Peer> peers) {
+    public List<ProposalResponse> installChaincodeOnPeer(ChaincodeID chaincode, String chainname, String path, String lang, List<Peer> peers) {
         switch (lang) {
         case "go":
             return getChain(chainname)
@@ -587,7 +587,7 @@ public class FabricSDK {
         return emptyList();
     }
 
-    public Optional<Chain> constructChain(String chain, ChainConfiguration chainConfiguration) {
+    public Optional<Channel> constructChain(String chain, ChannelConfiguration chainConfiguration) {
         Optional<Orderer> ordererOptional = withOrderer(defaultOrdererName, defaultOrdererEndpoint);
         return ordererOptional.flatMap(orderer -> constructChain(chain, orderer, chainConfiguration));
     }

@@ -183,7 +183,7 @@ public class FabricUserControllerSteps {
         user.setAuthorities(Sets.newHashSet(MANAGE));
 
         RegistrationRequest registrationRequest = new RegistrationRequest(username, org);
-        registrationRequest.setCAName(caName);
+        //registrationRequest.setCAName(caName);
         registrationRequest.addAttribute(new Attribute("hf.Registrar.Roles", "user"));
         registrationRequest.addAttribute(new Attribute("hf.Revoker", "true"));
         registrationRequest.setSecret(password);

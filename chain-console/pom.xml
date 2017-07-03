@@ -28,7 +28,7 @@
         <maven.surefire.plugin.version>2.19.1</maven.surefire.plugin.version>
         <maven.compiler.plugin.version>3.6.1</maven.compiler.plugin.version>
 
-        <fabric-sdk-java.version>1.0.0-SNAPSHOT</fabric-sdk-java.version>
+        <fabric-sdk-java.version>1.0.0-beta2</fabric-sdk-java.version>
         <hikaricp.version>2.6.1</hikaricp.version>
         <jjwt.version>0.7.0</jjwt.version>
     </properties>
@@ -187,4 +187,28 @@
         </plugins>
     </build>
 
+    <repositories>
+        <repository>
+            <id>oxchains-repo</id>
+            <url>http://maven.oxchains.com/repository/maven-public/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+    <pluginRepositories>
+        <pluginRepository>
+            <id>oxchains-repo</id>
+            <url>http://maven.oxchains.com/repository/maven-public/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </pluginRepository>
+    </pluginRepositories>
 </project>

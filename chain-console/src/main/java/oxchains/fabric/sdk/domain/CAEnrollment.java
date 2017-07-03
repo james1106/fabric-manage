@@ -22,7 +22,6 @@ public class CAEnrollment implements Enrollment {
 
     public CAEnrollment(String key, String cert) {
         this.cert = cert;
-
         try {
             KeyFactory kf = KeyFactory.getInstance("ECDSA");
             PKCS8EncodedKeySpec specPriv = new PKCS8EncodedKeySpec(Base64
@@ -32,6 +31,11 @@ public class CAEnrollment implements Enrollment {
         } catch (Exception ignore) {
             ignore.printStackTrace();
         }
+    }
+
+    public CAEnrollment(PrivateKey privateKey, String cert) {
+        this.cert = cert;
+        this.privateKey = privateKey;
     }
 
     @Override

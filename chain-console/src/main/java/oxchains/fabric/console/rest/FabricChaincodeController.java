@@ -10,6 +10,8 @@ import oxchains.fabric.console.rest.common.RestResp;
 import oxchains.fabric.console.rest.common.TxResult;
 import oxchains.fabric.console.service.ChaincodeService;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.List;
 
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
@@ -69,6 +71,7 @@ public class FabricChaincodeController {
 
     @GetMapping("/chaincode/tx")
     public RestResp query(@RequestParam String chain, @RequestParam String chaincode, @RequestParam String version, @RequestParam String[] args) {
+
         return chaincodeService
           .query(chain, chaincode, version, args)
           .map(RestResp::success)
