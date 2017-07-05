@@ -1,4 +1,4 @@
-export const ROOT_URL = 'http://localhost:9494';
+export const ROOT_URL = 'http://api.manage.oxchains.com:57600';
 
 
 export const AUTH_USER = 'auth_user';                               //登录

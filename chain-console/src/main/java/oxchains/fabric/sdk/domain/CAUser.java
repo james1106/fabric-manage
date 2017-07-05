@@ -55,8 +55,8 @@ public class CAUser implements User {
         CAUser user = null;
         try {
             // TODO hardcode
-            String certificate = new String(IOUtils.toByteArray(new FileInputStream(FabricConfig.RESOURCE_PATH + "/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/Admin@org1.example.com-cert.pem")), "UTF-8");
-            String privateKeyFile = FabricConfig.RESOURCE_PATH + "/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/6b32e59640c594cf633ad8c64b5958ef7e5ba2a205cfeefd44a9e982ce624d93_sk";
+            String certificate = new String(IOUtils.toByteArray(new FileInputStream(FabricConfig.FABRIC_RESOURCE_PATH + FabricConfig.FABRIC_ADMIN_CERTIFICATE_PATH)), "UTF-8");
+            String privateKeyFile = FabricConfig.FABRIC_RESOURCE_PATH + FabricConfig.FABRIC_ADMIN_PRIVATEKEY_PATH;
             final PEMParser pemParser = new PEMParser(new StringReader(new String(IOUtils.toByteArray(new FileInputStream(privateKeyFile)))));
 
             PrivateKeyInfo pemPair = (PrivateKeyInfo) pemParser.readObject();

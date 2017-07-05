@@ -10,5 +10,11 @@ import org.springframework.beans.factory.annotation.Value;
  */
 public final class FabricConfig {
     @Value("fabric.resource.path")
-    public static String RESOURCE_PATH;
+    public static String FABRIC_RESOURCE_PATH;
+
+    @Value("fabric.admin.privatekey.path")
+    public static String FABRIC_ADMIN_PRIVATEKEY_PATH;
+
+    @Value("fabric.admin.certificate.path")
+    public static String FABRIC_ADMIN_CERTIFICATE_PATH;
 }
