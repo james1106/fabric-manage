@@ -15,7 +15,7 @@ export default () => {
       <div className="pull-right hidden-xs">
         <b>Version</b> 0.1.0
       </div>
-      <strong>Copyright &copy; 2017 <a href="https://www.oxchains.com/">Oxchains</a>.</strong> All rights
+      <strong>Copyright &copy; 2017 <a href="http://www.ziyungufen.com/">紫云</a>.</strong> All rights
       reserved.
     </footer>
   );

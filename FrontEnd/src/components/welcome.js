@@ -8,7 +8,7 @@ export default () => {
     <section className="content">
       <div className="row">
         <div className="md-col-12 text-center">
-          <h1>欢迎使用OXCHAIN</h1>
+          <h1>欢迎使用区块链管理系统</h1>
           <div>现在时间是: <Moment locale="zh-cn" format="lll"></Moment></div>
         </div>
       </div>

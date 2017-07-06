@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { Link } from 'react-router-dom';
 
-const logo = 'https://www.oxchains.com/images/logo-black.png';
+const logo = 'http://www.ziyungufen.com/static/ziyungufen/image/logo.png';
 
 class Header extends  Component {
 
@@ -56,7 +56,7 @@ class Header extends  Component {
       <header className="main-header">
         <Link to="/" className="logo">
           <span className="logo-mini"><img src={logo} style={{width:50+'px'}} /></span>
-          <span className="logo-lg"><img src={logo} style={{width:80+'px'}} /><b>OXCHAIN</b></span>
+          <span className="logo-lg"><img src={logo} style={{width:80+'px'}} /></span>
         </Link>
         <nav className="navbar navbar-static-top">
           <Link to="#" className="sidebar-toggle" data-toggle="offcanvas" role="button">
