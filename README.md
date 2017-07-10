@@ -17,8 +17,8 @@ backend with RESTful API for:
 Checkout this repo, install dependencies, then start the app with the following:
 
 ```
-> git clone https://git@github.com:zkjs/oxchain-invoice.git
-> cd invoice-app/FrontEnd
+> git clone git@github.com:zkjs/fabric-manage.git
+> cd fabric-manage/FrontEnd
 > npm install
 > npm start
 ```
@@ -32,8 +32,8 @@ Checkout this repo, install dependencies, then start the app with the following:
 ### How to deploy 
 ```
 > Requirements: NPM
-> git clone https://git@github.com:zkjs/oxchain-invoice.git
-> cd invoice-app/FrontEnd
+> git clone git@github.com:zkjs/fabric-manage.git
+> cd fabric-manage/FrontEnd
 > modify ./src/actions/types.js , change ROOT_URL to right api server endpoint
 > npm install
 > npm install -g webpack
