@@ -63,6 +63,7 @@ What users can do:
 based on fabric-ca
 
 every organization can have a independent CA server, i.e. 
+
     - org1 : Org1CA
     - org2 : Org2CA
     - orderer : OrgOrdererCA
@@ -73,13 +74,17 @@ CA server generates key pairs for admin and user. To make use of the keys genera
 openssl pkcs8 -topk8 -inform pem -in generated_key.pem -outform pem -nocrypt -out private_key_for_test.pem
 ```
 
-To use the private key generated on enrollment, split the private key into lines each has 64 characters at most, then prepend `-----BEGIN PRIVATE KEY-----` and append `-----END PRIVATE KEY-----`.
- Say we have the result in file `enrollment_private_key.pem`, we can put `signcerts.pem` under `msp/signcerts/`.
+To use the key pair generated on enrollment:
+
+1. split the private key into lines each has 64 characters at most
+2. prepend `-----BEGIN PRIVATE KEY-----` and append `-----END PRIVATE KEY-----`.
+3. say we have the result in file `enrollment_private_key.pem`, we can put `keystore.pem` under `msp/keystore/` after running:
 
 ```commandline
-openssl ec -in enrollment_private_key.pem -out signcerts.pem
+openssl ec -in enrollment_private_key.pem -out keystore.pem
 ```
 
+4. put public key directly into `msp/signcerts/signcerts.pem`
 
 ### Chaincode Manipulation
 
