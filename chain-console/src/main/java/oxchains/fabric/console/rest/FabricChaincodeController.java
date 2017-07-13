@@ -1,15 +1,14 @@
 package oxchains.fabric.console.rest;
 
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import oxchains.fabric.console.rest.common.RestResp;
 import oxchains.fabric.console.rest.common.TxResult;
 import oxchains.fabric.console.service.ChaincodeService;
 
+import javax.annotation.Resource;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.List;
@@ -40,6 +39,14 @@ public class FabricChaincodeController {
     public RestResp install(@RequestParam String chain, @RequestParam String chaincode, @RequestParam String version, @RequestParam String lang, @RequestParam String[] peers) {
         List<TxResult> result = chaincodeService.installCCOnPeer(chain, chaincode, version, lang, peers);
         return result.isEmpty() ? fail() : success(result);
+    }
+
+    @PostMapping("/chaincode/upgrade")
+    public RestResp upGrade(@RequestParam String chain, @RequestParam String version, @RequestParam String name, @RequestParam MultipartFile endorsement, @RequestParam String[] args) {
+        return chaincodeService
+                .upgradeChainCode(chain, version, name, endorsement, args)
+                .map(RestResp::success)
+                .orElse(fail());
     }
 
     @PostMapping(value = "/chaincode", consumes = MULTIPART_FORM_DATA_VALUE)

@@ -1,10 +1,8 @@
 package oxchains.fabric.console.service;
 
 import org.apache.commons.io.FileUtils;
-import org.hyperledger.fabric.sdk.ChaincodeEndorsementPolicy;
-import org.hyperledger.fabric.sdk.ChaincodeID;
-import org.hyperledger.fabric.sdk.Peer;
-import org.hyperledger.fabric.sdk.ProposalResponse;
+import org.hyperledger.fabric.sdk.*;
+import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +14,7 @@ import oxchains.fabric.console.data.ChaincodeRepo;
 import oxchains.fabric.console.domain.ChainCodeInfo;
 import oxchains.fabric.console.domain.User;
 import oxchains.fabric.console.rest.common.QueryResult;
+import oxchains.fabric.console.rest.common.RestResp;
 import oxchains.fabric.console.rest.common.TxPeerResult;
 import oxchains.fabric.console.rest.common.TxResult;
 import oxchains.fabric.sdk.FabricSDK;
@@ -48,6 +47,11 @@ public class ChaincodeService {
 
     private FabricSDK fabricSDK;
     private ChaincodeRepo chaincodeRepo;
+    private Channel channel;
+
+    public Channel getChannel() {
+        return channel;
+    }
 
     public ChaincodeService(@Autowired FabricSDK fabricSDK, @Autowired ChaincodeRepo chaincodeRepo) {
         this.fabricSDK = fabricSDK;
@@ -65,7 +69,7 @@ public class ChaincodeService {
                 return false;
             } else FileUtils.forceMkdir(chaincodePath);
 
-            File target = new File(chaincodePath.getPath() + String.format("/%s-%s-%s.go", name, version, now().format(ISO_LOCAL_DATE_TIME)));
+            File target = new File(chaincodePath.getPath() + String.format("/%s-%s-%s.go", name, version, System.currentTimeMillis() +""));
             if (target.exists()) {
                 LOG.warn("target cache file {} already exists", target.getPath());
                 return false;
@@ -175,7 +179,7 @@ public class ChaincodeService {
                 ChainCodeInfo chainCodeInfo = chainCodeInfoOptional.get();
                 File dir = new File(String.format("%s/endorsement/%s", path, name));
                 if (!dir.exists()) FileUtils.forceMkdir(dir);
-                File endorsementYaml = new File(String.format("%s/endorsement/%s/%s-%s-(%s).yaml", path, name, name, version, now().toString()));
+                File endorsementYaml = new File(String.format("%s/endorsement/%s/%s-%s-(%s).yaml", path, name, name, version, System.currentTimeMillis()));
                 endorsement.transferTo(endorsementYaml);
 
                 ChaincodeEndorsementPolicy chaincodeEndorsementPolicy = new ChaincodeEndorsementPolicy();
@@ -199,6 +203,51 @@ public class ChaincodeService {
             }
         } catch (Exception e) {
             LOG.error("failed to instantiate chaincode {}-{} with {}", name, version, params, e);
+        }
+        return empty();
+    }
+
+    public Optional<TxPeerResult> upgradeChainCode(String chain, String version, String name, MultipartFile endorsement, String... params){
+        ChaincodeID chaincode = ChaincodeID.newBuilder().setName(name).setVersion(version).setPath(chaincodePath(name, version)).build();
+
+        if (noPeersYet(chain)) return empty();
+
+        try {
+            Optional<User> contextOptional = userContext();
+            if (contextOptional.isPresent()) {
+                User context = contextOptional.get();
+                Optional<ChainCodeInfo> chainCodeInfoOptional = chaincodeRepo.findByNameAndVersionAndAffiliation(name, version, context.getAffiliation());
+                if (!chainCodeInfoOptional.isPresent()) return empty();
+                ChainCodeInfo chainCodeInfo = chainCodeInfoOptional.get();
+                File dir = new File(String.format("%s/endorsement/%s", path, name));
+
+                if (!dir.exists()) FileUtils.forceMkdir(dir);
+                File file = new File(String.format("%s/endorsement/%s/%s-%s-(%s).yaml", path, name, name, version, System.currentTimeMillis()));
+                endorsement.transferTo(file);
+
+                ChaincodeEndorsementPolicy chaincodeEndorsementPolicy = new ChaincodeEndorsementPolicy();
+//                File file = new File("D:/Git_hub/Shenzhen/fabric-manage/chain-console/src/test/resources/chain_configuration/example_chaincode_endorsement_policy.yaml");
+
+                chaincodeEndorsementPolicy.fromYamlFile(file);
+
+                LOG.info("upgrade chaincode {}-{} with endorsement {}", name, version, file.getPath());
+
+                return Optional.ofNullable(fabricSDK
+                        .withUserContext(fromUser2(context))
+                        .upgradeChaincode(chaincode, chain, chaincodeEndorsementPolicy, params)
+                        .thenApplyAsync(RESPONSE2TXPEERRESULT_FUNC)
+                        .thenApplyAsync(txPeerResult -> {
+                            if (txPeerResult.getSuccess() == 1) {
+                                chainCodeInfo.addInstantiated(txPeerResult.getPeer());
+                                chaincodeRepo.save(chainCodeInfo);
+                                LOG.info("chaincode {}-{} instantiated on peer {}", name, version, txPeerResult.getPeer());
+                            }
+                            return txPeerResult;
+                        })
+                        .get(txTimeout, SECONDS));
+            }
+        } catch (Exception e) {
+            LOG.error("failed to upgrade chaincode {}-{} with {}", name, version, params, e);
         }
         return empty();
     }

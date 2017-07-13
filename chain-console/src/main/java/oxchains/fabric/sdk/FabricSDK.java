@@ -1,30 +1,41 @@
 package oxchains.fabric.sdk;
 
+import ch.qos.logback.core.pattern.util.RegularEscapeUtil;
 import com.google.common.collect.Lists;
+import org.apache.commons.io.FileUtils;
 import org.hyperledger.fabric.protos.peer.Query;
 import org.hyperledger.fabric.sdk.*;
-import org.hyperledger.fabric.sdk.exception.CryptoException;
-import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
-import org.hyperledger.fabric.sdk.exception.TransactionException;
+import org.hyperledger.fabric.sdk.exception.*;
 import org.hyperledger.fabric_ca.sdk.HFCAClient;
 import org.hyperledger.fabric_ca.sdk.RegistrationRequest;
 import org.hyperledger.fabric_ca.sdk.RevokeReason;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.web.multipart.MultipartFile;
 import oxchains.fabric.console.data.ChainRepo;
 import oxchains.fabric.console.domain.ChainInfo;
 import oxchains.fabric.console.domain.PeerEventhub;
+import oxchains.fabric.console.rest.common.RestResp;
+import sun.rmi.runtime.Log;
+import sun.security.pkcs.PKCS8Key;
 
 import javax.annotation.PostConstruct;
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.LongStream;
 
 import static com.google.common.collect.Lists.newArrayList;
+import static com.google.common.collect.Lists.transform;
+import static java.time.LocalTime.now;
 import static java.util.Collections.*;
 import static java.util.Optional.empty;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
@@ -34,6 +45,7 @@ import static org.hyperledger.fabric.sdk.TransactionRequest.Type.GO_LANG;
 import static org.hyperledger.fabric.sdk.TransactionRequest.Type.JAVA;
 import static org.hyperledger.fabric.sdk.security.CryptoSuite.Factory.getCryptoSuite;
 import static org.hyperledger.fabric_ca.sdk.RevokeReason.UNSPECIFIED;
+import static sun.security.pkcs.PKCS8Key.version;
 
 /**
  * @author aiet
@@ -330,6 +342,40 @@ public class FabricSDK {
         return supplyAsync(() -> null);
     }
 
+    public CompletableFuture<ProposalResponse> upgradeChaincode(ChaincodeID chaincode, Channel channel, Peer peer, ChaincodeEndorsementPolicy policy, final String... args) {
+        UpgradeProposalRequest upgradeProposalRequest = fabricClient.newUpgradeProposalRequest();
+        if (args.length > 0) upgradeProposalRequest.setFcn(args[0]);
+        if (args.length > 1) upgradeProposalRequest.setArgs(Arrays.copyOfRange(args, 1, args.length));
+        else upgradeProposalRequest.setArgs(EMPTY_ARGS);
+        upgradeProposalRequest.setChaincodeEndorsementPolicy(policy);
+        upgradeProposalRequest.setChaincodeID(chaincode);
+        upgradeProposalRequest.setChaincodeVersion(chaincode.getVersion());
+        upgradeProposalRequest.setChaincodeName(chaincode.getName());
+        try {
+            //TODO transient map not used
+            upgradeProposalRequest.setTransientMap(emptyMap());
+            Collection<ProposalResponse> responses = channel.sendUpgradeProposal(upgradeProposalRequest, singletonList(peer));
+            if (responses.isEmpty()) {
+                LOG.warn("no responses while upgrade chaincode {}", chaincode.getName());
+            } else {
+                final ProposalResponse response = responses
+                        .iterator()
+                        .next();
+                if (response.getStatus() == SUCCESS) {
+                    return channel
+                            .sendTransaction(responses, channel.getOrderers())
+                            .thenApply(transactionEvent -> {
+                                LOG.info("upgrade {} : transaction {} finished", Arrays.toString(args), transactionEvent.getTransactionID());
+                                return response;
+                            });
+                } else supplyAsync(() -> response);
+            }
+        } catch (Exception e) {
+            LOG.error("failed to upgrade chaincode {} with arg {}", chaincode.getName(), Arrays.toString(args), e);
+        }
+        return supplyAsync(() -> null);
+    }
+
     public Optional<ChaincodeID> getChaincode(String chaincodeName) {
         return Optional.ofNullable(CHAINCODE_CACHE.get(chaincodeName));
     }
@@ -363,6 +409,16 @@ public class FabricSDK {
         return supplyAsync(() -> null);
     }
 
+        public CompletableFuture<ProposalResponse> upgradeChaincode(ChaincodeID chaincode, String chainname, ChaincodeEndorsementPolicy policy, String... params) {
+            return getChain(chainname)
+                    .map(chain -> upgradeChaincode(chaincode, chain, chain
+                            .getPeers()
+                            .iterator()
+                            .next(), policy, params))
+                    .orElse(supplyAsync(() -> null));
+        }
+
+
     public CompletableFuture<ProposalResponse> invokeChaincode(String chainname, ChaincodeID chaincode, String... params) {
         return getChain(chainname)
           .map(chain -> invokeChaincode(chaincode, chain, chain
@@ -373,12 +429,7 @@ public class FabricSDK {
     }
 
     public ProposalResponse queryChaincode(String chainname, ChaincodeID chaincode, String... args) {
-        return getChain(chainname)
-          .map(chain -> queryChaincode(chaincode, chain, chain
-            .getPeers()
-            .iterator()
-            .next(), args))
-          .orElse(null);
+        return getChain(chainname).map(chain -> queryChaincode(chaincode, chain, chain.getPeers().iterator().next(), args)).orElse(null);
     }
 
     public ProposalResponse queryChaincode(ChaincodeID chaincode, Channel channel, Peer peer, String... args) {
