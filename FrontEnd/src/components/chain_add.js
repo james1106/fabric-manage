@@ -7,6 +7,9 @@
  *
  */
 
+
+
+
 import React, { Component } from 'react';
 import { Field, reduxForm } from 'redux-form';
 import { connect } from 'react-redux';
@@ -59,7 +62,7 @@ class ChainAdd extends Component {
             {this.renderAlert()}
             <form className="form-signin" onSubmit={handleSubmit(this.handleFormSubmit.bind(this))}>
               <Field name="chainname" component={this.renderField} type="text"  label="链名称" />
-              <Field name="config" component={this.renderField} type="file" label="配置文件" />
+              <Field name="config" component={this.renderField} type="file" label="配置文件" ></Field>
               <div className="row">
                 <div className="col-xs-8">
                   {this.state.spin?'创建链耗时较长,请耐心等待...':''}

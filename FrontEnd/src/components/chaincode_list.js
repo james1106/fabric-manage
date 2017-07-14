@@ -25,6 +25,9 @@ import ChaincodeInstall from './chaincode_install';
 import ChaincodeInit from './chaincode_init';
 import ChaincodeExecute from './chaincode_execute';
 import ChaincodeQuery from './chaincode_query';
+import UpdateChainCode from './chaincode_update';
+
+
 
 class ChainCodeList extends Component {
   constructor() {
@@ -36,6 +39,7 @@ class ChainCodeList extends Component {
       isInitModalOpen : false,
       isExecuteModalOpen : false,
       isQueryModalOpen: false,
+        isUpdateModalOpen:false,
       actionSuccess: null,
       actionResult: '',
       selectedItem: null
@@ -104,6 +108,25 @@ class ChainCodeList extends Component {
     }
   }
 
+
+  ///////Update/////
+
+    handleUpdateClick(row) {
+        this.setState({isUpdateModalOpen: true, selectedItem: row});
+    }
+
+    hideUpdateModal = () => {
+        this.setState({ isUpdateModalOpen : false, selectedItem: null });
+    };
+
+    UpdateCallback(err) {
+        if(!err){
+            this.props.fetchChainCodeList();
+            this.setState({isUpdateModalOpen : false, isModalOpen: true ,actionSuccess:true, actionResult:'更新成功!' });
+        }
+    }
+
+
   //////// execute ////////
 
   handleExecuteClick(row) {
@@ -137,10 +160,13 @@ class ChainCodeList extends Component {
       let buttons = [<button className='btn btn-sm btn-default margin-r-5' onClick={this.handleInstallClick.bind(this, row)} key="1">部署</button>];
       if(row.installed && row.installed.length>0) {//已经部署
         buttons.push(<button className='btn btn-sm btn-default margin-r-5' onClick={this.handleInitClick.bind(this, row)} key="2">初始化</button>);
-        if(row.instantiated && row.instantiated.length>0) {//已经初始化
-          buttons.push(<button className='btn btn-sm btn-default margin-r-5' onClick={this.handleExecuteClick.bind(this, row)}  key="3">执行</button>);
-          buttons.push(<button className='btn btn-sm btn-default margin-r-5' onClick={this.handleQueryClick.bind(this, row)}  key="4">查询</button>);
-        }
+        //if(row.instantiated && row.instantiated.length>0) {//已经初始化
+
+            buttons.push(<button className='btn btn-sm btn-default margin-r-5' onClick={this.handleUpdateClick.bind(this, row)}  key="3">更新</button>);
+
+          buttons.push(<button className='btn btn-sm btn-default margin-r-5' onClick={this.handleExecuteClick.bind(this, row)}  key="4">执行</button>);
+          buttons.push(<button className='btn btn-sm btn-default margin-r-5' onClick={this.handleQueryClick.bind(this, row)}  key="5">查询</button>);
+        //}
       }
       return (<tr key={idx}>
         <td>{row.name}</td>
@@ -244,6 +270,20 @@ class ChainCodeList extends Component {
           <ModalFooter>
           </ModalFooter>
         </Modal>
+
+          {/* Update Modal*/}
+        <Modal isOpen={this.state.isUpdateModalOpen} onRequestHide={this.hideUpdateModal.bind(this)}>
+          <ModalHeader>
+            <ModalClose onClick={this.hideUpdateModal.bind(this)}/>
+            <ModalTitle>更新合约</ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <UpdateChainCode actionCallback={this.UpdateCallback.bind(this)} selectedItem={this.state.selectedItem}/>
+          </ModalBody>
+          <ModalFooter>
+          </ModalFooter>
+        </Modal>
+
 
         {/* Execute Modal */}
         <Modal isOpen={this.state.isExecuteModalOpen} onRequestHide={this.hideExecuteModal.bind(this)}>

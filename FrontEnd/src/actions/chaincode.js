@@ -17,6 +17,7 @@ import {
   UPLOAD_CHAINCODE,
   INSTALL_CHAINCODE,
   INIT_CHAINCODE,
+    UPDATE_CHAINCODE,
   EXECUTE_CHAINCODE,
   FETCH_CHAINCODE_INFO,
   getAuthorizedHeader
@@ -158,8 +159,43 @@ export function initChainCode({ chain, name, version, args, endorsement }, callb
         dispatch(requestError(err.message));
         callback(err.message);
       });
-
   }
+}
+
+/**
+ * 更新合约
+ * POST : application/x-www-form-urlencoded
+ * @param name
+ * @param version
+ * @param args
+ * @param endorsement  : yaml file
+ * @param callback(err)   :  callback when http request response. if(success) err=null ; else err=[error message].
+ */
+export function UpdateChainCode({ chain, name, version, args, endorsement }, callback) {
+    console.log(`UpdateChainCode: ${chain}, ${name}, ${version}, ${args}, ${endorsement}`);
+
+    return function(dispatch) {
+        let formData = new FormData();
+        formData.append('chain', chain)
+        formData.append('name', name)
+        formData.append('version', version)
+        formData.append('args', args)
+        formData.append('endorsement', endorsement[0])
+        const headers = getAuthorizedHeader();
+        axios.post(`${ROOT_URL}/chaincode/upgrade`, formData, {headers: { 'content-type': 'application/x-www-form-urlencoded', ...headers }})
+            .then(function(response) {
+                if(response.data.status == 1) {// success
+                    dispatch({ type: UPDATE_CHAINCODE, payload:response });
+                    callback();
+                } else {// fail
+                    callback(response.data.message);
+                }
+            })
+            .catch(function(err) {
+                dispatch(requestError(err.message));
+                callback(err.message);
+            });
+    }
 }
 
 /**
