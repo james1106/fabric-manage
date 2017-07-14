@@ -5,9 +5,9 @@
 - [ ] TODO
 
 * 版本更新
-    - [ ] v1.0-beta
-    - [ ] v1.0-RC
-    - [ ] v1.0
+    - [x] v1.0-beta
+    - [x] v1.0-RC
+    - [ ] v1.0-release
     
 * 安全策略
     - [ ] TLS 支持

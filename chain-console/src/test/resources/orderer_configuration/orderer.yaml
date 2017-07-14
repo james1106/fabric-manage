@@ -128,10 +128,23 @@ Kafka:
 
     # Retry: What to do if none of the Kafka brokers are available.
     Retry:
-        # The producer should attempt to reconnect every <Period>
-        Period: 3s
-        # Panic if <Stop> has elapsed and no connection has been established
-        Stop: 60s
+        ShortInterval: 5s
+        ShortTotal: 10m
+        LongInterval: 5m
+        LongTotal: 12h
+        NetworkTimeouts:
+            DialTimeout: 10s
+            ReadTimeout: 10s
+            WriteTimeout: 10s
+        Metadata:
+            RetryBackoff: 250ms
+            RetryMax: 3
+        Producer:
+            RetryBackoff: 100ms
+            RetryMax: 3
+        Consumer:
+            RetryBackoff: 2s
+
 
     # Verbose: Turn on logging for sarama, the client library that we use to
     # interact with the Kafka cluster.
@@ -157,48 +170,3 @@ Kafka:
       RootCAs:
         #File: uncomment to read Certificate from a file
 
-################################################################################
-#
-#   SECTION: SBFT Local
-#
-#   - This section applies to the configuration of the SBFT-based orderer.
-#
-################################################################################
-SbftLocal:
-
-    # Address to use for SBFT internal communication
-    PeerCommAddr: ":6101"
-    CertFile: "sbft/testdata/cert1.pem"
-    KeyFile: "sbft/testdata/key.pem"
-    # Directory for SBFT data (persistence)
-    DataDir: "/tmp"
-
-################################################################################
-#
-#   SECTION: Genesis
-#
-#   - This section is pending removal but is left to support SBFT
-#     to be migrated to configtx.yaml.
-#
-################################################################################
-Genesis:
-
-    # Deprecated Batch Timeout: The amount of time to wait before creating a
-    # batch. shorten wait time here
-    DeprecatedBatchTimeout: 2s
-
-    # DeprecatedBatchSize: The absolute maximum number of bytes allowed for
-    # the serialized messages in a batch.
-    DeprecatedBatchSize: 99 MB
-
-    # Defines the SBFT parameters when 'sbft' is specified as the 'OrdererType'
-    SbftShared:
-        # Number of peers
-        "N": 1
-        # Fault tolerance
-        F: 0
-        # Timeout of requests (seconds)
-        RequestTimeoutNsec: 1000000000
-        # Peers (PeerCommAddr) with the path of their cert
-        Peers:
-            ":6101": "sbft/testdata/cert1.pem"
