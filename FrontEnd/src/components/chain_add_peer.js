@@ -82,7 +82,7 @@ class ChainAddPeer extends Component {
       return <div><section className="content"><h1>Loading...</h1></section></div>
     }
 
-    //console.log(this.props.chainName);
+    console.log(this.props.chainName);
     return (
       <div>
         <section className="content-header"><h1></h1></section>

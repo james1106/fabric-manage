@@ -1,4 +1,4 @@
-export const ROOT_URL = 'http://10.8.47.4:9494';
+export const ROOT_URL = 'http://192.168.1.157:9494';
 
 
 export const AUTH_USER = 'auth_user';                               //登录
@@ -33,6 +33,9 @@ export const INSTALL_CHAINCODE = 'install_chain_code';              //部署合�
 export const INIT_CHAINCODE = 'init_chain_code';                    //初始化合约
 export const EXECUTE_CHAINCODE = 'execute_chain_code';              //执行合约
 export const FETCH_CHAINCODE_INFO = 'fetch_chain_code_info';        //查询合约
+
+export const UPDATE_CHAINCODE = 'update_chain_code';                //更新合约
+
 
 
 export function getAuthorizedHeader() {
