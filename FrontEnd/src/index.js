@@ -48,6 +48,9 @@ ReactDOM.render(
         <div className="content-wrapper">
           <Switch>
             <Route path="/signout" component={Signout} />
+
+            {/*<Route path="/signout" component={Signin}/>*/}
+
             <Route path="/signin" component={Signin} />
             <PrivateRoute path="/peer/:id/status" component={PeerStatus} />
             <PrivateRoute path="/peer/:id" component={PeerDetail} />
@@ -59,7 +62,9 @@ ReactDOM.render(
             <PrivateRoute path="/chain" component={ChainList} />
             <PrivateRoute path="/users" component={UserList}/>
             <PrivateRoute path="/profile" component={UserProfile} />
-            <Route path="/" component={Welcome} />
+
+            <PrivateRoute path="/" component={Welcome}/>
+            <Route path="/" component={Signin} />
           </Switch>
         </div>
         <Footer/>

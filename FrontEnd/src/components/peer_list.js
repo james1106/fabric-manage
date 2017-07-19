@@ -46,13 +46,13 @@ class PeerList extends Component {
         <td>{row.endpoint}</td>
         <td>{row.status}</td>
         <td>
-          <button className={`btn btn-sm btn-success margin-r-5 hidden`}
+          <button className={`btn btn-sm success margin-r-5 hidden`}
                   onClick={this.handleStopClick.bind(this, row.id, 1)}>启动</button>
-          <button className={`btn btn-sm btn-danger margin-r-5 hidden`}
+          <button className={`btn btn-sm danger margin-r-5 hidden`}
                   onClick={this.handleStopClick.bind(this, row.id, 0)}>停止</button>
-          <button className={`btn btn-sm btn-warning hidden margin-r-5`}
+          <button className={`btn btn-sm warning hidden margin-r-5`}
                   onClick={this.handleDetailClick.bind(this, idx)}>详情</button>
-          <Link className="btn btn-sm btn-warning margin-r-5" to={`/peer/${row.id}`}>详情</Link>
+          <Link className="btn btn-sm warning margin-r-5" to={`/peer/${row.id}`}>详情</Link>
         </td>
       </tr>);
     });
@@ -106,7 +106,7 @@ class PeerList extends Component {
               <div className="box box-info">
                 <div className="box-header">
                   <h3 className="box-title">节点</h3>
-                  <button className="btn btn-success pull-right" onClick={this.handleAddClick.bind(this)}><i className="fa fa-plus"></i> 添加节点</button>
+                  <button className="btn success pull-right" onClick={this.handleAddClick.bind(this)}><i className="fa fa-plus"></i> 添加节点</button>
                 </div>
                 <div className="box-body table-responsive no-padding">
                   <table className="table table-bordered table-hover">

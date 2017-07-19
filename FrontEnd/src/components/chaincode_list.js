@@ -193,9 +193,9 @@ class ChainCodeList extends Component {
               <div className="box box-info">
                 <div className="box-header">
                   <h3 className="box-title">合约</h3>
-                  <button className="btn btn-success pull-right hidden" onClick={this.handleAddClick.bind(this)}><i className="fa fa-plus"></i> 添加合约</button>
-                  <Link to="/chaincode/add" className="btn btn-success pull-right hidden"><i className="fa fa-plus"></i> 添加合约</Link>
-                  <button className="btn btn-success pull-right" onClick={this.handleAddClick.bind(this)}><i className="fa fa-plus"></i> 上传合约</button>
+                  <button className="btn success pull-right hidden" onClick={this.handleAddClick.bind(this)}><i className="fa fa-plus"></i> 添加合约</button>
+                  <Link to="/chaincode/add" className="btn success pull-right hidden"><i className="fa fa-plus"></i> 添加合约</Link>
+                  <button className="btn success pull-right" onClick={this.handleAddClick.bind(this)}><i className="fa fa-plus"></i> 上传合约</button>
                 </div>
                 <div className="box-body table-responsive no-padding">
                   <table className="table table-bordered table-hover">

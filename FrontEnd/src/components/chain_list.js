@@ -58,8 +58,8 @@ class ChainList extends Component {
         <td>{row.hash}</td>
         <td>{row.next}</td>
         <td>
-          <Link className="btn btn-sm btn-warning margin-r-5" to={`/chain/${row.name}`}>详情</Link>
-          <button className="btn btn-sm btn-warning margin-r-5" onClick={this.handleAddPeer.bind(this, idx)}>添加节点</button>
+          <Link className="btn btn-sm warning margin-r-5" to={`/chain/${row.name}`}>详情</Link>
+          <button className="btn btn-sm warning margin-r-5" onClick={this.handleAddPeer.bind(this, idx)}>添加节点</button>
         </td>
       </tr>);
     });
@@ -84,7 +84,7 @@ class ChainList extends Component {
               <div className="box box-info">
                 <div className="box-header">
                   <h3 className="box-title">链</h3>
-                  <button className="btn btn-success pull-right" onClick={this.handleAddClick.bind(this)}><i className="fa fa-plus"></i> 添加链</button>
+                  <button className="btn success pull-right" onClick={this.handleAddClick.bind(this)}><i className="fa fa-plus"></i> 添加链</button>
                 </div>
                 <div className="box-body table-responsive no-padding">
                   <table className="table table-bordered table-hover">
