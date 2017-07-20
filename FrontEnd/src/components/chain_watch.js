@@ -1,4 +1,6 @@
-
+/**
+ * Created by oxchain on 2017/7/20.
+ */
 
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -9,8 +11,6 @@ class Chainwatch extends Component {
 
         };
     }
-
-
     render() {
         return (
             <div >

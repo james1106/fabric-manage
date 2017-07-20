@@ -14,10 +14,10 @@ class NavSide extends  Component {
     if(this.props.authenticated) {
       const user = JSON.parse(localStorage.getItem('user'));
       const username= user.username;
-      const avatar = `https://gravatar.com/avatar/oxchain-${username}?s=100&d=retro`;
+      // const avatar = `https://gravatar.com/avatar/oxchain-${username}?s=100&d=retro`;
       return <div className="user-panel">
         <div className="pull-left image">
-          <img src={avatar} className="img-circle" alt="User Image" style={{"width":"100px"}} />
+          <img src="../../screenshot/touxiang.jpg" className="img-circle" alt="User Image" style={{"width":"100px"}} />
         </div>
         <div className="pull-left info">
           <p>{username}</p>
@@ -57,7 +57,7 @@ class NavSide extends  Component {
       {path:'chain', title:'区块链', icon:'link'},
       {path:'chaincode', title:'合约管理', icon:'bitcoin'},
       {path:'users', title:'用户管理', icon:'users'},
-        {path:'watch', title:'区块链监控', icon:'users'}
+        {path:'watch', title:'区块链监控', icon:'list-alt'}
     ];
 
     return (

@@ -11,7 +11,6 @@ body {
     border-bottom: 1px dotted lightgray;
     padding-bottom: 20px;
 }
-
 .multi-line-table {
     table-layout: fixed;
     word-wrap: break-word;
@@ -22,10 +21,9 @@ body {
     justify-content: center;
     align-content: center;
 }
-
 .chainiframe
 {
-
+    width: 100%;
     display: flex;
     justify-content: center;
     align-content: center;
@@ -33,5 +31,5 @@ body {
 iframe
 {
     width: 100%;
-    min-height: 850px;
+    min-height: 870px;
 }

@@ -92,7 +92,7 @@ class UserList extends Component {
 
     let button = null;
     if(this.state.isAdmin) {
-      button = <button className="btn btn-success pull-right" onClick={this.handleAddClick.bind(this)}><i className="fa fa-plus"></i> 注册用户</button>;
+      button = <button className="btn success pull-right" onClick={this.handleAddClick.bind(this)}><i className="fa fa-plus"></i> 注册用户</button>;
     }
     return (
       <div>
