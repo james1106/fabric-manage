@@ -42,7 +42,6 @@ class Signin extends Component {
     const { handleSubmit} = this.props;
     const { from } = this.props.location.state || { from: { pathname: '/' } };
     console.log(from);
-
     if(this.props.loggedIn) {
       return <Redirect to={from}/>;
     }

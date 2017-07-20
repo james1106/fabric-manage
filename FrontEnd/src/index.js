@@ -27,6 +27,8 @@ import ChainCodeUpload from './components/chaincode_upload';
 import ChainList from './components/chain_list';
 import UserProfile from './components/user_profile';
 
+import Chainwatch from './components/chain_watch';
+
 const createStoreWithMiddleware = compose(
   applyMiddleware(reduxThunk),
   window.devToolsExtension ? window.devToolsExtension() : f => f
@@ -47,8 +49,10 @@ ReactDOM.render(
         <NavSide/>
         <div className="content-wrapper">
           <Switch>
+
             <Route path="/signout" component={Signout} />
 
+              {/*<PrivateRoute path="/signout" component={Signin}/>*/}
             {/*<Route path="/signout" component={Signin}/>*/}
 
             <Route path="/signin" component={Signin} />
@@ -62,9 +66,11 @@ ReactDOM.render(
             <PrivateRoute path="/chain" component={ChainList} />
             <PrivateRoute path="/users" component={UserList}/>
             <PrivateRoute path="/profile" component={UserProfile} />
-
+            <PrivateRoute path="/watch" component={Chainwatch}/>
             <PrivateRoute path="/" component={Welcome}/>
             <Route path="/" component={Signin} />
+
+
           </Switch>
         </div>
         <Footer/>
