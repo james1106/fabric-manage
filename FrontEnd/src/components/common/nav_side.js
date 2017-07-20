@@ -57,7 +57,7 @@ class NavSide extends  Component {
       {path:'chain', title:'区块链', icon:'link'},
       {path:'chaincode', title:'合约管理', icon:'bitcoin'},
       {path:'users', title:'用户管理', icon:'users'},
-        {path:'watch', title:'区块链监控', icon:'users'}
+        {path:'watch', title:'区块链监控', icon:'list-alt'}
     ];
 
     return (
