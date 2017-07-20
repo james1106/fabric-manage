@@ -48,7 +48,7 @@ class UserList extends Component {
     return this.props.all.map((row, idx) => {
       let button = null;
       if(this.state.isAdmin && row.username != this.state.currentUser.username) {
-        button = <button className="btn btn-sm btn-danger margin-r-5" onClick={this.handleStopClick.bind(this, row)}>禁用</button>;
+        button = <button className="btn btn-sm danger margin-r-5" onClick={this.handleStopClick.bind(this, row)}>禁用</button>;
       }
       return (<tr key={idx}>
         <td>{row.username}</td>

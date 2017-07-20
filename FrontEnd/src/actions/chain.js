@@ -61,14 +61,13 @@ export function addChain({ chainname, config }, callback) {
         dispatch(requestError(err.message));
         callback(err.message);
       });
-
   }
 }
 
 //Chain详情
 export function fetchChainInfo(name) {
   return function(dispatch) {
-    axios.get(`${ROOT_URL}/chain/${name}`, { headers: getAuthorizedHeader() })
+    axios.get(`${ROOT_URL}/chain/${name}`,{ headers: getAuthorizedHeader() })
       .then(response => dispatch({ type: FETCH_CHAIN_INFO, payload:response }))
       .catch( err => dispatch(requestError(err.message)) );
   }

@@ -44,9 +44,9 @@ class BlockList extends Component {
         <td>{row.hash}</td>
         <td>{row.previous}</td>
         <td>
-          <button className={`btn btn-sm btn-warning margin-r-5 hidden`}
+          <button className={`btn btn-sm warning margin-r-5 hidden`}
                   onClick={this.handleDetailClick.bind(this, row.number)}>详情</button>
-          <Link className="btn btn-sm btn-warning" to={`/chain/${name}/block/${row.number}`}>详情</Link>
+          <Link className="btn btn-sm warning" to={`/chain/${name}/block/${row.number}`}>详情</Link>
         </td>
       </tr>);
     });

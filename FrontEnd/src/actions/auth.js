@@ -26,7 +26,6 @@ export function signinAction({ username, password,affiliation }, callback) {
         } else {//auth fail
           dispatch(authError(response.data.message));
         }
-
       })
       .catch(() => {
         // If request is bad...

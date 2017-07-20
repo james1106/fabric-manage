@@ -16,3 +16,22 @@ body {
     table-layout: fixed;
     word-wrap: break-word;
 }
+.siginout
+{
+    display: flex;
+    justify-content: center;
+    align-content: center;
+}
+
+.chainiframe
+{
+
+    display: flex;
+    justify-content: center;
+    align-content: center;
+}
+iframe
+{
+    width: 100%;
+    min-height: 850px;
+}

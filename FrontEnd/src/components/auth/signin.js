@@ -42,7 +42,6 @@ class Signin extends Component {
     const { handleSubmit} = this.props;
     const { from } = this.props.location.state || { from: { pathname: '/' } };
     console.log(from);
-
     if(this.props.loggedIn) {
       return <Redirect to={from}/>;
     }
@@ -51,11 +50,13 @@ class Signin extends Component {
       <div>
         <section className="content">
         <div className="login-box">
-          <div className="login-logo">
-          </div>
-          <div className="login-box-body">
-            <p className="login-box-msg" style={{fontSize: 24+'px'}}>OXCHAIN</p>
 
+          <div className="login-box-body">
+            {/*<p className="login-box-msg" style={{fontSize: 24+'px'}}>OXCHAIN</p>*/}
+
+            <div className="signinlogo">
+              <img  src="http://www.ziyungufen.com/static/ziyungufen/image/logo.png" alt=""/>
+            </div>
             {this.renderAlert()}
 
             <form className="form-signin" onSubmit={handleSubmit(this.handleFormSubmit.bind(this))}>
@@ -69,7 +70,6 @@ class Signin extends Component {
                   <button type="submit" className="btn btn-primary btn-block btn-flat">登录</button>
                 </div>
               </div>
-
             </form>
           </div>
         </div>
