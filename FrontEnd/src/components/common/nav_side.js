@@ -14,10 +14,10 @@ class NavSide extends  Component {
     if(this.props.authenticated) {
       const user = JSON.parse(localStorage.getItem('user'));
       const username= user.username;
-      const avatar = `https://gravatar.com/avatar/oxchain-${username}?s=100&d=retro`;
+      // const avatar = `https://gravatar.com/avatar/oxchain-${username}?s=100&d=retro`;
       return <div className="user-panel">
         <div className="pull-left image">
-          <img src={avatar} className="img-circle" alt="User Image" style={{"width":"100px"}} />
+          <img src="../../screenshot/touxiang.jpg" className="img-circle" alt="User Image" style={{"width":"100px"}} />
         </div>
         <div className="pull-left info">
           <p>{username}</p>

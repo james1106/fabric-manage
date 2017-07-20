@@ -1,15 +1,6 @@
 /**
  * Created by oxchain on 2017/7/14.
  */
-/**
- * oxchain ivoice app
- *
- *
- * Author: Jun
- * Email: iyakexi@gmail.com
- * Date: 09/05/2017
- *
- */
 
 import React, { Component } from 'react';
 import { Field, reduxForm, formValueSelector } from 'redux-form';

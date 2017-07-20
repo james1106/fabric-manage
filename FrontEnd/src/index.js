@@ -26,7 +26,6 @@ import ChainCodeList from './components/chaincode_list';
 import ChainCodeUpload from './components/chaincode_upload';
 import ChainList from './components/chain_list';
 import UserProfile from './components/user_profile';
-
 import Chainwatch from './components/chain_watch';
 
 const createStoreWithMiddleware = compose(
@@ -51,10 +50,6 @@ ReactDOM.render(
           <Switch>
 
             <Route path="/signout" component={Signout} />
-
-              {/*<PrivateRoute path="/signout" component={Signin}/>*/}
-            {/*<Route path="/signout" component={Signin}/>*/}
-
             <Route path="/signin" component={Signin} />
             <PrivateRoute path="/peer/:id/status" component={PeerStatus} />
             <PrivateRoute path="/peer/:id" component={PeerDetail} />
@@ -69,8 +64,6 @@ ReactDOM.render(
             <PrivateRoute path="/watch" component={Chainwatch}/>
             <PrivateRoute path="/" component={Welcome}/>
             <Route path="/" component={Signin} />
-
-
           </Switch>
         </div>
         <Footer/>
