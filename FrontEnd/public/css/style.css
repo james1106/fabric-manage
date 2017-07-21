@@ -33,3 +33,8 @@ body {
     /*align-content: center;*/
 
 /*}*/
+
+iframe
+{
+    border:none;
+}
