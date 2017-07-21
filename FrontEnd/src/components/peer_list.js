@@ -61,8 +61,6 @@ class PeerList extends Component {
   handleDetailClick(index) {
     this.setState({ selectedIndex: index, isDetailModalOpen: true });
   }
-
-
   handleStopClick(id, up) {
     this.props.switchPeerStatus(id, up?1:0, success => {
       console.log(success);
