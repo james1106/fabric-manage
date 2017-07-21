@@ -31,6 +31,6 @@ body {
 iframe
 {
     width: 100%;
-    min-height: 770px;
+    min-height: 90%;
     border:none;
 }
