@@ -11,13 +11,13 @@ class Chainwatch extends Component {
 
         };
     }
+
     render() {
         return (
             <div >
                 <div className="chainiframe">
-                    <iframe  src="https://datav.aliyun.com/share/85603cadebbedbee1920046c13b971ae" frameborder="0"></iframe>
+                    <iframe id="Iframe"  src="https://datav.aliyun.com/share/85603cadebbedbee1920046c13b971ae" width='100%' height='90%'  frameborder="0"></iframe>
                 </div>
-
             </div>)
     }
 }

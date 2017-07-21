@@ -1,5 +1,10 @@
 body {
     background-color: #d2d6de;
+    margin-left: 0px;
+    margin-top: 0px;
+    margin-right: 0px;
+    margin-bottom: 0px;
+    overflow: hidden;
 }
 
 .input-group[class*=col-] {
@@ -21,15 +26,10 @@ body {
     justify-content: center;
     align-content: center;
 }
-.chainiframe
-{
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-content: center;
-}
-iframe
-{
-    width: 100%;
-    min-height: 870px;
-}
+/*.chainiframe*/
+/*{*/
+    /*display: flex;*/
+    /*justify-content:center;*/
+    /*align-content: center;*/
+
+/*}*/
