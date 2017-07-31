@@ -1,9 +1,12 @@
 package oxchains.fabric.console.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.hyperledger.fabric.protos.peer.Query;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -46,6 +49,12 @@ public class ChainCodeInfo {
     private String version;
     private String lang;
     private Date createtime;
+    private String chain;
+    private String[] peers;
+    private String args;
+    @Transient
+    private String function;
+
 
     @ElementCollection(fetch = FetchType.EAGER)
     private Set<String> installed = new HashSet<>(4);
@@ -158,4 +167,37 @@ public class ChainCodeInfo {
     public void addInstantiated(String peer) {
         this.instantiated.add(peer);
     }
+
+    public String getChain() {
+        return chain;
+    }
+
+    public void setChain(String chain) {
+        this.chain = chain;
+    }
+
+    public String[] getPeers() {
+        return peers;
+    }
+
+    public void setPeers(String[] peers) {
+        this.peers = peers;
+    }
+
+    public String getArgs() {
+        return args;
+    }
+
+    public void setArgs(String args) {
+        this.args = args;
+    }
+
+    public String getFunction() {
+        return function;
+    }
+
+    public void setFunction(String function) {
+        this.function = function;
+    }
+
 }

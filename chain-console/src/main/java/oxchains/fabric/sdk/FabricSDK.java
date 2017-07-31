@@ -3,6 +3,7 @@ package oxchains.fabric.sdk;
 import ch.qos.logback.core.pattern.util.RegularEscapeUtil;
 import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.hyperledger.fabric.protos.peer.Query;
 import org.hyperledger.fabric.sdk.*;
 import org.hyperledger.fabric.sdk.exception.*;
@@ -19,6 +20,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
 import oxchains.fabric.console.data.ChainRepo;
+import oxchains.fabric.console.domain.ChainCodeInfo;
 import oxchains.fabric.console.domain.ChainInfo;
 import oxchains.fabric.console.domain.PeerEventhub;
 import oxchains.fabric.console.rest.common.RestResp;
@@ -380,12 +382,24 @@ public class FabricSDK {
         return Optional.ofNullable(CHAINCODE_CACHE.get(chaincodeName));
     }
 
-    public CompletableFuture<ProposalResponse> invokeChaincode(ChaincodeID chaincode, Channel channel, Peer peer, String... args) {
+    public CompletableFuture<ProposalResponse> invokeChaincode(ChainCodeInfo chainCodeInfo, ChaincodeID chaincode, Channel channel, Peer peer, String... args) {
         TransactionProposalRequest transactionProposalRequest = fabricClient.newTransactionProposalRequest();
         transactionProposalRequest.setChaincodeID(chaincode);
-        if (args.length > 0) transactionProposalRequest.setFcn(args[0]);
+        /*if (args.length > 0) transactionProposalRequest.setFcn(args[0]);
         if (args.length > 1) transactionProposalRequest.setArgs(Arrays.copyOfRange(args, 1, args.length));
-        else transactionProposalRequest.setArgs(EMPTY_ARGS);
+        else transactionProposalRequest.setArgs(EMPTY_ARGS);*/
+        if (StringUtils.isNotBlank(chainCodeInfo.getFunction())){
+            transactionProposalRequest.setFcn(chainCodeInfo.getFunction());
+        } else {
+            LOG.error("please input function: invoke or other");
+        }
+
+        if (args.length != 0){
+            transactionProposalRequest.setArgs(args);
+        } else {
+            LOG.error("params is null");
+        }
+
         try {
             Collection<ProposalResponse> responses = channel.sendTransactionProposal(transactionProposalRequest, singletonList(peer));
             if (responses.isEmpty()) {
@@ -398,7 +412,7 @@ public class FabricSDK {
                     return channel
                       .sendTransaction(responses)
                       .thenApply(transactionEvent -> {
-                          LOG.info("invoking {} : transaction {} finished", Arrays.toString(args), transactionEvent.getTransactionID());
+                          LOG.info("invoking {} : transactionId {} finished", Arrays.toString(args), transactionEvent.getTransactionID());
                           return response;
                       });
                 } else return supplyAsync(() -> response);
@@ -409,35 +423,45 @@ public class FabricSDK {
         return supplyAsync(() -> null);
     }
 
-        public CompletableFuture<ProposalResponse> upgradeChaincode(ChaincodeID chaincode, String chainname, ChaincodeEndorsementPolicy policy, String... params) {
-            return getChain(chainname)
-                    .map(chain -> upgradeChaincode(chaincode, chain, chain
-                            .getPeers()
-                            .iterator()
-                            .next(), policy, params))
-                    .orElse(supplyAsync(() -> null));
-        }
-
-
-    public CompletableFuture<ProposalResponse> invokeChaincode(String chainname, ChaincodeID chaincode, String... params) {
+    public CompletableFuture<ProposalResponse> upgradeChaincode(ChaincodeID chaincode, String chainname, ChaincodeEndorsementPolicy policy, String... params) {
         return getChain(chainname)
-          .map(chain -> invokeChaincode(chaincode, chain, chain
+                .map(chain -> upgradeChaincode(chaincode, chain, chain
+                        .getPeers()
+                        .iterator()
+                        .next(), policy, params))
+                .orElse(supplyAsync(() -> null));
+    }
+
+    public CompletableFuture<ProposalResponse> invokeChaincode(ChainCodeInfo chainCodeInfo, String chainname, ChaincodeID chaincode, String... params) {
+        return getChain(chainname)
+          .map(chain -> invokeChaincode(chainCodeInfo, chaincode, chain, chain
             .getPeers()
             .iterator()
             .next(), params))
           .orElse(supplyAsync(() -> null));
     }
 
-    public ProposalResponse queryChaincode(String chainname, ChaincodeID chaincode, String... args) {
-        return getChain(chainname).map(chain -> queryChaincode(chaincode, chain, chain.getPeers().iterator().next(), args)).orElse(null);
+    public ProposalResponse queryChaincode(ChainCodeInfo chainCodeInfo, String chainname, ChaincodeID chaincode, String... args) {
+        return getChain(chainname).map(chain -> queryChaincode(chainCodeInfo, chaincode, chain, chain.getPeers().iterator().next(), args)).orElse(null);
     }
 
-    public ProposalResponse queryChaincode(ChaincodeID chaincode, Channel channel, Peer peer, String... args) {
+    public ProposalResponse queryChaincode(ChainCodeInfo chainCodeInfo, ChaincodeID chaincode, Channel channel, Peer peer, String... args) {
         QueryByChaincodeRequest queryByChaincodeRequest = fabricClient.newQueryProposalRequest();
         queryByChaincodeRequest.setChaincodeID(chaincode);
-        if (args.length > 0) queryByChaincodeRequest.setFcn(args[0]);
+        /*if (args.length > 0) queryByChaincodeRequest.setFcn(args[0]);
         if (args.length > 1) queryByChaincodeRequest.setArgs(Arrays.copyOfRange(args, 1, args.length));
-        else queryByChaincodeRequest.setArgs(EMPTY_ARGS);
+        else queryByChaincodeRequest.setArgs(EMPTY_ARGS);*/
+        if (StringUtils.isNotBlank(chainCodeInfo.getFunction())) {
+            queryByChaincodeRequest.setFcn(chainCodeInfo.getFunction());
+        } else {
+            LOG.error("please input function: query or other");
+        }
+
+        if (args.length != 0) {
+            queryByChaincodeRequest.setArgs(args);
+        } else {
+            LOG.error("params is null");
+        }
 
         try {
             Collection<ProposalResponse> responses = channel.queryByChaincode(queryByChaincodeRequest, singletonList(peer));
