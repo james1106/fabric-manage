@@ -6,6 +6,7 @@ import { Route, BrowserRouter, Switch } from 'react-router-dom';
 import reduxThunk from 'redux-thunk';
 
 import reducers from './reducers';
+
 import { AUTH_USER } from './actions/types';
 
 import RequireAuth from './components/auth/require_auth';
@@ -48,7 +49,6 @@ ReactDOM.render(
         <NavSide/>
         <div className="content-wrapper">
           <Switch>
-
             <Route path="/signout" component={Signout} />
             <Route path="/signin" component={Signin} />
             <PrivateRoute path="/peer/:id/status" component={PeerStatus} />

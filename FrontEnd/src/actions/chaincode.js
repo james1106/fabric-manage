@@ -60,6 +60,14 @@ export function uploadChainCode({ name, version, lang, chaincode }, callback) {
     formData.append('version', version)
     formData.append('lang', lang)
     formData.append('chaincode', chaincode[0])
+
+     // let formData ={
+     //     name:this.refs['name'].getDOMNode().value,
+     //     version:this.refs['version'].getDOMNode().value,
+     //     lang:this.refs['lang'].getDOMNode().value,
+     //     chaincode:this.refs['chaincode[0]'].getDOMNode().value,
+     //
+     // }
     const headers = getAuthorizedHeader();
     axios.post(`${ROOT_URL}/chaincode/file`, formData, {headers: { 'content-type': 'multipart/form-data', ...headers }})
       .then(function(response) {
@@ -74,7 +82,6 @@ export function uploadChainCode({ name, version, lang, chaincode }, callback) {
         dispatch(requestError(err.message));
         callback(err.message);
       });
-
   }
 }
 
@@ -92,7 +99,16 @@ export function installChainCode({ chain, name, version, lang, peers }, callback
   console.log(`installChainCode: ${chain}, ${name}, ${version}, ${lang}, ${peers}`);
 
   return function(dispatch) {
-    axios.post(`${ROOT_URL}/chaincode/install?chain=${chain}&chaincode=${name}&version=${version}&lang=${lang}&peers=${peers.join()}`, null, { headers: getAuthorizedHeader() })
+      let formData = {
+          "chain":chain,
+          "name": name,
+          "version": version,
+          "lang": lang,
+          "peers":peers
+      }
+      console.log("---部署合约---",formData)
+      const headers = getAuthorizedHeader();
+      axios.post(`${ROOT_URL}/chaincode/install`, formData, {headers: { 'content-type': 'application/json', ...headers }})
       .then(response => {
 
         if(response.data.status == 1) {// success
@@ -139,16 +155,28 @@ export function initChainCode({ chain, name, version, args, endorsement }, callb
   console.log(`initChainCode: ${chain}, ${name}, ${version}, ${args}, ${endorsement}`);
 
   return function(dispatch) {
-    let formData = new FormData();
-    formData.append('chain', chain)
-    formData.append('name', name)
-    formData.append('version', version)
-    formData.append('args', args)
-    formData.append('endorsement', endorsement[0])
-    const headers = getAuthorizedHeader();
-    axios.post(`${ROOT_URL}/chaincode`, formData, {headers: { 'content-type': 'multipart/form-data', ...headers }})
+      let formData = new FormData();
+     formData.append('chain', chain)
+     formData.append('name', name)
+     formData.append('version', version)
+     formData.append('args', args)
+     formData.append('endorsement', endorsement[0])
+
+       //  formData = {
+       //     "chain":chain,
+       //     "name": name,
+       //     "version": version,
+       //     "args": args,
+       //     "endorsement":endorsement[0],
+       // }
+ console.log("---初始化合约+---",formData)
+
+    const headers = getAuthorizedHeader();                                     //'application/json'
+    axios.post(`${ROOT_URL}/chaincode`,formData , {headers: { 'content-type': 'multipart/form-data', ...headers }})
       .then(function(response) {
+
         if(response.data.status == 1) {// success
+
           dispatch({ type: INIT_CHAINCODE, payload:response });
           callback();
         } else {// fail
@@ -181,6 +209,15 @@ export function UpdateChainCode({ chain, name, version, args, endorsement }, cal
         formData.append('version', version)
         formData.append('args', args)
         formData.append('endorsement', endorsement[0])
+
+        // formData = {
+        //     "chain":chain,
+        //     "name": name,
+        //     "version": version,
+        //     "args": args,
+        //     "endorsement":endorsement[0],
+        // }
+        console.log("---+更新合约---",formData)
         const headers = getAuthorizedHeader();
         axios.post(`${ROOT_URL}/chaincode/upgrade`, formData, {headers: { 'content-type': 'application/x-www-form-urlencoded', ...headers }})
             .then(function(response) {
@@ -205,11 +242,32 @@ export function UpdateChainCode({ chain, name, version, args, endorsement }, cal
  * @param args
  * @param callback(err)   :  callback when http request response. if(success) err=null ; else err=[error message].
  */
-export function executeChainCode({ chain, name, version, args }, callback) {
-  console.log(`executeChainCode: ${chain}, ${name}, ${version}, ${args}`);
+export function executeChainCode({ chain, name, version, func,args }, callback) {
+  console.log(`executeChainCode: ${chain}, ${name}, ${version}, ${func},${args}`);
 
+  // let arry =[];
+  //  for(let i =0;i < args.length;i++)
+  //  {
+  //      let aaa = args[i]
+  //
+  //      console.log( "--------------",aaa)
+  //      arry.push(aaa)
+  //
+  //
+  //  }
+
+    // console.log("++++array+++++++",arry)
   return function(dispatch) {
-    axios.post(`${ROOT_URL}/chaincode/tx?chain=${chain}&chaincode=${name}&version=${version}&args=${args}`, null, { headers: getAuthorizedHeader() })
+      let formData = {
+          "chain":chain,
+          "name": name,
+          "version": version,
+          "function":func,
+          "args": args
+      }
+      console.log("---执行合约---",formData)
+      const headers = getAuthorizedHeader();
+    axios.post(`${ROOT_URL}/chaincode/tx`, formData, {headers: { ...headers }})
       .then(response => {
         if(response.data.status == 1 && response.data.data.success == 1) {// success
           const data = response.data.data;
@@ -234,9 +292,20 @@ export function executeChainCode({ chain, name, version, args }, callback) {
  * @param args
  * @param callback(err)   :  callback when http request response. if(success) err=null ; else err=[error message].
  */
-export function fetchChainCodeInfo({ chain, name, version, args }, callback) {
+export function fetchChainCodeInfo({ chain, name, version,func, args }, callback) {
+    console.log(`executeChainCode: ${chain}, ${name}, ${version}, ${func},${args}`);
   return function(dispatch) {
-    axios.get(`${ROOT_URL}/chaincode/tx?chain=${chain}&chaincode=${name}&version=${version}&args=${args}`, { headers: getAuthorizedHeader() })
+
+      let formData = {
+          "chain":chain,
+          "name": name,
+          "version": version,
+          "function":func,
+          "args": args
+      }
+      console.log("---查询合约---",formData)
+      const headers = getAuthorizedHeader();
+    axios.post(`${ROOT_URL}/chaincode/query`, formData,{headers: { 'content-type': 'application/json', ...headers }})
       .then(response => {
         dispatch({ type: FETCH_CHAINCODE_INFO, payload:response })
         if(response.data.status == 1) {

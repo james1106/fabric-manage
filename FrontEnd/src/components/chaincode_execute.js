@@ -29,15 +29,15 @@ class ChainCodeExecute extends Component {
     }
   }
 
-  handleFormSubmit({ args, chain }) {
+  handleFormSubmit({ func,args, chain }) {
     if(!this.props.selectedItem) return;
 
     const { name, version } = this.props.selectedItem
-    console.log({ chain, name, version, args })
+    console.log({ chain, name, version, func,args })
 
-    if(chain, name && version && args) {
+    if(chain, name && version && func && args) {
       this.setState({ spin:true });
-      this.props.executeChainCode({ chain, name, version, args }, err => {
+      this.props.executeChainCode({ chain, name, version,func, args }, err => {
         this.setState({ error: err ? err : null, spin:false });
         this.props.actionCallback(err);
       });
@@ -58,11 +58,22 @@ class ChainCodeExecute extends Component {
     return (
       <div className={`form-group has-feedback ${touched && error ? 'has-error' : ''}`}>
         <label>{label}</label>
-        <input {...input} placeholder={label} type={type} className="form-control"/>
+        <input {...input} placeholder={label} type={type}  className="form-control" />
         <div className="help-block with-errors">{touched && error ? error : ''}</div>
       </div>
     )
   }
+
+
+    renderFieldfunc({ input, label, type, meta: { touched, error } }) {
+        return (
+            <div className={`form-group has-feedback ${touched && error ? 'has-error' : ''}`}>
+              <label className="lab">{label}</label>
+              <input {...input} placeholder={label} type="type" className="form-control" />
+              <div className="help-block with-errors">{touched && error ? error : ''}</div>
+            </div>
+        )
+    }
 
 
   renderTd( key ) {
@@ -90,7 +101,8 @@ class ChainCodeExecute extends Component {
             </table>
             <form className="form-signin" onSubmit={handleSubmit(this.handleFormSubmit.bind(this))}>
               <Field name="chain" component={ChainsSelector} className="form-control" label="选择链"/>
-              <Field name="args" component={this.renderField.bind(this)} type="text"  label="参数" />
+              <Field name="func" component={this.renderFieldfunc.bind(this)} type="text"  label="函数名"/>
+              <Field name="args" component={this.renderField.bind(this)} type="text"  label="参数"/>
               <div className="row">
                 <div className="col-xs-8">
                   {this.state.spin?'合约正在执行中...':''}
