@@ -52,7 +52,6 @@ class Signup extends Component {
                   <button type="submit" className="btn btn-primary btn-block btn-flat">注册</button>
                 </div>
               </div>
-
             </form>
           </div>
         </div>
