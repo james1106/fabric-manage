@@ -6,12 +6,13 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
 import java.io.IOException;
+import java.io.Serializable;
 
 /**
  * @author aiet
  */
 @JsonSerialize(using = TxResult.TXResultSerializer.class)
-public class TxResult<K, V> extends KV<K, V> {
+public class TxResult<K, V> extends KV<K, V> implements Serializable{
 
     private String txid;
 

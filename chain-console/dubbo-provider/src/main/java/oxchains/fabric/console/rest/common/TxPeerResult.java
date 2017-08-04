@@ -1,9 +1,11 @@
 package oxchains.fabric.console.rest.common;
 
+import java.io.Serializable;
+
 /**
  * @author aiet
  */
-public class TxPeerResult {
+public class TxPeerResult implements Serializable{
 
     private final String txid;
     private final String peer;

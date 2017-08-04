@@ -7,13 +7,14 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Transient;
+import java.io.Serializable;
 import java.util.Date;
 
 /**
  * @author aiet
  */
 @Entity
-public class UserToken {
+public class UserToken implements Serializable{
 
     @Id private Long id;
     @Column(length = 512)

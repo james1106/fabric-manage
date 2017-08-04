@@ -110,6 +110,23 @@ public class ChainServiceImpl implements ChainService{
 
     }
 
+    public boolean newChain(String chain, byte[] config) {
+        try {
+            ChannelConfiguration chainConfiguration = new ChannelConfiguration(config);
+            LOG.info("===constructing chain {}", chain);
+            LOG.info("===userContext()==="+userContext().get().getUsername());
+            return userContext()
+                    .flatMap(context -> fabricSDK
+                            .withUserContext(fromUser2(context))
+                            .constructChain(chain, chainConfiguration))
+                    .isPresent();
+        } catch (Exception e) {
+            LOG.error("failed to construct chain {}", e.getMessage());
+        }
+        return false;
+
+    }
+
     public boolean joinChain(String chainname, String peerId) {
         return peerRepo
           .findPeerEventhubById(peerId)

@@ -20,7 +20,7 @@
     <dependencies>
         <dependency>
             <groupId>oxchains.fabric</groupId>
-            <artifactId>dubbo-api</artifactId>
+            <artifactId>dubbo-provider</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>

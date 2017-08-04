@@ -6,7 +6,7 @@
     <artifactId>chain-console</artifactId>
     <version>1.0-SNAPSHOT</version>
     <modules>
-        <module>dubbo-api</module>
+        <module>dubbo-provider</module>
         <module>dubbo-service</module>
     </modules>
     <packaging>pom</packaging>

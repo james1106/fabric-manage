@@ -8,6 +8,7 @@ import oxchains.fabric.console.auth.JwtAuthentication;
 import oxchains.fabric.console.auth.JwtService;
 import oxchains.fabric.console.data.UserRepo;
 import oxchains.fabric.console.data.UserTokenRepo;
+import oxchains.fabric.console.domain.JwtAuth;
 import oxchains.fabric.console.domain.User;
 import oxchains.fabric.console.domain.UserToken;
 import oxchains.fabric.sdk.FabricSDK;
@@ -76,6 +77,10 @@ public class UserServiceImpl implements UserService{
         return empty();
     }
 
+    public User registerUser (User user){
+        return register(user).get();
+    }
+
     public boolean revoke(String username, int reason) {
         try {
             return userContext()
@@ -105,6 +110,7 @@ public class UserServiceImpl implements UserService{
 
     public Optional<UserToken> tokenForUser(final User user) {
         try {
+            LOG.debug("===tokenForUser==="+user.getUsername());
             /* admin users should be submitted to the system beforehand */
             Optional<User> userOptional = userRepo.findUserByUsernameAndPasswordAndAffiliation(user.getUsername(), user.getPassword(), user.getAffiliation());
             return userOptional
@@ -130,4 +136,12 @@ public class UserServiceImpl implements UserService{
         return empty();
     }
 
+    public UserToken enrollUser(User user){
+        return tokenForUser(user).get();
+    }
+
+    @Override
+    public JwtAuth parseToken(String token) {
+        return jwtService.parseToken(token);
+    }
 }

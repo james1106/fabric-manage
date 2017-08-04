@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonSetter;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import java.io.Serializable;
 import java.util.Date;
 
 import static org.springframework.util.StringUtils.isEmpty;
@@ -14,7 +15,7 @@ import static org.springframework.util.StringUtils.isEmpty;
  * @author aiet
  */
 @Entity
-public class PeerEventhub {
+public class PeerEventhub implements Serializable{
 
     @Id private String id;
     private String endpoint;

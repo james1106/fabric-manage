@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import oxchains.fabric.console.data.UserRepo;
+import oxchains.fabric.console.domain.JwtAuth;
 import oxchains.fabric.console.domain.User;
 
 import javax.annotation.PostConstruct;
@@ -22,6 +23,7 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPrivateKey;
 import java.time.ZonedDateTime;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -99,4 +101,20 @@ public class JwtService {
         return empty();
     }
 
+    public JwtAuth parseToken(String token) {
+        try {
+            Jws<Claims> jws = new DefaultJwtParser()
+                    .setSigningKey(publicKey)
+                    .parseClaimsJws(token);
+            Claims claims = jws.getBody();
+            return userRepo
+                    .findUserByUsernameAndAffiliation(claims.getSubject(), claims.get("affiliation", String.class))
+                    .map(u -> {
+                        return new JwtAuth(claims.getSubject(),claims.getExpiration());
+                    }).get();
+        } catch (Exception e) {
+            LOG.error("failed to parse jwt token {}: ", token, e);
+        }
+        return null;
+    }
 }

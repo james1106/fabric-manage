@@ -1,5 +1,6 @@
 package oxchains.fabric.console.service;
 
+import org.hyperledger.fabric.sdk.Channel;
 import org.springframework.web.multipart.MultipartFile;
 import oxchains.fabric.console.domain.ChainBlockInfo;
 import oxchains.fabric.console.domain.ChainInfo;
@@ -25,7 +26,8 @@ public interface ChainService {
 
     public List<EventHubInfo> eventHubs(String chainname);
 
-    public boolean newChain(String chain, MultipartFile config);
+    //public boolean newChain(String chain, MultipartFile config);
+    public boolean newChain(String chain, byte[] config);
 
     public boolean joinChain(String chainname, String peerId);
 

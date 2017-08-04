@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSetter;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -14,7 +15,7 @@ import static org.springframework.util.StringUtils.isEmpty;
  * @author aiet
  */
 @Entity
-public class User {
+public class User implements Serializable{
 
     public User() {
     }

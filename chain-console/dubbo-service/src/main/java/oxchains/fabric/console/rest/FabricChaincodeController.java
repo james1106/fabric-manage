@@ -38,6 +38,9 @@ public class FabricChaincodeController {
 
     @PostMapping("/chaincode/install")
     public RestResp install(@RequestParam String chain, @RequestParam String chaincode, @RequestParam String version, @RequestParam String lang, @RequestParam String[] peers) {
+        for(int i=0;i<peers.length;i++){
+            System.out.println("===peer==="+i+"==="+peers[i]);
+        }
         List<TxResult> result = chaincodeServiceImpl.installCCOnPeer(chain, chaincode, version, lang, peers);
         return result.isEmpty() ? fail() : success(result);
     }
