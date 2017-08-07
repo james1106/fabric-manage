@@ -2,13 +2,19 @@ package oxchains.fabric.console.rest.common;
 
 import org.hyperledger.fabric.sdk.ProposalResponse;
 
+import java.io.Serializable;
+
 /**
  * @author aiet
  */
-public class QueryResult {
+public class QueryResult implements Serializable{
     private String payload;
     private String peer;
     private String txid;
+
+    public QueryResult(){
+
+    }
 
     public QueryResult(ProposalResponse response) {
         this.txid = response.getTransactionID();
