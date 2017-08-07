@@ -298,7 +298,7 @@ public class ChaincodeServiceImpl implements ChaincodesService {
 
                 return fabricSDK
                         .withUserContext(fromUser2(context))
-                        .instantiateChaincode(chaincode, chain, chaincodeEndorsementPolicy, params)
+                        .instantiateChaincode2(chaincode, chain, chaincodeEndorsementPolicy, params)
                         .thenApplyAsync(RESPONSE2TXPEERRESULT_FUNC)
                         .thenApplyAsync(txPeerResult -> {
                             if (txPeerResult.getSuccess() == 1) {

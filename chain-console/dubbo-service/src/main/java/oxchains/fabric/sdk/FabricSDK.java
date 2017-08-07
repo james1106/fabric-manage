@@ -298,6 +298,44 @@ public class FabricSDK {
           .orElse(supplyAsync(() -> null));
     }
 
+    public CompletableFuture<ProposalResponse> instantiateChaincode2(ChaincodeID chaincode, String chainname, ChaincodeEndorsementPolicy policy, String... params) {
+        return getChain(chainname)
+                .map(chain -> instantiateChaincode2(chaincode, chain, policy, params))
+                .orElse(supplyAsync(() -> null));
+    }
+
+    public CompletableFuture<ProposalResponse> instantiateChaincode2(ChaincodeID chaincode, Channel channel, ChaincodeEndorsementPolicy policy, final String... args) {
+        InstantiateProposalRequest instantiateProposalRequest = fabricClient.newInstantiationProposalRequest();
+        instantiateProposalRequest.setChaincodeID(chaincode);
+        if (args.length > 0) instantiateProposalRequest.setFcn(args[0]);
+        if (args.length > 1) instantiateProposalRequest.setArgs(Arrays.copyOfRange(args, 1, args.length));
+        else instantiateProposalRequest.setArgs(EMPTY_ARGS);
+        instantiateProposalRequest.setChaincodeEndorsementPolicy(policy);
+        try {
+            //TODO transient map not used
+            instantiateProposalRequest.setTransientMap(emptyMap());
+            Collection<ProposalResponse> responses = channel.sendInstantiationProposal(instantiateProposalRequest, channel.getPeers());
+            if (responses.isEmpty()) {
+                LOG.warn("no responses while instantiating chaincode {}", chaincode.getName());
+            } else {
+                final ProposalResponse response = responses
+                        .iterator()
+                        .next();
+                if (response.getStatus() == SUCCESS) {
+                    return channel
+                            .sendTransaction(responses, channel.getOrderers())
+                            .thenApply(transactionEvent -> {
+                                LOG.info("instantiation {} : transaction {} finished", Arrays.toString(args), transactionEvent.getTransactionID());
+                                return response;
+                            });
+                } else supplyAsync(() -> response);
+            }
+        } catch (Exception e) {
+            LOG.error("failed to instantiate chaincode {} with arg {}", chaincode.getName(), Arrays.toString(args), e);
+        }
+        return supplyAsync(() -> null);
+    }
+
     public CompletableFuture<ProposalResponse> instantiateChaincode(ChaincodeID chaincode, Channel channel, Peer peer, ChaincodeEndorsementPolicy policy, final String... args) {
         InstantiateProposalRequest instantiateProposalRequest = fabricClient.newInstantiationProposalRequest();
         instantiateProposalRequest.setChaincodeID(chaincode);
