@@ -4,6 +4,7 @@ import net.thucydides.core.annotations.Steps;
 import org.jbehave.core.annotations.Given;
 import org.jbehave.core.annotations.Then;
 import org.jbehave.core.annotations.When;
+import oxchains.fabric.console.domain.ChainCodeInfo;
 import oxchains.fabric.sdk.steps.ChaincodeAPISteps;
 
 import static oxchains.fabric.util.StoryTestUtil.scriptParse;
@@ -42,8 +43,8 @@ public class InvoiceChaincodeStory {
     }
 
     @When("I create invoice with: $args")
-    public void whenICreateInvoiceWith(String args) throws Exception {
-        chaincodeSteps.invokeChainWith(scriptParse(args));
+    public void whenICreateInvoiceWith(ChainCodeInfo chainCodeInfo, String args) throws Exception {
+        chaincodeSteps.invokeChainWith(chainCodeInfo,scriptParse(args));
     }
 
     @Then("creation success")
@@ -52,13 +53,13 @@ public class InvoiceChaincodeStory {
     }
 
     @When("I $action invoice: $args")
-    public void whenIQueryInvoiceWith(String action, String args) throws Exception {
+    public void whenIQueryInvoiceWith(ChainCodeInfo chainCodeInfo, String action, String args) throws Exception {
         switch (action) {
         case "query":
-            chaincodeSteps.queryChainWith(args);
+            chaincodeSteps.queryChainWith(chainCodeInfo, args);
             break;
         case "transfer":
-            chaincodeSteps.invokeChainWith(scriptParse(args));
+            chaincodeSteps.invokeChainWith(chainCodeInfo,scriptParse(args));
             break;
         default:
             break;
@@ -66,8 +67,8 @@ public class InvoiceChaincodeStory {
     }
 
     @When("I request a reimbursement with $args")
-    public void whenICreateReimbursementWith(String args) throws Exception {
-        chaincodeSteps.invokeChainWith(scriptParse(args));
+    public void whenICreateReimbursementWith(ChainCodeInfo chainCodeInfo, String args) throws Exception {
+        chaincodeSteps.invokeChainWith(chainCodeInfo, scriptParse(args));
     }
 
     @Then("reimbursement request accepted")
@@ -76,18 +77,18 @@ public class InvoiceChaincodeStory {
     }
 
     @When("I reject reimbursement with $arg")
-    public void whenIRejectReimbursementWith(String arg) throws Exception {
-        chaincodeSteps.invokeChainWith(scriptParse(arg));
+    public void whenIRejectReimbursementWith(ChainCodeInfo chainCodeInfo, String arg) throws Exception {
+        chaincodeSteps.invokeChainWith(chainCodeInfo, scriptParse(arg));
     }
 
     @When("I query reimbursement with $arg")
-    public void whenIQueryReimbursementWith(String arg) {
-        chaincodeSteps.queryChainWith(arg);
+    public void whenIQueryReimbursementWith(ChainCodeInfo chainCodeInfo, String arg) {
+        chaincodeSteps.queryChainWith(chainCodeInfo, arg);
     }
 
     @When("I confirm reimbursement with $arg")
-    public void whenIConfirmReimbursementWith(String arg) throws Exception {
-        chaincodeSteps.invokeChainWith(scriptParse(arg));
+    public void whenIConfirmReimbursementWith(ChainCodeInfo chainCodeInfo, String arg) throws Exception {
+        chaincodeSteps.invokeChainWith(chainCodeInfo, scriptParse(arg));
     }
 
     @Then("reimbursement $bxid has been $action")

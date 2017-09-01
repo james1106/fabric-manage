@@ -1,5 +1,9 @@
 package oxchains.fabric.console.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import javassist.CtClass;
 import org.apache.commons.io.FileUtils;
 import org.hyperledger.fabric.sdk.*;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
@@ -7,7 +11,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
+import org.springframework.ui.ModelMap;
 import org.springframework.web.multipart.MultipartFile;
 import oxchains.fabric.console.auth.JwtAuthentication;
 import oxchains.fabric.console.data.ChaincodeRepo;
@@ -32,6 +38,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.empty;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.stream.Collectors.toConcurrentMap;
 import static java.util.stream.Collectors.toList;
 import static org.hyperledger.fabric.sdk.ChaincodeResponse.Status.SUCCESS;
 import static org.springframework.security.core.context.SecurityContextHolder.getContext;
@@ -61,7 +68,7 @@ public class ChaincodeService {
     @Value("${fabric.chaincode.path}") private String path;
     @Value("${fabric.tx.timeout}") private int txTimeout;
 
-    public boolean cacheChaincode(String name, String version, String lang, MultipartFile file) {
+    public boolean cacheChaincode (String name, String version, String lang, MultipartFile file) {
         try {
             File chaincodePath = new File(String.format("%s/src/%s-%s", path, name, version));
             if (chaincodePath.exists()) {
@@ -92,17 +99,23 @@ public class ChaincodeService {
         return false;
     }
 
-    private String chaincodePath(String name, String version) {
+    private String chaincodePath (String name, String version) {
         return name + "-" + version;
     }
 
-    public List<TxResult> installCCOnPeer(String chain, String name, String version, String lang, String... peers) {
+    public List<TxResult> installCCOnPeer( ChainCodeInfo chainCodeInfo) {
+        String chain = chainCodeInfo.getChain();
+        String name = chainCodeInfo.getName();
+        String version = chainCodeInfo.getVersion();
+        String lang = chainCodeInfo.getLang();
+        String[] peers = chainCodeInfo.getPeers();
+
         ChaincodeID chaincode = ChaincodeID
-          .newBuilder()
-          .setName(name)
-          .setVersion(version)
-          .setPath(chaincodePath(name, version))
-          .build();
+                .newBuilder()
+                .setName(name)
+                .setVersion(version)
+                .setPath(chaincodePath(name, version))
+                .build();
 
         if (noPeersYet(chain)) return emptyList();
 
@@ -112,42 +125,43 @@ public class ChaincodeService {
                 User context = contextOptional.get();
                 Optional<ChainCodeInfo> chainCodeInfoOptional = chaincodeRepo.findByNameAndVersionAndAffiliation(name, version, context.getAffiliation());
                 if (!chainCodeInfoOptional.isPresent()) return emptyList();
-                ChainCodeInfo chainCodeInfo = chainCodeInfoOptional.get();
+                chainCodeInfo = chainCodeInfoOptional.get();
                 Set<String> installedPeers = chainCodeInfo.getInstalled();
                 List<String> peers2Install = Arrays.asList(peers);
                 installedPeers.retainAll(peers2Install);
                 List<Peer> peerList = peers2Install
-                  .stream()
-                  .map(p -> fabricSDK
-                    .getPeer(p, chain)
-                    .orElse(null))
-                  .filter(Objects::nonNull)
-                  .filter(p -> !installedPeers.contains(p.getName()))
-                  .collect(toList());
+                        .stream()
+                        .map(p -> fabricSDK
+                                .getPeer(p, chain)
+                                .orElse(null))
+                        .filter(Objects::nonNull)
+                        .filter(p -> !installedPeers.contains(p.getName()))
+                        .collect(toList());
 
                 List<TxResult> list = installedPeers
-                  .stream()
-                  .map(installedPeer -> new TxResult<>(null, installedPeer, 1))
-                  .collect(toList());
+                        .stream()
+                        .map(installedPeer -> new TxResult<>(null, installedPeer, 1))
+                        .collect(toList());
 
                 if (!peerList.isEmpty()) {
+                    ChainCodeInfo finalChainCodeInfo = chainCodeInfo;
                     fabricSDK
-                      .withUserContext(fromUser2(context))
-                      .installChaincodeOnPeer(chaincode, chain, path, lang, peerList)
-                      .stream()
-                      .map(resp -> {
-                          if (resp.getStatus() == SUCCESS) {
-                              chainCodeInfo.addInstalled(resp
-                                .getPeer()
-                                .getName());
-                              LOG.info("chaincode {}-{} installed on peer", name, version, resp
-                                .getPeer()
-                                .getName());
-                          }
-                          return resp;
-                      })
-                      .map(RESPONSE2TXRESULT_FUNC)
-                      .forEach(list::add);
+                            .withUserContext(fromUser2(context))
+                            .installChaincodeOnPeer(chaincode, chain, path, lang, peerList)
+                            .stream()
+                            .map(resp -> {
+                                if (resp.getStatus() == SUCCESS) {
+                                    finalChainCodeInfo.addInstalled(resp
+                                            .getPeer()
+                                            .getName());
+                                    LOG.info("chaincode {}-{} installed on peer", name, version, resp
+                                            .getPeer()
+                                            .getName());
+                                }
+                                return resp;
+                            })
+                            .map(RESPONSE2TXRESULT_FUNC)
+                            .forEach(list::add);
                     chaincodeRepo.save(chainCodeInfo);
                 }
                 return list;
@@ -267,7 +281,159 @@ public class ChaincodeService {
         return ((JwtAuthentication) getContext().getAuthentication()).user();
     }
 
-    public Optional<TxPeerResult> invoke(String chain, String name, String version, String... params) {
+    public Optional<TxPeerResult> invoke(ChainCodeInfo chainCodeInfo) {
+        // String[] args = new String[] { chainCodeInfo.getArgs() };
+        String chain = chainCodeInfo.getChain();
+        String name = chainCodeInfo.getName();
+        String version = chainCodeInfo.getVersion();
+        String params = chainCodeInfo.getArgs();
+        // String转String[]
+        String[] args = params.split(",");
+
+        ChaincodeID chaincode = ChaincodeID
+                .newBuilder()
+                .setName(name)
+                .setVersion(version)
+                .setPath(chaincodePath(name, version))
+                .build();
+
+        if (noPeersYet(chain)) return empty();
+
+        String[] newArgs = new String[args.length];
+        for (int i = 0; i < args.length; i++) {
+            try {
+                newArgs[i] = URLDecoder.decode(args[i], "utf-8");
+            } catch (UnsupportedEncodingException ignored) {
+                newArgs[i] = args[i];
+            }
+        }
+
+        LOG.info("invoking chaincode {}-{} with {} {}", name, version,  chainCodeInfo.getFunction(), newArgs);
+        return userContext().map(context -> {
+            try {
+                return fabricSDK
+                        .withUserContext(fromUser2(context))
+                        .invokeChaincode(chainCodeInfo, chain, chaincode, newArgs)
+                        .thenApplyAsync(RESPONSE2TXPEERRESULT_FUNC)
+                        .get(txTimeout, SECONDS);
+            } catch (Exception e) {
+                LOG.error("failed to invoke chaincode {}-{} with {}", name, version, newArgs, e);
+            }
+            return null;
+        });
+    }
+
+    private static Function<ProposalResponse, TxPeerResult> RESPONSE2TXPEERRESULT_FUNC = proposalResponse -> nonNull(proposalResponse) ? new TxPeerResult(proposalResponse.getTransactionID(), proposalResponse
+      .getPeer()
+      .getName(), proposalResponse.getStatus() == SUCCESS ? 1 : 0) : null;
+
+    private static Function<ProposalResponse, TxResult> RESPONSE2TXRESULT_FUNC = proposalResponse -> nonNull(proposalResponse) ? new TxResult<>(proposalResponse.getTransactionID(), proposalResponse
+      .getPeer()
+      .getName(), proposalResponse.getStatus() == SUCCESS ? 1 : 0) : null;
+
+    public Optional<QueryResult> query(ChainCodeInfo chainCodeInfo) {
+        // String[] args = new String[] { chainCodeInfo.getArgs() };
+        String chain = chainCodeInfo.getChain();
+        String name = chainCodeInfo.getName();
+        String version = chainCodeInfo.getVersion();
+        String params = chainCodeInfo.getArgs();
+
+        String[] args = params.split(",");
+
+        ChaincodeID chaincode = ChaincodeID
+                .newBuilder()
+                .setName(name)
+                .setVersion(version)
+                .setPath(name)
+                .build();
+
+
+        if (noPeersYet(chain)) return empty();
+
+        LOG.info("querying chaincode {}-{} with {}:{}", name, version, chainCodeInfo.getFunction(), args);
+        return userContext()
+                .map(context -> fabricSDK
+                        .withUserContext(fromUser2(context))
+                        .queryChaincode(chainCodeInfo, chain, chaincode, args))
+                .map(QueryResult::new);
+    }
+
+    private boolean noPeersYet(String chain) {
+        return userContext()
+          .map(u -> fabricSDK
+            .withUserContext(fromUser2(u))
+            .chainPeers(chain))
+          .orElse(emptyList())
+          .isEmpty();
+    }
+
+    //*****************************参数获取方式@RequestBody之前的代码*****************************//
+
+    /*public List<TxResult> installCCOnPeer(String chain, String name, String version, String lang, String... peers) {
+        ChaincodeID chaincode = ChaincodeID
+          .newBuilder()
+          .setName(name)
+          .setVersion(version)
+          .setPath(chaincodePath(name, version))
+          .build();
+
+        if (noPeersYet(chain)) return emptyList();
+
+        try {
+            Optional<User> contextOptional = userContext();
+            if (contextOptional.isPresent()) {
+                User context = contextOptional.get();
+                Optional<ChainCodeInfo> chainCodeInfoOptional = chaincodeRepo.findByNameAndVersionAndAffiliation(name, version, context.getAffiliation());
+                if (!chainCodeInfoOptional.isPresent()) return emptyList();
+                ChainCodeInfo chainCodeInfo = chainCodeInfoOptional.get();
+                Set<String> installedPeers = chainCodeInfo.getInstalled();
+                List<String> peers2Install = Arrays.asList(peers);
+                installedPeers.retainAll(peers2Install);
+                List<Peer> peerList = peers2Install
+                  .stream()
+                  .map(p -> fabricSDK
+                    .getPeer(p, chain)
+                    .orElse(null))
+                  .filter(Objects::nonNull)
+                  .filter(p -> !installedPeers.contains(p.getName()))
+                  .collect(toList());
+
+                List<TxResult> list = installedPeers
+                  .stream()
+                  .map(installedPeer -> new TxResult<>(null, installedPeer, 1))
+                  .collect(toList());
+
+                if (!peerList.isEmpty()) {
+                    fabricSDK
+                      .withUserContext(fromUser2(context))
+                      .installChaincodeOnPeer(chaincode, chain, path, lang, peerList)
+                      .stream()
+                      .map(resp -> {
+                          if (resp.getStatus() == SUCCESS) {
+                              chainCodeInfo.addInstalled(resp
+                                .getPeer()
+                                .getName());
+                              LOG.info("chaincode {}-{} installed on peer", name, version, resp
+                                .getPeer()
+                                .getName());
+                          }
+                          return resp;
+                      })
+                      .map(RESPONSE2TXRESULT_FUNC)
+                      .forEach(list::add);
+                    chaincodeRepo.save(chainCodeInfo);
+                }
+                return list;
+
+            }
+
+        } catch (Exception e) {
+            LOG.error("failed to update install status of chaincode {}-{}", name, version, e);
+        }
+        return emptyList();
+    }*/
+
+    /*public Optional<TxPeerResult> invoke(String chain, String name, String version, String... params) {
         ChaincodeID chaincode = ChaincodeID
           .newBuilder()
           .setName(name)
@@ -299,17 +465,9 @@ public class ChaincodeService {
             }
             return null;
         });
-    }
+    }*/
 
-    private static Function<ProposalResponse, TxPeerResult> RESPONSE2TXPEERRESULT_FUNC = proposalResponse -> nonNull(proposalResponse) ? new TxPeerResult(proposalResponse.getTransactionID(), proposalResponse
-      .getPeer()
-      .getName(), proposalResponse.getStatus() == SUCCESS ? 1 : 0) : null;
-
-    private static Function<ProposalResponse, TxResult> RESPONSE2TXRESULT_FUNC = proposalResponse -> nonNull(proposalResponse) ? new TxResult<>(proposalResponse.getTransactionID(), proposalResponse
-      .getPeer()
-      .getName(), proposalResponse.getStatus() == SUCCESS ? 1 : 0) : null;
-
-    public Optional<QueryResult> query(String chain, String name, String version, String... args) {
+    /*public Optional<QueryResult> query(String chain, String name, String version, String... args) {
         ChaincodeID chaincode = ChaincodeID
           .newBuilder()
           .setName(name)
@@ -325,15 +483,5 @@ public class ChaincodeService {
             .withUserContext(fromUser2(context))
             .queryChaincode(chain, chaincode, args))
           .map(QueryResult::new);
-    }
-
-    private boolean noPeersYet(String chain) {
-        return userContext()
-          .map(u -> fabricSDK
-            .withUserContext(fromUser2(u))
-            .chainPeers(chain))
-          .orElse(emptyList())
-          .isEmpty();
-    }
-
+    }*/
 }

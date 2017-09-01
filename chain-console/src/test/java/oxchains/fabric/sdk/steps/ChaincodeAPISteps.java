@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import oxchains.fabric.ChainConsoleApplication;
+import oxchains.fabric.console.domain.ChainCodeInfo;
 import oxchains.fabric.sdk.FabricSDK;
 
 import java.io.File;
@@ -87,10 +88,10 @@ public class ChaincodeAPISteps {
     }
 
     @Step("query on chain with {0}")
-    public void queryChainWith(String arg) {
+    public void queryChainWith(ChainCodeInfo chainCodeInfo, String arg) {
         assertNotNull("chain should have been created", chain);
         assertNotNull("chaincode should have been created", chaincode);
-        queryResponse = fabricSDK.queryChaincode(chaincode, chain, chain
+        queryResponse = fabricSDK.queryChaincode(chainCodeInfo, chaincode, chain, chain
           .getPeers()
           .iterator()
           .next(), arg.split(" "));
@@ -130,11 +131,11 @@ public class ChaincodeAPISteps {
     }
 
     @Step("invoke chain with arg {0}")
-    public void invokeChainWith(String arg) throws Exception {
+    public void invokeChainWith(ChainCodeInfo chainCodeInfo, String arg) throws Exception {
         assertNotNull("chain should have been created", chain);
         assertNotNull("chaincode should have been created", chaincode);
         invokeResponse = fabricSDK
-          .invokeChaincode(chaincode, chain, chain
+          .invokeChaincode(chainCodeInfo, chaincode, chain, chain
             .getPeers()
             .iterator()
             .next(), arg.split(" "))

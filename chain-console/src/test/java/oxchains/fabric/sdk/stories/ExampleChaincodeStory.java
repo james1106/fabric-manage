@@ -4,6 +4,7 @@ import net.thucydides.core.annotations.Steps;
 import org.jbehave.core.annotations.Given;
 import org.jbehave.core.annotations.Then;
 import org.jbehave.core.annotations.When;
+import oxchains.fabric.console.domain.ChainCodeInfo;
 import oxchains.fabric.sdk.steps.ChaincodeAPISteps;
 import oxchains.fabric.sdk.steps.PeerAPISteps;
 
@@ -59,8 +60,8 @@ public class ExampleChaincodeStory {
     }
 
     @When("I query asset $holder with: $arg")
-    public void whenIQueryForAssetOf(String holder, String arg) {
-        chaincodeAPISteps.queryChainWith(arg);
+    public void whenIQueryForAssetOf(ChainCodeInfo chainCodeInfo, String holder, String arg) {
+        chaincodeAPISteps.queryChainWith(chainCodeInfo, arg);
     }
 
     @Then("should return $result")
@@ -69,8 +70,8 @@ public class ExampleChaincodeStory {
     }
 
     @When("I transfer asset from a to b with: $arg")
-    public void whenTransferAsset(String arg) throws Exception {
-        chaincodeAPISteps.invokeChainWith(arg);
+    public void whenTransferAsset(ChainCodeInfo chainCodeInfo, String arg) throws Exception {
+        chaincodeAPISteps.invokeChainWith(chainCodeInfo, arg);
     }
 
     @Then("transfer succeed")
