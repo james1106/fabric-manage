@@ -31,6 +31,7 @@
         <fabric-sdk-java.version>1.0.0-beta2</fabric-sdk-java.version>
         <hikaricp.version>2.6.1</hikaricp.version>
         <jjwt.version>0.7.0</jjwt.version>
+        <docker.image.prefix>oxchains</docker.image.prefix>
     </properties>
 
     <dependencies>
@@ -143,6 +144,15 @@
 
     <build>
         <plugins>
+
+            <plugin>
+                <groupId>com.spotify</groupId>
+                <artifactId>dockerfile-maven-plugin</artifactId>
+                <version>1.3.4</version>
+                <configuration>
+                    <repository>${docker.image.prefix}/${project.artifactId}</repository>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -166,6 +176,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven.surefire.plugin.version}</version>
                 <configuration>
+                    <skip>true</skip>
                     <testFailureIgnore>true</testFailureIgnore>
                 </configuration>
             </plugin>
