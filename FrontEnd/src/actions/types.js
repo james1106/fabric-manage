@@ -1,5 +1,9 @@
-//export const ROOT_URL = 'http://59.110.17.41:9494';
- export const ROOT_URL = 'http://192.168.1.157:9494';
+export const ROOT_URL = 'http://59.110.17.41:9494';
+
+//export const ROOT_URL = 'http://117.159.10.142:9494';
+
+
+// export const ROOT_URL = 'http://192.168.1.157:9494';
 
 export const AUTH_USER = 'auth_user';                               //登录
 export const UNAUTH_USER = 'unauth_user';                           //退出登录
