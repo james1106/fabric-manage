@@ -1,0 +1,39 @@
+body {
+    background-color: #d2d6de;
+}
+
+.input-group[class*=col-] {
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+.panel dl:not(:last-child) {
+    border-bottom: 1px dotted lightgray;
+    padding-bottom: 20px;
+}
+.multi-line-table {
+    table-layout: fixed;
+    word-wrap: break-word;
+}
+.siginout
+{
+    display: flex;
+    justify-content: center;
+    align-content: center;
+}
+.chainiframe
+{
+    display: flex;
+    justify-content:center;
+    align-content: center;
+    width: 100%;
+    min-height: 580px;
+
+}
+iframe
+{
+    width: 100%;
+    min-height: 90%;
+    border:none;
+}
+

@@ -1,0 +1,70 @@
+Profiles:
+
+    TwoOrgsOrdererGenesis:
+        Orderer:
+            <<: *OrdererDefaults
+            Organizations:
+        Consortiums:
+            DevConsortium:
+                Organizations:
+                    - *Org1
+                    - *Org2
+    TwoOrgsChannel:
+        Orderer:
+            <<: *OrdererDefaults
+            Organizations:
+        Consortium: DevConsortium
+        Application:
+            <<: *ApplicationDefaults
+            Organizations:
+                - *Org1
+                - *Org2
+
+Organizations:
+
+    - &Org1
+        Name: Org1MSP
+        ID: Org1MSP
+        MSPDir: org1/msp
+        AdminPrincipal: Role.ADMIN
+        AnchorPeers:
+            # AnchorPeers defines the location of peers which can be used
+            # for cross org gossip communication.  Note, this value is only
+            # encoded in the genesis block in the Application section context
+            - Host: peer0
+              Port: 7051
+
+    - &Org2
+        Name: Org2MSP
+        ID: Org2MSP
+        MSPDir: org2/msp
+        ## only one admin allowed? ##
+        #AdminPrincipal: Role.MEMBER
+        AnchorPeers:
+            # AnchorPeers defines the location of peers which can be used
+            # for cross org gossip communication.  Note, this value is only
+            # encoded in the genesis block in the Application section context
+            - Host: peer2
+              Port: 8051
+
+Orderer: &OrdererDefaults
+
+    OrdererType: solo
+    Addresses:
+        - orderer0:7050
+
+    # Batch Timeout: The amount of time to wait before creating a batch
+    BatchTimeout: 1s
+    MaxChannels: 0
+    BatchSize:
+        MaxMessageCount: 10
+        AbsoluteMaxBytes: 99 MB
+        PreferredMaxBytes: 512 KB
+    Kafka:
+        Brokers:
+            - 127.0.0.1:9092
+    Organizations:
+
+Application: &ApplicationDefaults
+    Organizations:
+
